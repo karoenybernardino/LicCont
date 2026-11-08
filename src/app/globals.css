@@ -2,50 +2,69 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Cores da marca LicCONT (provisórias até o guia em docs/marca/). */
+/* Cores da marca LicCONT. Guia: docs/marca/guia.md. */
 :root {
   --marca-petroleo: #0b2e3a;
   --marca-teal: #0e7490;
   --marca-aqua: #2dd4bf;
   --marca-menta: #ccfbf1;
   --marca-aco: #4f8592;
-  --marca-fundo-claro: #f3f8f9;
 }
 
-/* Tema claro. Texto, linhas e superfícies: pendência (guia de marca). */
+/* Tema claro (canvas "Login — versão clara"). */
 [data-theme="light"] {
   color-scheme: light;
-  --fundo: var(--marca-fundo-claro);
-  --superficie: #ffffff;
+  --fundo: #eaf3f4;
+  --superficie: rgb(255 255 255 / 0.78);
+  --superficie-2: rgb(255 255 255 / 0.6);
+  --campo: #ffffff;
   --texto: var(--marca-petroleo);
-  --texto-suave: #3d6672;
-  --linha: #c9dde1;
+  --texto-suave: #3f5e66;
+  --linha: rgb(11 46 58 / 0.12);
+  --borda-campo: #798c93;
   --destaque: var(--marca-teal);
   --destaque-texto: #ffffff;
   --foco: var(--marca-teal);
   --erro: #b42318;
+  --logo-bloco: var(--marca-petroleo);
+  --logo-vazio: #d5dce5;
+  --luz:
+    radial-gradient(1100px 620px at 4% -12%, #9fdbe0 0%, rgb(159 219 224 / 0) 65%),
+    radial-gradient(900px 560px at 100% 105%, #a9e8d6 0%, rgb(169 232 214 / 0) 62%),
+    radial-gradient(600px 400px at 85% 10%, #dcecf6 0%, rgb(220 236 246 / 0) 70%);
 }
 
-/* Tema escuro: preto puro; marca só como destaque. Pendência: guia de marca. */
+/* Tema escuro (canvas "Login — fundo E1"): quase preto, luz petróleo nos cantos. */
 [data-theme="dark"] {
   color-scheme: dark;
-  --fundo: #000000;
-  --superficie: #0a1417;
-  --texto: #e8f3f5;
+  --fundo: #05090b;
+  --superficie: #0b1418;
+  --superficie-2: #111d22;
+  --campo: #070d10;
+  --texto: #eef5f6;
   --texto-suave: #9bb8bf;
-  --linha: #1d3a42;
+  --linha: #1f3239;
+  --borda-campo: var(--marca-aco);
   --destaque: var(--marca-aqua);
-  --destaque-texto: #000000;
+  --destaque-texto: var(--marca-petroleo);
   --foco: var(--marca-aqua);
   --erro: #fda29b;
+  --logo-bloco: #8cc5cf;
+  --logo-vazio: #285a66;
+  --luz:
+    radial-gradient(900px 520px at 6% -8%, #0f5568 0%, rgb(15 85 104 / 0) 70%),
+    radial-gradient(700px 400px at 100% 100%, var(--marca-petroleo) 0%, rgb(11 46 58 / 0) 70%);
 }
 
 @theme inline {
   --color-fundo: var(--fundo);
   --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-campo: var(--campo);
   --color-texto: var(--texto);
   --color-texto-suave: var(--texto-suave);
   --color-linha: var(--linha);
+  --color-borda-campo: var(--borda-campo);
   --color-destaque: var(--destaque);
   --color-destaque-texto: var(--destaque-texto);
   --color-foco: var(--foco);
@@ -55,20 +74,20 @@
   --color-aqua: var(--marca-aqua);
   --color-menta: var(--marca-menta);
   --color-aco: var(--marca-aco);
-  --font-sans: var(--font-sora);
+  --font-sans: var(--font-plex);
+  --font-titulo: var(--font-sora);
 }
 
 body {
   background-color: var(--fundo);
+  background-image: var(--luz);
+  background-attachment: fixed;
   color: var(--texto);
 }
 
-/* Luz petróleo no canto superior do modo escuro. */
-[data-theme="dark"] body {
-  background-image: radial-gradient(
-    60rem 40rem at 0% 0%,
-    rgb(11 46 58 / 0.9),
-    transparent 70%
-  );
-  background-attachment: fixed;
+h1,
+h2,
+h3 {
+  font-family: var(--font-sora);
+  font-weight: 600;
 }

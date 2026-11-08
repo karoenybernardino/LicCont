@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Sora } from "next/font/google";
+import { IBM_Plex_Sans, Sora } from "next/font/google";
 import "./globals.css";
 
-const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["300", "600", "700"] });
+const plex = IBM_Plex_Sans({ variable: "--font-plex", subsets: ["latin"], weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
   title: "LicCONT",
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       data-theme="light"
-      className={`${sora.variable} h-full antialiased`}
+      className={`${sora.variable} ${plex.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

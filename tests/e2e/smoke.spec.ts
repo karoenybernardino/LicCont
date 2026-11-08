@@ -32,6 +32,20 @@ test("com o sistema no escuro, o botão oferece o tema claro", async ({ page }) 
   await expect(page.getByRole("button", { name: "Ativar tema escuro" })).toBeVisible();
 });
 
+test("segue a marca do canvas: IBM Plex Sans no texto, Sora nos títulos e fundos dos dois temas", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  const estilo = (seletor: string, prop: string) =>
+    page.locator(seletor).first().evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
+
+  expect(await estilo("body", "font-family")).toContain("IBM Plex Sans");
+  expect(await estilo("h1", "font-family")).toContain("Sora");
+  expect(await estilo("body", "background-color")).toBe("rgb(234, 243, 244)");
+
+  await page.getByRole("button", { name: "Ativar tema escuro" }).click();
+  expect(await estilo("body", "background-color")).toBe("rgb(5, 9, 11)");
+});
+
 test("respostas trazem os cabeçalhos básicos de segurança", async ({ request }) => {
   const resposta = await request.get("/");
   const h = resposta.headers();
