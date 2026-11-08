@@ -8,7 +8,7 @@
 -- "exemplo_acervo" é o modelo de política para as tabelas de acervo.
 begin;
 create extension if not exists pgtap with schema extensions;
-select * from no_plan();
+select plan(88);
 
 -- ---------------------------------------------------------------------------
 -- Dados fictícios (como postgres)
