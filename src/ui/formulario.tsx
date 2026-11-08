@@ -2,6 +2,7 @@
 
 import { useActionState, type ReactNode } from "react";
 import { Botao } from "./botao";
+import { Girando } from "./carregando";
 
 export type EstadoAcao = { erro?: string; aviso?: string; senha?: string } | undefined;
 
@@ -50,7 +51,14 @@ export function Formulario({
         </div>
       )}
       <Botao type="submit" variante={variante} disabled={pendente} className="w-full">
-        {pendente ? enviando : botao}
+        {pendente ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <Girando />
+            {enviando}
+          </span>
+        ) : (
+          botao
+        )}
       </Botao>
     </form>
   );

@@ -23,8 +23,14 @@ describe("lerUsuario", () => {
   });
 });
 
-it("senha provisória tem 16 caracteres e muda a cada vez", () => {
-  const a = senhaProvisoria();
-  expect(a).toHaveLength(16);
-  expect(a).not.toBe(senhaProvisoria());
+it("senha provisória tem 12 caracteres, os 4 tipos e muda a cada vez", () => {
+  for (let i = 0; i < 50; i++) {
+    const s = senhaProvisoria();
+    expect(s).toHaveLength(12);
+    expect(s).toMatch(/[a-z]/);
+    expect(s).toMatch(/[A-Z]/);
+    expect(s).toMatch(/\d/);
+    expect(s).toMatch(/[^A-Za-z0-9]/);
+  }
+  expect(senhaProvisoria()).not.toBe(senhaProvisoria());
 });

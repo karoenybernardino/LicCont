@@ -9,6 +9,8 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(88);
+-- Estes testes valem com o segundo fator obrigatório (como no piloto).
+update app.configuracao set segundo_fator_obrigatorio = true;
 
 -- ---------------------------------------------------------------------------
 -- Dados fictícios (como postgres)

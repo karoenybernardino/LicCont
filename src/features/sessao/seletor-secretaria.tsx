@@ -1,4 +1,5 @@
 import { Selecao } from "@/ui/selecao";
+import { BotaoEnviar } from "@/ui/botao-enviar";
 import { trocarSecretaria } from "./acoes";
 import { secretariasPermitidas, type Secretaria, type Usuario } from "./dal";
 
@@ -14,12 +15,11 @@ export async function SeletorSecretaria({ usuario, atual }: { usuario: Usuario; 
           </option>
         ))}
       </Selecao>
-      <button
-        type="submit"
+      <BotaoEnviar
         className="min-h-10 rounded-lg border border-linha px-3 text-sm text-texto hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco"
       >
         Trocar
-      </button>
+      </BotaoEnviar>
     </form>
   );
 }

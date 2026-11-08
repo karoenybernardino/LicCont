@@ -21,13 +21,14 @@ describe("esquemaLogin", () => {
 });
 
 describe("esquemaNovaSenha", () => {
-  it("exige 12 caracteres e confirmação igual", () => {
-    expect(esquemaNovaSenha.safeParse({ senha: "curta", confirmacao: "curta" }).success).toBe(false);
-    expect(
-      esquemaNovaSenha.safeParse({ senha: "uma-senha-longa", confirmacao: "outra-senha-longa" }).success,
-    ).toBe(false);
-    expect(
-      esquemaNovaSenha.safeParse({ senha: "uma-senha-longa", confirmacao: "uma-senha-longa" }).success,
-    ).toBe(true);
+  it("exige 8 caracteres com os 4 tipos e confirmação igual", () => {
+    const ok = (senha: string, confirmacao = senha) => esquemaNovaSenha.safeParse({ senha, confirmacao }).success;
+    expect(ok("Ab1!")).toBe(false);
+    expect(ok("abcdef1!")).toBe(false);
+    expect(ok("ABCDEF1!")).toBe(false);
+    expect(ok("Abcdefg!")).toBe(false);
+    expect(ok("Abcdefg1")).toBe(false);
+    expect(ok("Abcdef1!", "Abcdef1?")).toBe(false);
+    expect(ok("Abcdef1!")).toBe(true);
   });
 });

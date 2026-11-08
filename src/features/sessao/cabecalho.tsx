@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BotaoEnviar } from "@/ui/botao-enviar";
 import { Logo } from "@/ui/logo";
 import { SeletorTema } from "@/ui/seletor-tema";
 import { sair } from "./acoes";
@@ -12,12 +13,11 @@ export function CabecalhoSistema({ children }: { children?: ReactNode }) {
         {children}
         <SeletorTema />
         <form action={sair}>
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-full border border-linha px-3 py-1.5 text-sm text-texto hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco"
           >
             Sair
-          </button>
+          </BotaoEnviar>
         </form>
       </div>
     </header>

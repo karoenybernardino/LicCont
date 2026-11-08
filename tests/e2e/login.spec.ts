@@ -104,7 +104,7 @@ test("senha provisória obriga a criar uma nova antes de usar o sistema", async 
   await page.getByLabel("Nova senha", { exact: true }).fill("curta");
   await page.getByLabel("Repita a nova senha").fill("curta");
   await page.getByRole("button", { name: "Salvar senha" }).click();
-  await expect(page.getByTestId("erro-formulario")).toHaveText("A senha precisa ter pelo menos 12 caracteres.");
+  await expect(page.getByTestId("erro-formulario")).toHaveText("A senha precisa ter pelo menos 8 caracteres.");
 
   const nova = `Nova-${crypto.randomUUID()}`;
   await page.getByLabel("Nova senha", { exact: true }).fill(nova);

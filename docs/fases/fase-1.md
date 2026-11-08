@@ -275,6 +275,13 @@ Cada tarefa: teste que falha primeiro, revisão pelo `revisor-codigo` e pelo
 3. Papéis: os 4 do canvas.
 4. Sem e-mail na Fase 1: senha provisória pelo administrador.
 5. Senha vazada: Have I Been Pwned.
+6. (depois do fechamento) Senha mínima de **8**, com letra maiúscula,
+   minúscula, número e símbolo obrigatórios (substitui a mínima de 12).
+7. (depois do fechamento) **Segundo fator desligado** enquanto só houver
+   dados fictícios: chave `app.configuracao.segundo_fator_obrigatorio`
+   (migração `20261108190000`). **Religar antes do piloto** (item
+   obrigatório da Fase 8): `update app.configuracao set
+   segundo_fator_obrigatorio = true;`. Local e CI rodam com ele ligado.
 
 ## Resultado (2026-11-08)
 
@@ -332,4 +339,12 @@ axe); 6 e 7 no CI.
   caracteres. Sem ele o login mostra "falta configuração no servidor".
 - Criar o próprio usuário da equipe LicCONT (passo a passo no PR #24).
 - Ligar os alertas do Dependabot (pendente da Fase 0).
+
+### Ajustes depois do fechamento (2026-11-08)
+
+- Decisões 6 e 7 acima (senha de 8 com 4 tipos; segundo fator desligado
+  por chave do banco).
+- Funções da Vercel em São Paulo (`vercel.json`, `gru1`): antes rodavam em
+  Washington e cada consulta ao banco cruzava o continente.
+- Animação de carregamento na troca de tela e nos botões.
 

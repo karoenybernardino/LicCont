@@ -11,7 +11,7 @@ import {
   ehCookieSupabase,
   opcoesCookie,
 } from "@/features/sessao/cookies";
-import { nivelSessao, origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, origemDaRequisicao, segundoFatorObrigatorio, usuarioAtual } from "@/features/sessao/dal";
 import {
   MENSAGEM_ERRO_LOGIN,
   MENSAGEM_INDISPONIVEL,
@@ -160,7 +160,8 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
   loja.set(COOKIE_SECRETARIA, secretaria, opcoesCookie);
   await marcarAtividade();
   // Administrador passa pelo segundo fator antes de tudo (inclusive da troca de senha).
-  redirect(administrador ? "/segundo-fator" : troca ? "/nova-senha" : "/inicio");
+  const pedirCodigo = administrador && (await segundoFatorObrigatorio());
+  redirect(pedirCodigo ? "/segundo-fator" : troca ? "/nova-senha" : "/inicio");
 }
 
 export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
@@ -184,7 +185,7 @@ export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Pro
     p_aparelho: sessao.aparelho,
   });
   await marcarAtividade();
-  redirect("/segundo-fator");
+  redirect((await segundoFatorObrigatorio()) ? "/segundo-fator" : "/equipe");
 }
 
 const MENSAGEM_VAZADA = "Esta senha aparece em vazamentos conhecidos na internet. Escolha outra.";
@@ -197,7 +198,7 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
   if (!usuario) redirect("/entrar");
   // Troca voluntária (pedindo a senha atual) fica para depois: aqui só a provisória.
   if (!usuario.trocaSenha) redirect("/inicio");
-  if (usuario.administrador && (await nivelSessao()) !== "aal2") redirect("/segundo-fator");
+  if (usuario.administrador && (await faltaSegundoFator())) redirect("/segundo-fator");
 
   const dados = esquemaNovaSenha.safeParse({
     senha: formData.get("senha"),
