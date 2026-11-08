@@ -1,0 +1,3 @@
+-- Dados fictícios para desenvolvimento e testes.
+-- Nunca coloque aqui dado real de prefeitura, servidor ou empresa.
+-- A Fase 0 não tem tabelas de negócio; os dados entram a partir da Fase 1.
