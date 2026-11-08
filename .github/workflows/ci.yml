@@ -131,4 +131,5 @@ jobs:
             echo "::error::Falta o segredo SUPABASE_DB_URL (Settings > Secrets and variables > Actions)."
             exit 1
           fi
-          supabase db push --remote="$SUPABASE_DB_URL"
+          # Sem terminal o CLI não confirma sozinho: --yes é obrigatório.
+          supabase db push --remote="$SUPABASE_DB_URL" --yes
