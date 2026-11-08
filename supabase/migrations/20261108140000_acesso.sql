@@ -164,6 +164,18 @@ as $$
     and exists (select 1 from public.equipe_liccont e where e.usuario_id = auth.uid())
 $$;
 
+-- A pessoa é da equipe LicCONT? (equipe_liccont não tem GRANT; as
+-- políticas consultam por aqui.)
+create or replace function app.e_da_equipe(p_usuario uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (select 1 from public.equipe_liccont e where e.usuario_id = p_usuario)
+$$;
+
 -- Secretarias cujo acervo o usuário pode ver: as dos vínculos; para o
 -- administrador, todas as da prefeitura. Modelo para as tabelas de acervo.
 create or replace function app.secretarias_permitidas()
@@ -186,9 +198,9 @@ as $$
 $$;
 
 revoke execute on function app.sessao_valida(), app.prefeitura_atual(), app.eh_admin(),
-  app.eh_equipe(), app.secretarias_permitidas() from public, anon;
+  app.eh_equipe(), app.secretarias_permitidas(), app.e_da_equipe(uuid) from public, anon;
 grant execute on function app.sessao_valida(), app.prefeitura_atual(), app.eh_admin(),
-  app.eh_equipe(), app.secretarias_permitidas() to authenticated;
+  app.eh_equipe(), app.secretarias_permitidas(), app.e_da_equipe(uuid) to authenticated;
 
 -- Auditoria imutável: nem o dono da tabela altera ou apaga.
 create or replace function app.auditoria_imutavel()
@@ -323,7 +335,7 @@ create policy usuarios_inclui on public.usuarios for insert to authenticated
     and (select app.eh_admin())
     and id <> (select auth.uid())
     and troca_senha_obrigatoria
-    and not exists (select 1 from public.equipe_liccont e where e.usuario_id = id)
+    and not app.e_da_equipe(id)
   );
 create policy usuarios_altera on public.usuarios for update to authenticated
   using (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()))

@@ -289,7 +289,7 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select results_eq($$select nome from public.prefeituras_para_login() where nome like 'Prefeitura Fictícia _'$$,
   array['Prefeitura Fictícia A', 'Prefeitura Fictícia B'], 'login lista só prefeituras ativas, só o nome');
 select results_eq($$select nome from public.secretarias_para_login('11111111-1111-1111-1111-111111111111')$$,
-  array['Obras', 'Saúde'], 'login lista só secretarias ativas');
+  array['Obras', 'Saúde', 'Turismo'], 'login lista só secretarias ativas');
 select is_empty($$select 1 from public.secretarias_para_login('33333333-3333-3333-3333-333333333333')$$,
   'login não lista secretarias de prefeitura suspensa');
 select throws_ok('select 1 from public.usuarios', '42501', null, 'anon não lê usuários');
