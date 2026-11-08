@@ -1,5 +1,6 @@
 # Regra em docs/decisoes/0004-atualizacao-de-dependencias.md:
-# versões major ignoradas por enquanto; patch e minor num só PR por semana.
+# bibliotecas do app: major ignorada; patch e minor num só PR por semana.
+# Ações do GitHub: todas as atualizações (inclusive major) num só PR.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -27,9 +28,7 @@ updates:
       timezone: America/Fortaleza
     cooldown:
       default-days: 7
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+    # Ações: sem ignorar major; tudo num único PR, revisado antes do piloto.
     groups:
-      actions-pequenas:
-        update-types: [minor, patch]
+      acoes-github:
+        patterns: ["*"]
