@@ -14,6 +14,10 @@ Na Fase 0 o LicCONT usa só estes serviços externos, todos em plano gratuito:
 | Semgrep (CLI aberta) | Análise estática no CI | Não | Gratuito, sem conta |
 | Gitleaks (CLI aberta) | Busca de segredos no CI | Não | Gratuito, sem conta |
 
+A fonte Sora vem do Google Fonts via `next/font`: é baixada no build e
+servida pelo próprio app, então o navegador do usuário não chama o Google.
+Não é suboperador.
+
 Supabase, Vercel e GitHub entram em `docs/lgpd/suboperadores.md`.
 Semgrep e Gitleaks rodam dentro do GitHub Actions e não enviam código nem
 dado a terceiros.
