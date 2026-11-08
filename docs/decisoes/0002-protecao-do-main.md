@@ -19,8 +19,10 @@ técnica, sempre com branch e PR, e ligar antes do piloto.
 Settings → Rules → Rulesets → New branch ruleset:
 - Alvo: `main`. Enforcement: Active.
 - Restrict deletions; Block force pushes.
-- Require a pull request before merging (1 aprovação; descartar aprovação
-  com novo commit).
+- Require a pull request before merging, com **0 aprovações obrigatórias**:
+  os PRs saem da mesma conta do responsável, e o GitHub não deixa o autor
+  aprovar o próprio PR. A aprovação é o próprio merge feito pelo responsável.
+  Se entrar um segundo revisor (ex.: o sócio), subir para 1.
 - Require status checks to pass: `lint`, `tipos`, `vitest`, `playwright`,
   `pgtap`, `semgrep`, `gitleaks`. Require branches to be up to date.
 
