@@ -66,6 +66,11 @@ export async function confirmarCadastro(_: Estado, formData: FormData): Promise<
   const factorId = idSchema.safeParse(formData.get("fator"));
   const codigo = codigoSchema.safeParse(formData.get("codigo"));
   if (!factorId.success || !codigo.success) return { erro: MENSAGEM_CODIGO };
+  // Só confirma o fator novo, ainda não verificado (quem já tem usa verificarCodigo).
+  const { data: fatores } = await c.supabase.auth.mfa.listFactors();
+  if (fatores?.totp.length) redirect("/segundo-fator");
+  const pendente = fatores?.all.some((f) => f.id === factorId.data && f.status === "unverified");
+  if (!pendente) return { erro: MENSAGEM_CODIGO };
 
   const falha = await comLimite(c, async () => {
     const { error } = await c.supabase.auth.mfa.challengeAndVerify({ factorId: factorId.data, code: codigo.data });

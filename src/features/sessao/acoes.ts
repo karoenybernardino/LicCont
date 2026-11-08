@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA, opcoesCookie } from "./cookies";
-import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaPermitida } from "./dal";
+import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaAtual, secretariaPermitida } from "./dal";
 
 export async function sair() {
   const supabase = await clienteSessao();
@@ -40,12 +40,13 @@ export async function trocarSecretaria(formData: FormData) {
   if (!secretaria) redirect("/inicio");
 
   const loja = await cookies();
-  const anterior = loja.get(COOKIE_SECRETARIA)?.value ?? null;
+  // O anterior vem da conferência no servidor, não do cookie cru.
+  const anterior = (await secretariaAtual(usuario))?.id ?? "todas";
   const nova = secretaria.id ?? "todas";
   if (nova !== anterior) {
     const supabase = (await clienteSessao())!;
     const { ip, aparelho } = await origemDaRequisicao();
-    await supabase.rpc("registrar_auditoria", {
+    const { error } = await supabase.rpc("registrar_auditoria", {
       p_acao: "sessao.troca_secretaria",
       p_alvo_tabela: "secretarias",
       p_alvo_id: secretaria.id,
@@ -54,7 +55,8 @@ export async function trocarSecretaria(formData: FormData) {
       p_ip: ip,
       p_aparelho: aparelho,
     });
-    loja.set(COOKIE_SECRETARIA, nova, opcoesCookie);
+    // Sem registro na auditoria, não troca.
+    if (!error) loja.set(COOKIE_SECRETARIA, nova, opcoesCookie);
   }
   redirect("/inicio");
 }

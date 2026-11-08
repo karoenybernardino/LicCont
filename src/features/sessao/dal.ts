@@ -45,6 +45,8 @@ export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
 });
 
 // Nível da sessão no Supabase Auth: "aal2" depois do código do autenticador.
+// Lê o aal do token sem conferir assinatura: chamar sempre depois de
+// usuarioAtual() ou membroEquipe(), que validam o token com getUser().
 export const nivelSessao = cache(async () => {
   const supabase = await clienteSessao();
   if (!supabase) return null;
@@ -89,6 +91,8 @@ export async function exigirSessao() {
   return { usuario, secretaria };
 }
 
+// Só diz se a pessoa é da equipe; NÃO confere o segundo fator. Porteiro de
+// tela ou ação da equipe é sempre exigirEquipe().
 export const membroEquipe = cache(async (): Promise<{ id: string } | null> => {
   const supabase = await clienteSessao();
   const servico = clienteServico();

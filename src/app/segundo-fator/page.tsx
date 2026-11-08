@@ -7,6 +7,7 @@ import { clienteSessao } from "@/lib/supabase/servidor";
 import { verificarCodigo } from "@/features/dois-fatores/acoes";
 import { CadastroAutenticador } from "@/features/dois-fatores/cadastro";
 import { MolduraLogin } from "@/features/login/moldura";
+import { sair } from "@/features/sessao/acoes";
 import { membroEquipe, nivelSessao, usuarioAtual } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Segundo fator · LicCONT" };
@@ -45,6 +46,11 @@ export default async function SegundoFator() {
         ) : (
           <CadastroAutenticador />
         )}
+        <form action={sair} className="self-center">
+          <button type="submit" className="text-[13px] text-destaque underline-offset-2 hover:underline">
+            Sair
+          </button>
+        </form>
       </Cartao>
     </MolduraLogin>
   );
