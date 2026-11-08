@@ -17,6 +17,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
 
   // Secretarias: cadastrar e desativar.
   await page.getByRole("link", { name: "Secretarias" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome da secretaria").fill("Obras");
   await page.getByRole("button", { name: "Cadastrar" }).click();
@@ -29,6 +30,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
 
   // Usuários: cadastrar operador só em Obras.
   await page.getByRole("link", { name: "Usuários e perfis" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Usuários e perfis" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("E-mail").fill("pessoa.nova@exemplo.test");
   await page.getByLabel("Nome").fill("Pessoa Nova Fictícia");
@@ -42,6 +44,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
 
   // Edição: bloquear, desbloquear e redefinir a senha.
   await page.getByRole("link", { name: "Editar Pessoa Nova Fictícia" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Pessoa Nova Fictícia" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await page.getByRole("button", { name: "Bloquear usuário" }).click();
   await expect(page.getByRole("button", { name: "Desbloquear usuário" })).toBeVisible();

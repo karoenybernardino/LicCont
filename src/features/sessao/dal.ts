@@ -19,19 +19,20 @@ export type Usuario = {
 
 export type Secretaria = { id: string | null; nome: string };
 
-// getUser confere o token no Supabase Auth; a linha de usuarios só volta se
-// a pessoa está ativa e a sessão existe (RLS + app.sessao_valida).
+// getClaims confere a assinatura do token (sem ir ao Supabase Auth quando a
+// chave é assimétrica). A linha de usuarios só volta se a pessoa está ativa e
+// a sessão ainda existe no banco (RLS + app.sessao_valida): bloqueio e
+// sessão encerrada cortam o acesso mesmo com token dentro da validade.
 export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
   const supabase = await clienteSessao();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data: token } = await supabase.auth.getClaims();
+  const id = token?.claims.sub;
+  if (!id) return null;
   const { data } = await supabase
     .from("usuarios")
     .select("id, prefeitura_id, nome, administrador, troca_senha_obrigatoria")
-    .eq("id", user.id)
+    .eq("id", id)
     .maybeSingle();
   return data
     ? {
@@ -46,13 +47,27 @@ export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
 
 // Nível da sessão no Supabase Auth: "aal2" depois do código do autenticador.
 // Lê o aal do token sem conferir assinatura: chamar sempre depois de
-// usuarioAtual() ou membroEquipe(), que validam o token com getUser().
+// usuarioAtual() ou membroEquipe(), que validam o token.
 export const nivelSessao = cache(async () => {
   const supabase = await clienteSessao();
   if (!supabase) return null;
   const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   return data?.currentLevel ?? null;
 });
+
+// Chave do banco (app.configuracao): o segundo fator está obrigatório?
+// Erro ou sem resposta conta como obrigatório.
+export const segundoFatorObrigatorio = cache(async () => {
+  const servico = clienteServico();
+  if (!servico) return true;
+  const { data, error } = await servico.rpc("segundo_fator_obrigatorio");
+  return error ? true : data !== false;
+});
+
+// Falta o código do autenticador para esta sessão?
+export async function faltaSegundoFator() {
+  return (await segundoFatorObrigatorio()) && (await nivelSessao()) !== "aal2";
+}
 
 // Secretarias que a pessoa pode escolher como filtro da tela: as dos
 // vínculos; para o administrador, todas as ativas e "Todas as secretarias".
@@ -84,7 +99,7 @@ export async function exigirSessao() {
   const usuario = await usuarioAtual();
   if (!usuario) redirect("/entrar");
   // Administrador sem o segundo fator não usa o sistema (o banco também exige aal2).
-  if (usuario.administrador && (await nivelSessao()) !== "aal2") redirect("/segundo-fator");
+  if (usuario.administrador && (await faltaSegundoFator())) redirect("/segundo-fator");
   if (usuario.trocaSenha) redirect("/nova-senha");
   const secretaria = await secretariaAtual(usuario);
   if (!secretaria) redirect("/entrar/dados");
@@ -112,7 +127,7 @@ export const membroEquipe = cache(async (): Promise<{ id: string } | null> => {
 export async function exigirEquipe() {
   const membro = await membroEquipe();
   if (!membro) redirect("/equipe/entrar");
-  if ((await nivelSessao()) !== "aal2") redirect("/segundo-fator");
+  if (await faltaSegundoFator()) redirect("/segundo-fator");
   return membro;
 }
 

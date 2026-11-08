@@ -76,6 +76,7 @@ test("administrador cadastra o autenticador, precisa do código a cada login e e
 test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ page }) => {
   await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
+  await expect(secretariaEmUso(page)).toHaveText("Saúde");
   const opcoes = await page.getByLabel("Secretaria", { exact: true }).locator("option").allTextContents();
   expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
   await page.getByLabel("Secretaria", { exact: true }).selectOption({ label: "Educação" });
@@ -104,7 +105,7 @@ test("senha provisória obriga a criar uma nova antes de usar o sistema", async 
   await page.getByLabel("Nova senha", { exact: true }).fill("curta");
   await page.getByLabel("Repita a nova senha").fill("curta");
   await page.getByRole("button", { name: "Salvar senha" }).click();
-  await expect(page.getByTestId("erro-formulario")).toHaveText("A senha precisa ter pelo menos 12 caracteres.");
+  await expect(page.getByTestId("erro-formulario")).toHaveText("A senha precisa ter pelo menos 8 caracteres.");
 
   const nova = `Nova-${crypto.randomUUID()}`;
   await page.getByLabel("Nova senha", { exact: true }).fill(nova);

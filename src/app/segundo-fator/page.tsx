@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BotaoEnviar } from "@/ui/botao-enviar";
 import { redirect } from "next/navigation";
 import { Campo } from "@/ui/campo";
 import { Cartao } from "@/ui/cartao";
@@ -8,7 +9,7 @@ import { verificarCodigo } from "@/features/dois-fatores/acoes";
 import { CadastroAutenticador } from "@/features/dois-fatores/cadastro";
 import { MolduraLogin } from "@/features/login/moldura";
 import { sair } from "@/features/sessao/acoes";
-import { membroEquipe, nivelSessao, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, membroEquipe, usuarioAtual } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Segundo fator · LicCONT" };
 
@@ -18,7 +19,7 @@ export default async function SegundoFator() {
   const equipe = usuario ? null : await membroEquipe();
   if (!usuario && !equipe) redirect("/entrar");
   if (usuario && !usuario.administrador) redirect("/inicio");
-  if ((await nivelSessao()) === "aal2") redirect(!usuario ? "/equipe" : usuario.trocaSenha ? "/nova-senha" : "/inicio");
+  if (!(await faltaSegundoFator())) redirect(!usuario ? "/equipe" : usuario.trocaSenha ? "/nova-senha" : "/inicio");
 
   const supabase = (await clienteSessao())!;
   const { data } = await supabase.auth.mfa.listFactors();
@@ -47,9 +48,9 @@ export default async function SegundoFator() {
           <CadastroAutenticador />
         )}
         <form action={sair} className="self-center">
-          <button type="submit" className="text-[13px] text-destaque underline-offset-2 hover:underline">
+          <BotaoEnviar className="text-[13px] text-destaque underline-offset-2 hover:underline">
             Sair
-          </button>
+          </BotaoEnviar>
         </form>
       </Cartao>
     </MolduraLogin>

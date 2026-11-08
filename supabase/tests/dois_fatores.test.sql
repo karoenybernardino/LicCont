@@ -3,6 +3,8 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(5);
+-- Estes testes valem com o segundo fator obrigatório (como no piloto).
+update app.configuracao set segundo_fator_obrigatorio = true;
 
 insert into public.prefeituras (id, nome, cnpj, status) values
   ('77777777-7777-7777-7777-777777777777', 'Prefeitura Fictícia MFA', '00000000000777', 'ativa');

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { idSchema } from "@/features/login/esquemas";
 
@@ -38,7 +38,16 @@ export function lerUsuario(formData: FormData) {
   });
 }
 
-// 16 caracteres aleatórios (96 bits). A pessoa troca no primeiro acesso.
+// 16 caracteres com os 4 tipos exigidos, sem os que se confundem (l, I, 0, O).
+// A pessoa troca no primeiro acesso.
+const TIPOS = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$%*-_"];
 export function senhaProvisoria() {
-  return randomBytes(12).toString("base64url");
+  const sortear = (s: string) => s[randomInt(s.length)];
+  const todos = TIPOS.join("");
+  const letras = [...TIPOS.map(sortear), ...Array.from({ length: 12 }, () => sortear(todos))];
+  for (let i = letras.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [letras[i], letras[j]] = [letras[j], letras[i]];
+  }
+  return letras.join("");
 }

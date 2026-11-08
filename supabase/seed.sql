@@ -14,3 +14,7 @@ insert into public.secretarias (prefeitura_id, nome) values
   ('5eed0000-0000-0000-0000-000000000001', 'Obras'),
   ('5eed0000-0000-0000-0000-000000000002', 'Saúde'),
   ('5eed0000-0000-0000-0000-000000000002', 'Educação');
+
+-- Local e CI: segundo fator obrigatório, como será no piloto (a produção
+-- está com ele desligado por decisão do responsável; ver migração 20261108190000).
+update app.configuracao set segundo_fator_obrigatorio = true;
