@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, Sora } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
+import { FaixaDemo } from "@/features/demo/faixa";
 
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["300", "600", "700"] });
 const plex = IBM_Plex_Sans({ variable: "--font-plex", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -27,7 +28,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <FaixaDemo />
+        {children}
+      </body>
     </html>
   );
 }

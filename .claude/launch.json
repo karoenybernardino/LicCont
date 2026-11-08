@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "liccont-demo",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set LICCONT_DEMO=1&& npx next dev -p 3200"],
+      "port": 3200
+    }
+  ]
+}

@@ -347,4 +347,7 @@ axe); 6 e 7 no CI.
 - Funções da Vercel em São Paulo (`vercel.json`, `gru1`): antes rodavam em
   Washington e cada consulta ao banco cruzava o continente.
 - Animação de carregamento na troca de tela e nos botões.
+- Modo demonstração (`LICCONT_DEMO=1`), como no Prummo: dados fictícios em
+  `src/features/demo/`, troca de perfil na faixa, nada salvo. Prévia local
+  pelo `.claude/launch.json` e prévias da Vercel com a variável em Preview.
 

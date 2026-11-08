@@ -4,9 +4,17 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA, opcoesCookie } from "./cookies";
+import { COOKIE_PERFIL_DEMO, emDemo } from "@/features/demo/dados";
 import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaAtual, secretariaPermitida } from "./dal";
 
 export async function sair() {
+  if (emDemo()) {
+    const loja = await cookies();
+    const equipe = loja.get(COOKIE_PERFIL_DEMO)?.value === "equipe";
+    loja.delete(COOKIE_PERFIL_DEMO);
+    loja.delete(COOKIE_SECRETARIA);
+    redirect(equipe ? "/equipe/entrar" : "/entrar");
+  }
   const supabase = await clienteSessao();
   let destino = "/entrar";
   if (supabase) {
@@ -43,7 +51,9 @@ export async function trocarSecretaria(formData: FormData) {
   // O anterior vem da conferência no servidor, não do cookie cru.
   const anterior = (await secretariaAtual(usuario))?.id ?? "todas";
   const nova = secretaria.id ?? "todas";
-  if (nova !== anterior) {
+  if (emDemo()) {
+    loja.set(COOKIE_SECRETARIA, nova, opcoesCookie);
+  } else if (nova !== anterior) {
     const supabase = (await clienteSessao())!;
     const { ip, aparelho } = await origemDaRequisicao();
     const { error } = await supabase.rpc("registrar_auditoria", {

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { Botao } from "@/ui/botao";
 import { Cartao } from "@/ui/cartao";
 import { Selecao } from "@/ui/selecao";
-import { clientePublico } from "@/lib/supabase/servidor";
+import { prefeiturasParaLogin } from "@/features/login/listas";
 import { escolherPrefeitura } from "@/features/login/acoes";
 import { Aviso, MolduraLogin } from "@/features/login/moldura";
 import { COOKIE_PREFEITURA } from "@/features/sessao/cookies";
@@ -13,9 +13,8 @@ export const metadata: Metadata = { title: "Entrar · LicCONT" };
 // Tela 1 do login (canvas "Login 1"): escolher a prefeitura.
 export default async function EscolherPrefeitura({ searchParams }: PageProps<"/entrar">) {
   const { motivo } = await searchParams;
-  const publico = clientePublico();
-  const { data } = publico ? await publico.rpc("prefeituras_para_login") : { data: null };
-  const prefeituras = (data ?? []) as { id: string; nome: string }[];
+  const lista = await prefeiturasParaLogin();
+  const prefeituras = lista ?? [];
   const escolhida = (await cookies()).get(COOKIE_PREFEITURA)?.value;
 
   return (
@@ -25,7 +24,7 @@ export default async function EscolherPrefeitura({ searchParams }: PageProps<"/e
         {motivo === "inatividade" && (
           <Aviso>Sua sessão foi encerrada depois de 30 minutos sem uso. Entre de novo.</Aviso>
         )}
-        {!publico ? (
+        {!lista ? (
           <Aviso>O login não está disponível nesta versão de teste (sem conexão com o banco).</Aviso>
         ) : prefeituras.length === 0 ? (
           <Aviso>Nenhuma prefeitura disponível no momento.</Aviso>

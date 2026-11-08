@@ -5,6 +5,7 @@ import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { exigirAdmin, origemDaRequisicao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
+import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { emailSchema, lerUsuario, senhaProvisoria } from "./esquemas";
 
 const FALHA = "Não foi possível salvar. Tente de novo.";
@@ -64,6 +65,7 @@ const EMAIL_RECUSADO =
 
 export async function cadastrarUsuario(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const c = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const dados = lerUsuario(formData);
   const email = emailSchema.safeParse(formData.get("email"));
@@ -100,6 +102,7 @@ export async function cadastrarUsuario(_: EstadoAcao, formData: FormData): Promi
 
 export async function salvarUsuario(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const c = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   const dados = lerUsuario(formData);
@@ -124,6 +127,7 @@ export async function salvarUsuario(_: EstadoAcao, formData: FormData): Promise<
 
 export async function alternarBloqueio(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const c = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   const bloquear = formData.get("bloquear") === "sim";
@@ -145,6 +149,7 @@ export async function alternarBloqueio(_: EstadoAcao, formData: FormData): Promi
 
 export async function encerrarSessoes(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const c = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { erro: FALHA };
@@ -155,6 +160,7 @@ export async function encerrarSessoes(_: EstadoAcao, formData: FormData): Promis
 
 export async function redefinirSenha(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const c = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { erro: FALHA };
