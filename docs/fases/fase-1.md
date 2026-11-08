@@ -1,6 +1,6 @@
 # Fase 1 — Acesso
 
-Status: **aprovado em 2026-11-08**, em construção.
+Status: **concluída em 2026-11-08** (PRs #18 a #24). Ver "Resultado" no fim.
 Segue `docs/plano-de-desenvolvimento.md` (Modelo de dados, Papéis, Regras do
 login, Controles técnicos, linha da Fase 1). Telas de referência: canvas
 "LicCONT — Telas do sistema" (Login, Login 1 — escolher prefeitura,
@@ -275,3 +275,61 @@ Cada tarefa: teste que falha primeiro, revisão pelo `revisor-codigo` e pelo
 3. Papéis: os 4 do canvas.
 4. Sem e-mail na Fase 1: senha provisória pelo administrador.
 5. Senha vazada: Have I Been Pwned.
+
+## Resultado (2026-11-08)
+
+Entregue em produção (https://lic-cont.vercel.app), com os 7 checks verdes e
+as migrações aplicadas pelo job `migracoes`:
+
+| # | PR | Entrega |
+| --- | --- | --- |
+| 1 | #18, #19 | Migrações pelo CI (decisão 0005) |
+| 2 | #20 | Marca do canvas |
+| 3 | #21 | Tabelas de acesso, RLS, auditoria, tentativas; pgTAP |
+| 4 | #22 | Login em duas etapas, mensagem única, limite de tentativas atômico, senha provisória com HIBP (decisão 0006), inatividade, Sair, CSP com nonce; Playwright com Supabase local no CI |
+| 5 | #23 | Segundo fator TOTP para administrador e equipe; administrador em `aal1` sem acesso no banco; troca de secretaria |
+| 6 | #24 | Usuários e perfis, Secretarias, Prefeituras (equipe) e primeiro administrador |
+
+Critérios de pronto: 1 a 4 no pgTAP (`acesso_isolamento`, `login_servidor`,
+`dois_fatores`); 5 no Playwright (`login.spec.ts`, `usuarios.spec.ts`, com
+axe); 6 e 7 no CI.
+
+### O que mudou em relação ao plano
+
+- **CSP com nonce, não só com hash.** Testado: só o hash do script de tema
+  bloqueia os scripts inline do próprio Next e a página para de funcionar.
+  A CSP sai do `src/proxy.ts` com nonce por requisição; por isso
+  `cacheComponents` saiu do `next.config.ts` (o shell estático não teria o
+  nonce) e todas as páginas renderizam por requisição.
+- **Limite de tentativas atômico** (`iniciar_tentativa_login` /
+  `concluir_tentativa_login`): a tentativa nasce como falha antes de testar
+  a senha; sem IP não há regra por IP. O mesmo limite vale para o código do
+  segundo fator.
+- **`app.prefeitura_atual()` exige `aal2` de administrador**: sem o segundo
+  fator, o administrador não tem nem o acesso de usuário comum.
+- **Troca de senha voluntária** (pedindo a senha atual) ficou para depois:
+  `/nova-senha` é só para a senha provisória.
+- **Um perfil por pessoa na tela** (como no canvas), aplicado a todas as
+  secretarias marcadas; o banco continua aceitando papel por vínculo.
+
+### Riscos aceitos na Fase 1 (decidir antes do piloto)
+
+- Força bruta de senha e de código direto na API do Supabase Auth (a URL e a
+  chave anon são públicas): ali vale só o limite do Supabase por IP. Saídas:
+  CAPTCHA do Supabase (gratuito, mas serviço externo novo) ou hooks de
+  verificação (plano pago).
+- Inatividade conferida só pelo app (cookie); token roubado usado direto na
+  API não expira em 30 min (o tempo de inatividade do Supabase é pago).
+- Quem gera a senha provisória (equipe ou administrador) pode entrar antes
+  da pessoa e cadastrar o próprio autenticador. Fica na auditoria, não é
+  impedido. Resolve com convite por e-mail de uso único.
+- Perdeu o celular do autenticador: sem recuperação pela tela; hoje só por
+  SQL do responsável (apagar o fator em `auth.mfa_factors`).
+
+### Pendências do responsável
+
+- `LOGIN_HASH_SEGREDO` na Vercel (Production): texto aleatório de 32+
+  caracteres. Sem ele o login mostra "falta configuração no servidor".
+- Criar o próprio usuário da equipe LicCONT (passo a passo no PR #24).
+- Ligar os alertas do Dependabot (pendente da Fase 0).
+
