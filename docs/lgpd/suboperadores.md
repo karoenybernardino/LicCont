@@ -23,3 +23,7 @@ que será feito antes do piloto com revisão jurídica.
 ## Ferramentas sem acesso a dado pessoal
 
 Semgrep e Gitleaks (CLIs abertas, rodam no GitHub Actions).
+
+Have I Been Pwned (API de senhas, gratuita): o servidor envia só os 5
+primeiros caracteres do SHA-1 da senha nova (k-anonimato), nunca a senha
+nem o e-mail. Decisão 0006.

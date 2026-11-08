@@ -9,6 +9,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL: `http://localhost:${porta}` },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  globalSetup: "./tests/e2e/preparar.ts",
   webServer: {
     command: `npm run build && npm run start -- -p ${porta}`,
     url: `http://localhost:${porta}`,

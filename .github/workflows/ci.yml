@@ -57,6 +57,30 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with: { node-version: 24, cache: npm }
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+        with:
+          version: 3.0.0
+      # Supabase local com o seed fictício; os usuários de teste nascem no
+      # tests/e2e/preparar.ts. Nada aqui toca o projeto de produção.
+      - name: Subir o Supabase local
+        run: supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,postgres-meta,supavisor,mailpit
+      - name: Variáveis do Supabase local
+        run: |
+          supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          cut -d= -f1 "$RUNNER_TEMP/supabase.env"
+          set -a; . "$RUNNER_TEMP/supabase.env"; set +a
+          ANON="${ANON_KEY:-$PUBLISHABLE_KEY}"
+          SERVICO="${SERVICE_ROLE_KEY:-$SECRET_KEY}"
+          SEGREDO="$(openssl rand -hex 32)"
+          echo "::add-mask::$SERVICO"
+          echo "::add-mask::$SEGREDO"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICO"
+            echo "E2E_DB_URL=$DB_URL"
+            echo "LOGIN_HASH_SEGREDO=$SEGREDO"
+          } >> "$GITHUB_ENV"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
