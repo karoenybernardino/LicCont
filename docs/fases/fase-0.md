@@ -151,7 +151,8 @@ Listado também em cada PR, com o lugar exato:
 - Ligar a proteção do main antes do piloto.
 - Plano Vercel Pro antes do piloto.
 - Ambiente de homologação com banco (ver decisão 0001).
-- **Antes da Fase 1:** decidir se o CI aplica as migrações em produção.
+- ~~**Antes da Fase 1:** decidir se o CI aplica as migrações em produção.~~
+  Decidido: sim (`docs/decisoes/0005-migracoes-pelo-ci.md`).
 - Domínio próprio (o plano previa na Fase 0; adiado, é pago).
 - Contato de segurança (`SECURITY.md`) e plano de resposta a incidentes.
 - CSP com hash do script de tema, antes do login.

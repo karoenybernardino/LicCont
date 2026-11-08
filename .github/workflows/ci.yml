@@ -10,7 +10,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # No main nunca cancela: um push novo não pode interromper o job migracoes.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Imagens do Semgrep e do Gitleaks: o Dependabot não atualiza; revisar à mão.
 # Nomes dos jobs = checagens obrigatórias em docs/decisoes/0002-protecao-do-main.md.
@@ -103,3 +104,31 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
             git /repo --redact --verbose ${INTERVALO:+--log-opts="$INTERVALO"}
+
+  # Aplica as migrações em produção depois do merge. Decisão 0005.
+  # Só no push do main e só com todos os checks verdes.
+  migracoes:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint, tipos, vitest, playwright, pgtap, semgrep, gitleaks]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: migracoes-producao
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+        with:
+          version: 3.0.0
+      # Só a string de conexão do banco do LicCont, sem token da conta Supabase
+      # (que alcançaria também os projetos do Prummo). Nunca ligar --debug aqui.
+      - name: Aplicar migrações no projeto LicCont
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta o segredo SUPABASE_DB_URL (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          supabase db push --remote="$SUPABASE_DB_URL"
