@@ -20,6 +20,7 @@ export const USUARIOS = {
   admin: { email: "admin@exemplo.test", prefeitura: PREFEITURA, administrador: true },
   novo: { email: "novo@exemplo.test", prefeitura: PREFEITURA, troca: true, secretarias: ["Educação"] },
   bloqueio: { email: "bloqueio@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"] },
+  duas: { email: "duas.secretarias@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde", "Educação"] },
   inatividade: { email: "inativo@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Obras"] },
   outra: { email: "operador.outra@exemplo.test", prefeitura: OUTRA_PREFEITURA, secretarias: ["Saúde"] },
   equipe: { email: "equipe@exemplo.test", equipe: true },

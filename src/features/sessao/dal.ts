@@ -44,32 +44,45 @@ export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
     : null;
 });
 
-// A secretaria escolhida no login é filtro da tela; o vínculo é conferido de novo.
-export const secretariaAtual = cache(async (u: Usuario): Promise<Secretaria | null> => {
-  const valor = (await cookies()).get(COOKIE_SECRETARIA)?.value;
-  if (valor === "todas") return u.administrador ? { id: null, nome: "Todas as secretarias" } : null;
-  const id = idSchema.safeParse(valor);
+// Nível da sessão no Supabase Auth: "aal2" depois do código do autenticador.
+export const nivelSessao = cache(async () => {
   const supabase = await clienteSessao();
-  if (!id.success || !supabase) return null;
-  const { data } = await supabase
-    .from("secretarias")
-    .select("id, nome")
-    .eq("id", id.data)
-    .eq("ativa", true)
-    .maybeSingle();
-  if (!data || u.administrador) return data;
-  const { data: vinculo } = await supabase
-    .from("vinculos")
-    .select("id")
-    .eq("usuario_id", u.id)
-    .eq("secretaria_id", data.id)
-    .maybeSingle();
-  return vinculo ? data : null;
+  if (!supabase) return null;
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  return data?.currentLevel ?? null;
 });
+
+// Secretarias que a pessoa pode escolher como filtro da tela: as dos
+// vínculos; para o administrador, todas as ativas e "Todas as secretarias".
+export const secretariasPermitidas = cache(async (u: Usuario): Promise<Secretaria[]> => {
+  const supabase = await clienteSessao();
+  if (!supabase) return [];
+  let consulta = supabase.from("secretarias").select("id, nome").eq("ativa", true).order("nome");
+  if (!u.administrador) {
+    const { data: vinculos } = await supabase.from("vinculos").select("secretaria_id").eq("usuario_id", u.id);
+    consulta = consulta.in("id", (vinculos ?? []).map((v) => v.secretaria_id as string));
+  }
+  const { data } = await consulta;
+  const lista = (data ?? []) as Secretaria[];
+  return u.administrador ? [...lista, { id: null, nome: "Todas as secretarias" }] : lista;
+});
+
+export async function secretariaPermitida(u: Usuario, valor: string | undefined) {
+  if (valor !== "todas" && !idSchema.safeParse(valor).success) return null;
+  const alvo = valor === "todas" ? null : valor;
+  return (await secretariasPermitidas(u)).find((s) => s.id === alvo) ?? null;
+}
+
+// A secretaria escolhida no login é filtro da tela; o vínculo é conferido de novo.
+export async function secretariaAtual(u: Usuario) {
+  return secretariaPermitida(u, (await cookies()).get(COOKIE_SECRETARIA)?.value);
+}
 
 export async function exigirSessao() {
   const usuario = await usuarioAtual();
   if (!usuario) redirect("/entrar");
+  // Administrador sem o segundo fator não usa o sistema (o banco também exige aal2).
+  if (usuario.administrador && (await nivelSessao()) !== "aal2") redirect("/segundo-fator");
   if (usuario.trocaSenha) redirect("/nova-senha");
   const secretaria = await secretariaAtual(usuario);
   if (!secretaria) redirect("/entrar/dados");
@@ -95,6 +108,7 @@ export const membroEquipe = cache(async (): Promise<{ id: string } | null> => {
 export async function exigirEquipe() {
   const membro = await membroEquipe();
   if (!membro) redirect("/equipe/entrar");
+  if ((await nivelSessao()) !== "aal2") redirect("/segundo-fator");
   return membro;
 }
 
