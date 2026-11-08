@@ -1,9 +1,11 @@
 -- Prova a convenção do LicCONT com uma tabela de exemplo que só existe
 -- dentro desta transação (o ROLLBACK final apaga tudo).
--- Modelo para os testes de isolamento de toda tabela nova.
+-- O isolamento por prefeitura e secretaria (com usuários, sessões e
+-- segundo fator) está em acesso_isolamento.test.sql, modelo para toda
+-- tabela nova.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(7);
 
 -- A função de vínculo existe e só "authenticated" pode chamá-la.
 select has_function('app', 'prefeitura_atual', 'app.prefeitura_atual() existe');
@@ -40,47 +42,9 @@ select table_privs_are(
   'tabela nova não dá privilégio automático para authenticated'
 );
 
--- Convenção: RLS + GRANT explícito + política pela função de vínculo.
+-- Convenção: RLS + GRANT explícito só para authenticated.
 alter table public.exemplo_isolamento enable row level security;
 grant select on public.exemplo_isolamento to authenticated;
-create policy "le_propria_prefeitura" on public.exemplo_isolamento
-  for select to authenticated
-  using (prefeitura_id = (select app.prefeitura_atual()));
-
--- Dados fictícios.
-insert into public.exemplo_isolamento (prefeitura_id, descricao) values
-  ('11111111-1111-1111-1111-111111111111', 'Contrato fictício A'),
-  ('22222222-2222-2222-2222-222222222222', 'Contrato fictício B');
-
--- Usuário da prefeitura A.
-set local role authenticated;
-select set_config('request.jwt.claims',
-  '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated","app_metadata":{"prefeitura_id":"11111111-1111-1111-1111-111111111111"}}',
-  true);
-select results_eq(
-  'select descricao from public.exemplo_isolamento',
-  array['Contrato fictício A'],
-  'usuário da prefeitura A vê só a linha da A'
-);
-
--- Usuário da prefeitura B.
-select set_config('request.jwt.claims',
-  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated","app_metadata":{"prefeitura_id":"22222222-2222-2222-2222-222222222222"}}',
-  true);
-select results_eq(
-  'select descricao from public.exemplo_isolamento',
-  array['Contrato fictício B'],
-  'usuário da prefeitura B vê só a linha da B'
-);
-
--- Token sem prefeitura não vê nada.
-select set_config('request.jwt.claims',
-  '{"sub":"cccccccc-cccc-cccc-cccc-cccccccccccc","role":"authenticated"}',
-  true);
-select is_empty(
-  'select 1 from public.exemplo_isolamento',
-  'usuário sem prefeitura no token não vê nada'
-);
 
 -- Visitante sem login não lê a tabela.
 reset role;

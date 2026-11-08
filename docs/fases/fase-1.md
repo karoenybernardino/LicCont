@@ -85,8 +85,8 @@ Todas com RLS, GRANT explícito só para quem precisa (inclusive
 | --- | --- | --- | --- |
 | `prefeituras` | nome, cnpj, status (implantacao, ativa, suspensa) | equipe; usuário lê só a própria | equipe |
 | `secretarias` | prefeitura_id, nome, ativa | usuários da prefeitura | admin da prefeitura |
-| `usuarios` | id (= `auth.users.id`), prefeitura_id, nome, matricula, ativo | o próprio; admin da prefeitura | admin da prefeitura |
-| `vinculos` | prefeitura_id, usuario_id, secretaria_id, papel | o próprio; admin | admin |
+| `usuarios` | id (= `auth.users.id`), prefeitura_id, nome, matricula, administrador, ativo, troca_senha_obrigatoria | o próprio; admin da prefeitura | admin da prefeitura |
+| `vinculos` | prefeitura_id, usuario_id, secretaria_id, papel (coordenador, operador, consulta) | o próprio; admin | admin |
 | `equipe_liccont` | usuario_id | ninguém pela API | só migração / SQL do responsável |
 | `auditoria` | prefeitura_id, usuario_id, acao, alvo, antes, depois, ip, aparelho, criado_em | admin da própria prefeitura | só pela função `app.registrar()`; UPDATE/DELETE barrados por gatilho |
 | `tentativas_login` | hash do e-mail, ip, sucesso, criado_em | ninguém pela API | só o servidor |
@@ -132,7 +132,9 @@ auditoria.
 | Operador | Nas secretarias vinculadas: cadastra documentos e registra empréstimos |
 | Consulta | Nas secretarias vinculadas: pesquisa e vê etiquetas |
 
-A matriz de permissões do canvas ("Permissões por perfil") vira uma função
+No banco, "Administrador" é a coluna `usuarios.administrador` (vale para
+toda a prefeitura); os outros três são o papel de cada vínculo com uma
+secretaria. A matriz de permissões do canvas ("Permissões por perfil") vira uma função
 `app.pode(acao, secretaria_id)` na tarefa 3. Na Fase 1 só "gerenciar
 usuários" e "ver auditoria" têm efeito; as demais ações ganham política
 quando as tabelas delas nascerem.
