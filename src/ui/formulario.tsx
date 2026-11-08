@@ -16,15 +16,30 @@ export function Formulario({
   children,
   className = "",
   variante,
+  nota,
 }: {
   acao: (estado: EstadoAcao, dados: FormData) => Promise<EstadoAcao>;
   botao: string;
   enviando: string;
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   variante?: "principal" | "secundario";
+  // Texto ao lado do botão (o botão deixa de ocupar a largura toda).
+  nota?: ReactNode;
 }) {
   const [estado, enviar, pendente] = useActionState(acao, undefined);
+  const botaoEnviar = (
+    <Botao type="submit" variante={variante} disabled={pendente} className={nota ? "shrink-0" : "w-full"}>
+      {pendente ? (
+        <span className="inline-flex items-center justify-center gap-2">
+          <Girando />
+          {enviando}
+        </span>
+      ) : (
+        botao
+      )}
+    </Botao>
+  );
   return (
     <form action={enviar} className={`flex flex-col gap-[18px] ${className}`}>
       {children}
@@ -50,16 +65,14 @@ export function Formulario({
           )}
         </div>
       )}
-      <Botao type="submit" variante={variante} disabled={pendente} className="w-full">
-        {pendente ? (
-          <span className="inline-flex items-center justify-center gap-2">
-            <Girando />
-            {enviando}
-          </span>
-        ) : (
-          botao
-        )}
-      </Botao>
+      {nota ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-0 max-w-[300px] flex-1 text-xs leading-[18px] text-texto-suave">{nota}</span>
+          {botaoEnviar}
+        </div>
+      ) : (
+        botaoEnviar
+      )}
     </form>
   );
 }

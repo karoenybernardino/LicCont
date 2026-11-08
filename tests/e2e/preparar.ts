@@ -48,7 +48,7 @@ export default async function preparar() {
       const secretaria = secretarias.find((s) => s.nome === nome && s.prefeitura_id === prefeitura)!.id;
       await sb
         .from("vinculos")
-        .insert({ prefeitura_id: prefeitura, usuario_id: id, secretaria_id: secretaria, papel: "operador" })
+        .insert({ prefeitura_id: prefeitura, usuario_id: id, secretaria_id: secretaria, papel: u.papel ?? "operador" })
         .throwOnError();
     }
   }
