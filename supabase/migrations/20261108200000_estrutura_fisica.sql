@@ -126,12 +126,16 @@ begin
   if new.prefeitura_id is distinct from app.prefeitura_atual() then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
-  v_ok := case tg_table_name
-    when 'ruas' then exists (select 1 from public.galpoes p where p.id = new.galpao_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
-    when 'modulos' then exists (select 1 from public.ruas p where p.id = new.rua_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
-    when 'niveis' then exists (select 1 from public.modulos p where p.id = new.modulo_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
-    else exists (select 1 from public.niveis p where p.id = new.nivel_id and p.prefeitura_id = new.prefeitura_id)
-  end;
+  -- Um IF por tabela: o PL/pgSQL não aceita citar coluna que a linha não tem.
+  if tg_table_name = 'ruas' then
+    v_ok := exists (select 1 from public.galpoes p where p.id = new.galpao_id and p.prefeitura_id = new.prefeitura_id and p.ativo);
+  elsif tg_table_name = 'modulos' then
+    v_ok := exists (select 1 from public.ruas p where p.id = new.rua_id and p.prefeitura_id = new.prefeitura_id and p.ativo);
+  elsif tg_table_name = 'niveis' then
+    v_ok := exists (select 1 from public.modulos p where p.id = new.modulo_id and p.prefeitura_id = new.prefeitura_id and p.ativo);
+  else
+    v_ok := exists (select 1 from public.niveis p where p.id = new.nivel_id and p.prefeitura_id = new.prefeitura_id);
+  end if;
   if not v_ok then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
@@ -174,6 +178,9 @@ begin
   join public.galpoes g on g.id = r.galpao_id
   where n.id = new.nivel_id and n.prefeitura_id = new.prefeitura_id
   for share;
+  if v_capacidade is null then
+    return new; -- nível de outra prefeitura: a chave estrangeira recusa
+  end if;
   if not coalesce(v_ativa, false) then
     raise exception 'parte da estrutura desativada' using errcode = 'LC004';
   end if;
