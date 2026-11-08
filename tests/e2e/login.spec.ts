@@ -76,6 +76,7 @@ test("administrador cadastra o autenticador, precisa do código a cada login e e
 test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ page }) => {
   await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
+  await expect(secretariaEmUso(page)).toHaveText("Saúde");
   const opcoes = await page.getByLabel("Secretaria", { exact: true }).locator("option").allTextContents();
   expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
   await page.getByLabel("Secretaria", { exact: true }).selectOption({ label: "Educação" });

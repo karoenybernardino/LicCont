@@ -4,9 +4,15 @@ import { PREFEITURA, SENHA } from "./dados";
 import { codigoTotp } from "./totp";
 
 // Passos comuns dos testes de ponta a ponta.
+
+// Espera a tela "Carregando…" sair (a página chega aos poucos).
+export async function esperarCarregar(page: Page) {
+  await expect(page.locator("main[aria-busy=true]")).toHaveCount(0);
+}
 export const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administrador da sua prefeitura.";
 
 export async function semFalhasDeAcessibilidade(page: Page) {
+  await esperarCarregar(page);
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations).toEqual([]);
 }
