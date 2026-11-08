@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { PREFEITURA, SENHA, USUARIOS, temSupabase } from "./dados";
+import { codigoTotp } from "./totp";
 
 // Critério 5 de docs/fases/fase-1.md. Precisa do Supabase local (job do CI).
 test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
@@ -12,6 +13,26 @@ const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administ
 async function semFalhasDeAcessibilidade(page: Page) {
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations).toEqual([]);
+}
+
+const secretariaEmUso = (page: Page) => page.getByLabel("Secretaria").locator("option:checked");
+
+// Cadastra o autenticador na primeira vez e devolve o segredo TOTP.
+async function cadastrarAutenticador(page: Page) {
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+  await semFalhasDeAcessibilidade(page);
+  await page.getByRole("button", { name: "Mostrar QR code" }).click();
+  const segredo = (await page.getByTestId("segredo-totp").textContent())!.trim();
+  await expect(page.getByRole("img", { name: /QR code/ })).toBeVisible();
+  await page.getByLabel("Código do aplicativo").fill(codigoTotp(segredo));
+  await page.getByRole("button", { name: "Confirmar" }).click();
+  return segredo;
+}
+
+// Espera a próxima janela de 30 s: um código não vale duas vezes.
+async function codigoNovo(segredo: string, page: Page) {
+  await page.waitForTimeout(30_000 - (Date.now() % 30_000) + 1_000);
+  return codigoTotp(segredo);
 }
 
 async function entrar(
@@ -44,7 +65,7 @@ test("login em duas etapas leva ao sistema na secretaria escolhida", async ({ pa
 
   await entrar(page, { email: USUARIOS.operador.email });
   await expect(page).toHaveURL(/\/inicio$/);
-  await expect(page.getByTestId("secretaria-atual")).toHaveText("Saúde");
+  await expect(secretariaEmUso(page)).toHaveText("Saúde");
   await semFalhasDeAcessibilidade(page);
 });
 
@@ -65,10 +86,41 @@ test("mesma mensagem para e-mail inexistente, senha errada, secretaria sem vínc
   }
 });
 
-test("administrador entra em 'Todas as secretarias'", async ({ page }) => {
+test("administrador cadastra o autenticador, precisa do código a cada login e entra em 'Todas as secretarias'", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
   await entrar(page, { email: USUARIOS.admin.email, secretaria: "Todas as secretarias" });
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+  // Sem o segundo fator não abre o sistema.
+  await page.goto("/inicio");
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+
+  const segredo = await cadastrarAutenticador(page);
   await expect(page).toHaveURL(/\/inicio$/);
-  await expect(page.getByTestId("secretaria-atual")).toHaveText("Todas as secretarias");
+  await expect(secretariaEmUso(page)).toHaveText("Todas as secretarias");
+
+  await page.getByRole("button", { name: "Sair" }).click();
+  await entrar(page, { email: USUARIOS.admin.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+  await expect(page.getByRole("heading", { name: "Código de acesso" })).toBeVisible();
+  await page.getByLabel("Código do aplicativo").fill("000000");
+  await page.getByRole("button", { name: "Confirmar" }).click();
+  await expect(page.getByTestId("erro-formulario")).toContainText("Código inválido");
+  await page.getByLabel("Código do aplicativo").fill(await codigoNovo(segredo, page));
+  await page.getByRole("button", { name: "Confirmar" }).click();
+  await expect(page).toHaveURL(/\/inicio$/);
+  await expect(secretariaEmUso(page)).toHaveText("Saúde");
+});
+
+test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ page }) => {
+  await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
+  const opcoes = await page.getByLabel("Secretaria").locator("option").allTextContents();
+  expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
+  await page.getByLabel("Secretaria").selectOption({ label: "Educação" });
+  await page.getByRole("button", { name: "Trocar", exact: true }).click();
+  await expect(secretariaEmUso(page)).toHaveText("Educação");
 });
 
 test("bloqueia a conta depois de 5 falhas, mesmo com a senha certa", async ({ page }) => {
@@ -151,6 +203,10 @@ test("equipe LicCONT entra pelo endereço próprio; usuário de prefeitura não"
   await page.getByLabel("E-mail").fill(USUARIOS.equipe.email);
   await page.getByLabel("Senha", { exact: true }).fill(SENHA);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+  await page.goto("/equipe");
+  await expect(page).toHaveURL(/\/segundo-fator$/);
+  await cadastrarAutenticador(page);
   await expect(page).toHaveURL(/\/equipe$/);
   await expect(page.getByRole("heading", { name: "Equipe LicCONT" })).toBeVisible();
 });

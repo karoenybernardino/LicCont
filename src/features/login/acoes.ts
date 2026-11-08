@@ -11,7 +11,7 @@ import {
   ehCookieSupabase,
   opcoesCookie,
 } from "@/features/sessao/cookies";
-import { origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
+import { nivelSessao, origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
 import {
   MENSAGEM_ERRO_LOGIN,
   MENSAGEM_INDISPONIVEL,
@@ -119,6 +119,7 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
   const ativa = p?.status === "ativa";
 
   let troca = false;
+  let administrador = false;
   const sessao = await autenticar(email, senha, ativa ? prefeitura.data : null, async (servico, id) => {
     const { data: u } = await servico
       .from("usuarios")
@@ -127,6 +128,7 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
       .maybeSingle();
     if (!ativa || !u?.ativo || u.prefeitura_id !== prefeitura.data) return false;
     troca = u.troca_senha_obrigatoria;
+    administrador = u.administrador;
     if (secretaria === "todas") return u.administrador;
 
     const { data: s } = await servico
@@ -157,7 +159,8 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
   });
   loja.set(COOKIE_SECRETARIA, secretaria, opcoesCookie);
   await marcarAtividade();
-  redirect(troca ? "/nova-senha" : "/inicio");
+  // Administrador passa pelo segundo fator antes de tudo (inclusive da troca de senha).
+  redirect(administrador ? "/segundo-fator" : troca ? "/nova-senha" : "/inicio");
 }
 
 export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
@@ -181,7 +184,7 @@ export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Pro
     p_aparelho: sessao.aparelho,
   });
   await marcarAtividade();
-  redirect("/equipe");
+  redirect("/segundo-fator");
 }
 
 const MENSAGEM_VAZADA = "Esta senha aparece em vazamentos conhecidos na internet. Escolha outra.";
@@ -194,6 +197,7 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
   if (!usuario) redirect("/entrar");
   // Troca voluntária (pedindo a senha atual) fica para depois: aqui só a provisória.
   if (!usuario.trocaSenha) redirect("/inicio");
+  if (usuario.administrador && (await nivelSessao()) !== "aal2") redirect("/segundo-fator");
 
   const dados = esquemaNovaSenha.safeParse({
     senha: formData.get("senha"),

@@ -3,8 +3,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
-import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA } from "./cookies";
-import { membroEquipe, origemDaRequisicao } from "./dal";
+import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA, opcoesCookie } from "./cookies";
+import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaAtual, secretariaPermitida } from "./dal";
 
 export async function sair() {
   const supabase = await clienteSessao();
@@ -30,4 +30,33 @@ export async function sair() {
   loja.delete(COOKIE_SECRETARIA);
   loja.delete(COOKIE_ATIVIDADE);
   redirect(destino);
+}
+
+// Troca a secretaria em uso (filtro da tela), só entre as permitidas. Auditada.
+export async function trocarSecretaria(formData: FormData) {
+  const { usuario } = await exigirSessao();
+  const valor = formData.get("secretaria");
+  const secretaria = await secretariaPermitida(usuario, typeof valor === "string" ? valor : undefined);
+  if (!secretaria) redirect("/inicio");
+
+  const loja = await cookies();
+  // O anterior vem da conferência no servidor, não do cookie cru.
+  const anterior = (await secretariaAtual(usuario))?.id ?? "todas";
+  const nova = secretaria.id ?? "todas";
+  if (nova !== anterior) {
+    const supabase = (await clienteSessao())!;
+    const { ip, aparelho } = await origemDaRequisicao();
+    const { error } = await supabase.rpc("registrar_auditoria", {
+      p_acao: "sessao.troca_secretaria",
+      p_alvo_tabela: "secretarias",
+      p_alvo_id: secretaria.id,
+      p_antes: { secretaria: anterior },
+      p_depois: { secretaria: nova },
+      p_ip: ip,
+      p_aparelho: aparelho,
+    });
+    // Sem registro na auditoria, não troca.
+    if (!error) loja.set(COOKIE_SECRETARIA, nova, opcoesCookie);
+  }
+  redirect("/inicio");
 }
