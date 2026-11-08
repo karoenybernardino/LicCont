@@ -31,3 +31,13 @@ test("com o sistema no escuro, o botão oferece o tema claro", async ({ page }) 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.getByRole("button", { name: "Ativar tema escuro" })).toBeVisible();
 });
+
+test("respostas trazem os cabeçalhos básicos de segurança", async ({ request }) => {
+  const resposta = await request.get("/");
+  const h = resposta.headers();
+  expect(h["x-frame-options"]).toBe("DENY");
+  expect(h["x-content-type-options"]).toBe("nosniff");
+  expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(h["strict-transport-security"]).toContain("max-age=63072000");
+  expect(h["x-powered-by"]).toBeUndefined();
+});
