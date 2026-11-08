@@ -300,6 +300,8 @@ select
   m.rua_id,
   r.galpao_id,
   n.prefeitura_id,
+  n.numero,
+  n.ativo,
   n.capacidade,
   (select count(*) from public.caixas c where c.nivel_id = n.id and c.ativo)::int as caixas
 from public.niveis n

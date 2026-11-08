@@ -11,6 +11,7 @@ export type UsuarioTeste = {
   troca?: boolean;
   secretarias?: string[];
   equipe?: boolean;
+  papel?: "coordenador" | "operador" | "consulta";
 };
 
 export const USUARIOS = {
@@ -27,6 +28,10 @@ export const USUARIOS = {
   // Telas de administração (usuarios.spec.ts).
   admin2: { email: "admin2@exemplo.test", prefeitura: OUTRA_PREFEITURA, administrador: true },
   equipe2: { email: "equipe2@exemplo.test", equipe: true },
+  // Estrutura física (estrutura.spec.ts).
+  adminEstrutura: { email: "admin.estrutura@exemplo.test", prefeitura: PREFEITURA, administrador: true },
+  coordEstrutura: { email: "coord.estrutura@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Obras"], papel: "coordenador" },
+  consultaEstrutura: { email: "consulta.estrutura@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"], papel: "consulta" },
 } satisfies Record<string, UsuarioTeste>;
 
 export const temSupabase = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
