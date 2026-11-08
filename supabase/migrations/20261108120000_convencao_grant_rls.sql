@@ -10,7 +10,10 @@ alter default privileges for role postgres in schema public
 alter default privileges for role postgres in schema public
   revoke all on sequences from anon, authenticated;
 alter default privileges for role postgres in schema public
-  revoke execute on functions from public, anon, authenticated;
+  revoke execute on functions from anon, authenticated;
+-- O EXECUTE para PUBLIC é padrão global do Postgres: só sai sem "in schema".
+alter default privileges for role postgres
+  revoke execute on functions from public;
 
 -- 2. Esquema das funções de vínculo. Não é exposto pela Data API.
 create schema if not exists app;
