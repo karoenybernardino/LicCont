@@ -3,13 +3,24 @@
 -- Modelo para os testes de isolamento de toda tabela nova.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(10);
 
 -- A função de vínculo existe e só "authenticated" pode chamá-la.
 select has_function('app', 'prefeitura_atual', 'app.prefeitura_atual() existe');
 select ok(
   not has_function_privilege('anon', 'app.prefeitura_atual()', 'execute'),
   'anon não executa app.prefeitura_atual()'
+);
+
+-- Função nova em public não fica executável por anon/authenticated sem GRANT.
+create function public.exemplo_funcao() returns int language sql as $$ select 1 $$;
+select ok(
+  not has_function_privilege('anon', 'public.exemplo_funcao()', 'execute'),
+  'função nova não é executável por anon sem GRANT'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.exemplo_funcao()', 'execute'),
+  'função nova não é executável por authenticated sem GRANT'
 );
 
 -- Tabela nova criada como na migração de qualquer fase.
