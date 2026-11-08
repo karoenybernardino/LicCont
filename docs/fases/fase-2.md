@@ -49,10 +49,12 @@ etiquetas (Fase 5) saem desta estrutura.
    Zod das ações.
 7. **Playwright** (`tests/e2e/estrutura.spec.ts`): administrador cria rua,
    gera módulos e níveis pelas listas de escolha, cadastra caixas e vê a
-   ocupação mudar; perfil Consulta abre a tela só para leitura e a ação
-   chamada direto é recusada no servidor; axe sem falhas em todas as telas
-   novas; em modo demonstração a tela abre com dados fictícios e toda ação
-   devolve `AVISO_DEMO`.
+   ocupação mudar; coordenador cadastra caixas sem ver os controles de
+   estrutura; perfil Consulta abre as telas só para leitura; axe sem falhas
+   em todas as telas novas. A recusa de ação chamada direto fica provada no
+   banco (pgTAP, critério 2) e conferida no servidor em cada ação. O modo
+   demonstração (dados fictícios, toda ação devolve `AVISO_DEMO`) é
+   conferido na prévia, porque o CI roda com banco.
 8. Migrações compatíveis com a versão anterior do app (só adicionam),
    aplicadas pelo job `migracoes`; os checks atuais seguem verdes.
 
