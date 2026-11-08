@@ -1,7 +1,8 @@
 # Fase 2 — Estrutura física
 
-Status: **rascunho para aprovação** (2026-11-08). Nenhum código antes do
-"aprovado" do responsável nas perguntas do fim.
+Status: **implementada, aguardando aprovação da demonstração** (2026-11-08).
+O responsável aprovou todas as recomendações do fim e pediu a fase inteira
+num PR só, com o link da demonstração para aprovar. Ver "Resultado" no fim.
 
 Segue `docs/plano-de-desenvolvimento.md` (Modelo de dados: `galpoes`,
 `ruas`, `modulos`, `niveis`, `caixas` com `prefeitura_id`; linha da Fase 2:
@@ -35,7 +36,8 @@ etiquetas (Fase 5) saem desta estrutura.
    reduzir a capacidade abaixo das caixas ativas é recusado; desativar
    nível, módulo, rua ou galpão com caixas ativas é recusado; duas
    inclusões simultâneas na última posição não passam as duas (trava na
-   linha do nível).
+   linha do nível; e o único `(nivel_id, numero)` impede duas caixas na
+   mesma posição).
 4. **pgTAP — ocupação calculada:** a visão `estrutura_ocupacao` devolve
    capacidade e caixas que batem com a contagem, respeita o RLS (outra
    prefeitura vê zero linhas) e não guarda nada (nenhuma coluna de
@@ -84,10 +86,10 @@ pai, chave estrangeira composta em cada filho, auditoria por gatilho.
 | Tabela | Campos principais | Únicos |
 | --- | --- | --- |
 | `galpoes` | prefeitura_id, nome (3–80), ativo, criado_em | (prefeitura_id, nome) |
-| `ruas` | prefeitura_id, galpao_id, codigo (`^[A-Z]{1,2}$`), ativa | (galpao_id, codigo) |
+| `ruas` | prefeitura_id, galpao_id, codigo (`^[A-Z]{1,2}$`), ativo | (galpao_id, codigo) |
 | `modulos` | prefeitura_id, rua_id, numero (1–99), ativo | (rua_id, numero) |
 | `niveis` | prefeitura_id, modulo_id, numero (1–20), capacidade (1–200 caixas), ativo | (modulo_id, numero) |
-| `caixas` | prefeitura_id, nivel_id, numero (1–capacidade), ativa, criado_em | (nivel_id, numero) |
+| `caixas` | prefeitura_id, nivel_id, numero (1–capacidade), ativo, criado_em | (nivel_id, numero) |
 
 Sem `secretaria_id` na estrutura: no protótipo uma mesma caixa guarda
 documentos de várias secretarias (Saúde, Obras, Cultura). O filtro por
@@ -197,3 +199,50 @@ variável nova. Só aprovar (ou mudar) as respostas abaixo.
 | 5 | Mais de um galpão por prefeitura? | **Sim no banco, seletor na tela só quando houver mais de um.** Custa quase nada agora e evita migração depois. |
 | 6 | Parte da estrutura pode ser **apagada** ou só desativada? | **Só desativada**, e só quando vazia. Preserva o histórico e a auditoria. |
 | 7 | Limites de "Adicionar módulos" por vez: 20 módulos, 10 níveis por módulo, 50 caixas por nível? | **Sim.** Evita clique errado gerar milhares de linhas; dá para repetir. |
+
+## Decisões do responsável (2026-11-08)
+
+Aprovadas todas as recomendações acima: galpão compartilhado pela
+prefeitura; administrador e coordenador cadastram caixas; ocupação da caixa
+em documentos na Fase 3; nomenclatura `B-M3-N3-C02`; mais de um galpão por
+prefeitura; só desativar, nunca apagar; limites de 20 módulos, 10 níveis e
+50 caixas por nível em cada "Adicionar módulos". Telas "tudo daquela forma"
+(igual ao canvas). Fase inteira num PR só, aprovada pela demonstração.
+
+## Resultado (2026-11-08)
+
+Um PR (`fase-2/estrutura`), a pedido do responsável, em vez das 4 tarefas.
+
+| Entrega | Onde |
+| --- | --- |
+| Tabelas, gatilhos de capacidade, visão de ocupação, `adicionar_modulos`, `adicionar_caixas`, auditoria, `app.eh_coordenador()` | `supabase/migrations/20261108200000_estrutura_fisica.sql` |
+| Estrutura fictícia no seed (Galpão Central nas 2 prefeituras de teste) | `supabase/seed.sql` |
+| pgTAP dos critérios 1 a 5 | `supabase/tests/estrutura_isolamento.test.sql` |
+| Ocupação, código da posição, próxima rua, últimas alterações, esquemas (Vitest, critério 6) | `src/features/estrutura/*.test.ts` |
+| Tela Estrutura física igual ao canvas (cartões, Ruas do galpão, árvore da rua, Últimas alterações, Adicionar módulos, Nova rua, Novo galpão, seletor de galpão) | `src/app/estrutura/page.tsx` |
+| Tela da rua: módulos e níveis com ocupação; por nível, caixas, cadastrar e desativar caixa, capacidade, desativar nível | `src/app/estrutura/rua/[id]/page.tsx` |
+| Demonstração (ruas A a D com 94%, 88%, 76% e 69%, como no canvas) | `src/features/demo/estrutura.ts` |
+| Playwright com axe (critério 7) | `tests/e2e/estrutura.spec.ts` |
+
+### O que mudou em relação ao plano
+
+- **Coluna `ativo` em todas as tabelas** (o plano dizia `ativa` em ruas e
+  caixas): um nome só para a mesma coisa.
+- **Duas caixas na mesma posição** são barradas pelo único
+  `(nivel_id, numero)`; os gatilhos travam a cadeia (`FOR SHARE`) contra
+  redução de capacidade e desativação ao mesmo tempo. O pgTAP prova a
+  posição repetida; a corrida em si não dá para provar numa transação só.
+- **`adicionar_caixas` reativa** caixas desativadas antes de ocupar posição
+  nova (a posição continua da caixa antiga).
+- **Tela da rua** (`/estrutura/rua/[id]`), que o canvas não tem: é onde se
+  cadastram caixas e se ajusta a capacidade, com o mesmo visual.
+- **Menu para todos os perfis**: "Início" e "Estrutura física" aparecem
+  para todos; "Usuários e perfis" e "Secretarias" só para o administrador.
+- **Cartões com linha acumulada rua a rua** (o canvas tem uma linha
+  decorativa; aqui ela mostra os números reais de A até a última rua).
+  O cartão Posições mostra "caixas de N posições · X%".
+- A moldura com a barra lateral de ícones do canvas vale para todas as
+  telas e ainda não existe no app (as telas da Fase 1 usam o cabeçalho de
+  cima). Fica para um PR próprio, depois desta fase.
+- **`service_role` sem privilégio** nas tabelas novas (revogado na
+  migração): nenhuma tela do servidor precisa delas.
