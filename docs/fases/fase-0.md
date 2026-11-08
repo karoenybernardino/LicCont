@@ -1,6 +1,6 @@
 # Fase 0 — Fundação
 
-Status: **aprovado em 2026-11-08**. Segue `docs/plano-de-desenvolvimento.md`;
+Status: **concluída em 2026-11-08** (ver "Resultado" no fim). Aprovada em 2026-11-08. Segue `docs/plano-de-desenvolvimento.md`;
 onde este texto e o plano divergirem, vale o que foi decidido abaixo.
 
 ## Por quê
@@ -60,12 +60,14 @@ fora do código e CI que barra o PR antes de entrar.
 ## Decisões minhas (revise)
 
 - **Gerenciador de pacotes:** npm (já instalado; evita mais uma ferramenta).
-- **Supabase CLI:** como dependência de desenvolvimento do projeto
-  (`npx supabase`). É a forma oficial no Windows sem Scoop, e o CI usa a
-  mesma versão.
+- **Supabase CLI:** fora do `package.json` (o pacote baixa um binário na
+  instalação e deixava o `npm ci` lento). Na máquina: `npx supabase@3.0.0`;
+  no CI: `supabase/setup-cli` na mesma versão.
 - **Vercel CLI:** instalada globalmente (feito).
-- **Tema:** variáveis CSS (tokens) em `:root` e `.dark`, ligadas ao Tailwind.
-  Troca de tema com `next-themes`, respeitando a preferência do sistema.
+- **Tema:** variáveis CSS (tokens) no atributo `data-theme` do `<html>`,
+  ligadas ao Tailwind. Sem `next-themes`: um script curto no layout aplica o
+  tema salvo ou o do sistema antes da primeira pintura (receita oficial do
+  Next) e o rótulo do botão troca só por CSS.
 - **Componentes base:** só o que a Fase 1 vai usar de cara — Botão, Campo de
   texto, Cartão, Logo (LIC/CONT) e o seletor de tema. Sem biblioteca de
   componentes por enquanto.
@@ -89,7 +91,7 @@ fora do código e CI que barra o PR antes de entrar.
   Essa escolha de modelo fica para a Fase 1.
   O teste usa dois usuários fictícios de prefeituras diferentes: um não
   enxerga a linha do outro; `anon` não lê nada.
-- **Migrações em produção:** só manuais na Fase 0 (`npx supabase db push`,
+- **Migrações em produção:** só manuais na Fase 0 (`npx supabase@3.0.0 db push --remote`,
   rodado pelo responsável). O plano prevê o main aplicando sozinho; essa
   decisão foi adiada e precisa ser retomada **antes da Fase 1**.
 - **Revisão de segurança:** cada PR passa pelo agente `auditor-seguranca`
@@ -134,11 +136,12 @@ outro agente antes de eu abrir.
 
 Listado também em cada PR, com o lugar exato:
 
-- `npx supabase login` e `npx supabase link` no seu terminal (abre o
-  navegador; eu não vejo o token).
-- Ligar o repositório `liccont` na Vercel (Import Project).
-- Variáveis na Vercel: `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` (a chave pública/publishable).
+- `npx supabase@3.0.0 login` e
+  `npx supabase@3.0.0 link --project-ref ogbgszivnrbouyfuxqry` (o ref é do
+  **projeto** LicCont, não da organização).
+- Ligar o repositório na Vercel (Import Project).
+- Variáveis na Vercel: nenhuma na Fase 0. Na Fase 1, quando o app ler dados:
+  `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Segredos no GitHub (Settings → Secrets → Actions): nenhum na Fase 0, salvo
   se quisermos aplicar migrações pelo CI (decisão adiada).
 
@@ -150,3 +153,27 @@ Listado também em cada PR, com o lugar exato:
 - Ambiente de homologação com banco (ver decisão 0001).
 - **Antes da Fase 1:** decidir se o CI aplica as migrações em produção.
 - Domínio próprio (o plano previa na Fase 0; adiado, é pago).
+- Contato de segurança (`SECURITY.md`) e plano de resposta a incidentes.
+- CSP com hash do script de tema, antes do login.
+- Conferir no painel do Supabase se o cadastro público está desligado.
+
+## Resultado (2026-11-08)
+
+| Critério de pronto | Situação |
+| --- | --- |
+| CI roda testes, lint, tipos e busca de segredos em todo PR | Feito. 7 checks (`lint`, `tipos`, `vitest`, `playwright`, `pgtap`, `semgrep`, `gitleaks`) verdes no `main`. Gitleaks barrou token falso num PR descartável (#5, fechado sem merge). |
+| App no endereço provisório da Vercel | Feito: https://lic-cont.vercel.app. Publica sozinho a partir do `main`. |
+| PR final aprovado | Feito: PRs #1 a #4 mesclados. |
+
+Também feito:
+- Migração da convenção aplicada em produção (`db push --remote`) e conferida
+  por consulta de leitura: `app.prefeitura_atual()` existe, `anon` não executa.
+- RLS automático de produção confirmado (gatilho `ensure_rls`).
+
+Achados que valem para a Fase 1:
+- Com "expor tabelas automaticamente" desligado, nem o `service_role` ganha
+  leitura/escrita automática em tabelas novas: GRANT explícito também para ele.
+- O modelo de teste precisa cobrir INSERT/UPDATE com `WITH CHECK`.
+- A prefeitura vem do token (validade de 1 hora): retirar vínculo leva até
+  1 hora para valer.
+- Ligar os alertas do Dependabot (Settings → Code security).
