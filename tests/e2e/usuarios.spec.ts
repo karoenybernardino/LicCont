@@ -7,7 +7,7 @@ test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
 // Um só fluxo em série: o autenticador do administrador é cadastrado uma vez.
 test.describe.configure({ mode: "serial", retries: 0 });
 
-test("administrador cadastra usuário que entra só na secretaria vinculada; bloqueio corta o acesso", async ({
+test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuário que entra só na secretaria vinculada", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -36,10 +36,20 @@ test("administrador cadastra usuário que entra só na secretaria vinculada; blo
   await page.getByRole("checkbox", { name: "Obras" }).check();
   await expect(page.getByRole("checkbox", { name: "Cultura" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cadastrar" }).click();
-  const senha = (await page.getByTestId("senha-provisoria").textContent())!.trim();
-  expect(senha).toHaveLength(16);
+  expect((await page.getByTestId("senha-provisoria").textContent())!.trim()).toHaveLength(16);
   await page.reload();
   await expect(page.getByRole("cell", { name: "pessoa.nova@exemplo.test" })).toBeVisible();
+
+  // Edição: bloquear, desbloquear e redefinir a senha.
+  await page.getByRole("link", { name: "Editar Pessoa Nova Fictícia" }).click();
+  await semFalhasDeAcessibilidade(page);
+  await page.getByRole("button", { name: "Bloquear usuário" }).click();
+  await expect(page.getByRole("button", { name: "Desbloquear usuário" })).toBeVisible();
+  await page.getByRole("button", { name: "Desbloquear usuário" }).click();
+  await expect(page.getByRole("button", { name: "Bloquear usuário" })).toBeVisible();
+  await page.getByRole("button", { name: "Redefinir senha" }).click();
+  const senha = (await page.getByTestId("senha-provisoria").textContent())!.trim();
+  expect(senha).toHaveLength(16);
   await page.getByRole("button", { name: "Sair" }).click();
 
   // A pessoa nova não entra em Saúde (sem vínculo); entra em Obras e troca a senha.
@@ -86,6 +96,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await expect(cartao.getByTestId("senha-provisoria")).toHaveText(/^.{16}$/);
 
   // Prefeitura com usuário não aceita outro "primeiro administrador".
+  await cartao.getByLabel("Nome do administrador").fill("Outro Admin Fictício");
   await cartao.getByLabel("E-mail do administrador").fill("admin.outro@exemplo.test");
   await cartao.getByRole("button", { name: "Cadastrar administrador" }).click();
   await expect(cartao.getByTestId("erro-formulario")).toContainText("já tem usuários");

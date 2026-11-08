@@ -32,9 +32,9 @@ export async function listarUsuarios(id?: string): Promise<UsuarioLista[]> {
   ]);
   if (!usuarios?.length) return [];
 
-  // shortcut: uma página de 1000 contas do Auth; trocar por consulta por id quando passar disso.
-  const { data: contas } = await servico.auth.admin.listUsers({ perPage: 1000 });
-  const emails = new Map((contas?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+  // Só os e-mails dos ids que o RLS devolveu (nada de outras prefeituras).
+  const contas = await Promise.all(usuarios.map((u) => servico.auth.admin.getUserById(u.id)));
+  const emails = new Map(contas.map(({ data }) => [data.user?.id, data.user?.email ?? ""]));
 
   return usuarios.map((u) => {
     const meus = (vinculos ?? []).filter((v) => v.usuario_id === u.id);

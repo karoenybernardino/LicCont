@@ -69,7 +69,12 @@ export async function cadastrarPrimeiroAdmin(_: EstadoAcao, formData: FormData):
   const senha = senhaProvisoria();
   const { data, error } = await servico.auth.admin.createUser({ email: email.data, password: senha, email_confirm: true });
   if (error || !data.user) {
-    return { erro: error?.code === "email_exists" ? "Já existe uma conta com este e-mail." : FALHA };
+    return {
+      erro:
+        error?.code === "email_exists"
+          ? "Não foi possível cadastrar este e-mail. Use outro e-mail institucional."
+          : FALHA,
+    };
   }
   // A função do banco só aceita prefeitura sem usuários e nunca alguém da equipe.
   const { error: erroAdmin } = await supabase.rpc("cadastrar_primeiro_admin", {
@@ -79,7 +84,9 @@ export async function cadastrarPrimeiroAdmin(_: EstadoAcao, formData: FormData):
   });
   if (erroAdmin) {
     await servico.auth.admin.deleteUser(data.user.id);
-    return { erro: "Não foi possível: esta prefeitura já tem usuários." };
+    return {
+      erro: erroAdmin.code === "42501" ? "Não foi possível: esta prefeitura já tem usuários." : FALHA,
+    };
   }
   return { aviso: "Primeiro administrador cadastrado.", senha };
 }
