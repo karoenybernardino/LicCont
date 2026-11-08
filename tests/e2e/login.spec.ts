@@ -1,58 +1,18 @@
-import { expect, test, type Page } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
 import { PREFEITURA, SENHA, USUARIOS, temSupabase } from "./dados";
-import { codigoTotp } from "./totp";
+import {
+  ERRO,
+  cadastrarAutenticador,
+  codigoNovo,
+  entrar,
+  secretariaEmUso,
+  semFalhasDeAcessibilidade,
+} from "./ajuda";
 
 // Critério 5 de docs/fases/fase-1.md. Precisa do Supabase local (job do CI).
 test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
 // Repetir um teste somaria falhas e bloquearia a conta de teste (limite de 5).
 test.describe.configure({ retries: 0 });
-
-const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administrador da sua prefeitura.";
-
-async function semFalhasDeAcessibilidade(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).analyze();
-  expect(violations).toEqual([]);
-}
-
-const secretariaEmUso = (page: Page) => page.getByLabel("Secretaria").locator("option:checked");
-
-// Cadastra o autenticador na primeira vez e devolve o segredo TOTP.
-async function cadastrarAutenticador(page: Page) {
-  await expect(page).toHaveURL(/\/segundo-fator$/);
-  await semFalhasDeAcessibilidade(page);
-  await page.getByRole("button", { name: "Mostrar QR code" }).click();
-  const segredo = (await page.getByTestId("segredo-totp").textContent())!.trim();
-  await expect(page.getByRole("img", { name: /QR code/ })).toBeVisible();
-  await page.getByLabel("Código do aplicativo").fill(codigoTotp(segredo));
-  await page.getByRole("button", { name: "Confirmar" }).click();
-  return segredo;
-}
-
-// Espera a próxima janela de 30 s: um código não vale duas vezes.
-async function codigoNovo(segredo: string, page: Page) {
-  await page.waitForTimeout(30_000 - (Date.now() % 30_000) + 1_000);
-  return codigoTotp(segredo);
-}
-
-async function entrar(
-  page: Page,
-  { email, senha = SENHA, secretaria = "Saúde", prefeitura = PREFEITURA }: {
-    email: string;
-    senha?: string;
-    secretaria?: string;
-    prefeitura?: string;
-  },
-) {
-  await page.goto("/entrar");
-  await page.getByLabel("Prefeitura").selectOption({ label: prefeitura });
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("heading", { name: "Entrar" })).toBeVisible();
-  await page.getByLabel("Secretaria").selectOption({ label: secretaria });
-  await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha", { exact: true }).fill(senha);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
-}
 
 test("login em duas etapas leva ao sistema na secretaria escolhida", async ({ page }) => {
   await page.goto("/entrar");
@@ -116,9 +76,9 @@ test("administrador cadastra o autenticador, precisa do código a cada login e e
 test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ page }) => {
   await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
-  const opcoes = await page.getByLabel("Secretaria").locator("option").allTextContents();
+  const opcoes = await page.getByLabel("Secretaria", { exact: true }).locator("option").allTextContents();
   expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
-  await page.getByLabel("Secretaria").selectOption({ label: "Educação" });
+  await page.getByLabel("Secretaria", { exact: true }).selectOption({ label: "Educação" });
   await page.getByRole("button", { name: "Trocar", exact: true }).click();
   await expect(secretariaEmUso(page)).toHaveText("Educação");
 });
