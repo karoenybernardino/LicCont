@@ -31,7 +31,8 @@ insert into auth.users (id, email) values
   ('0a000000-0000-0000-0000-000000000004', 'bloqueado.a@exemplo.test'),
   ('0a000000-0000-0000-0000-000000000009', 'extra.a@exemplo.test'),
   ('0b000000-0000-0000-0000-000000000001', 'operador.b@exemplo.test'),
-  ('0e000000-0000-0000-0000-000000000001', 'equipe@exemplo.test');
+  ('0e000000-0000-0000-0000-000000000001', 'equipe@exemplo.test'),
+  ('0d000000-0000-0000-0000-000000000001', 'primeiro.d@exemplo.test');
 
 insert into auth.sessions (id, user_id) values
   ('5a000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-000000000001'),
@@ -133,6 +134,22 @@ select throws_ok($$insert into public.prefeituras (nome, cnpj) values ('Nova', '
 select throws_ok($$select public.encerrar_sessoes('0a000000-0000-0000-0000-000000000004')$$,
   '42501', null, 'operador A não encerra sessões de outro usuário');
 
+select is_empty($$update public.usuarios set administrador = true
+  where id = '0a000000-0000-0000-0000-000000000002' returning id$$,
+  'operador A não se promove a administrador');
+select throws_ok($$insert into public.secretarias (prefeitura_id, nome)
+  values ('11111111-1111-1111-1111-111111111111', 'Nova')$$,
+  '42501', null, 'operador A não cadastra secretaria');
+select throws_ok($$select public.login_bloqueado(repeat('a', 64), '203.0.113.7')$$,
+  '42501', null, 'usuário logado não consulta tentativas de login');
+select throws_ok($$select public.registrar_auditoria_sistema(null, null, 'login.falha')$$,
+  '42501', null, 'usuário logado não usa a auditoria de sistema');
+select throws_ok($$select public.cadastrar_primeiro_admin('11111111-1111-1111-1111-111111111111',
+  '0a000000-0000-0000-0000-000000000009', 'X')$$,
+  '42501', null, 'operador A não cadastra primeiro administrador');
+-- Evento fora da lista fechada: não grava (conferido no fim).
+select public.registrar_auditoria('usuarios.insert', 'usuarios', 'forjado');
+
 -- Registro de auditoria pelo próprio usuário: quem e prefeitura vêm do banco.
 select lives_ok($$select public.registrar_auditoria('sessao.troca_secretaria', 'secretarias',
   'a1000000-0000-0000-0000-000000000000', null, null, '203.0.113.7', 'teste')$$,
@@ -154,6 +171,7 @@ select results_eq('select troca_senha_obrigatoria from public.usuarios', array[t
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
 select is_empty('select 1 from public.exemplo_acervo', 'usuário bloqueado não vê acervo');
 select is_empty('select 1 from public.usuarios', 'usuário bloqueado não lê nem o próprio cadastro');
+select public.registrar_auditoria('sessao.entrada'); -- não grava (conferido no fim)
 
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'aal1');
 select is_empty('select 1 from public.exemplo_acervo', 'token com sessão inexistente não vê nada');
@@ -199,6 +217,34 @@ select isnt_empty('select 1 from public.auditoria', 'administrador lê a auditor
 select throws_ok($$insert into public.prefeituras (nome, cnpj) values ('Nova', '00000000000434')$$,
   '42501', null, 'administrador não cadastra prefeitura');
 
+select throws_ok($$update public.usuarios set administrador = false
+  where id = '0a000000-0000-0000-0000-000000000001'$$,
+  '42501', null, 'administrador não rebaixa a si mesmo');
+select throws_ok($$update public.usuarios set ativo = false
+  where id = '0a000000-0000-0000-0000-000000000001'$$,
+  '42501', null, 'administrador não bloqueia a si mesmo');
+select throws_ok($$update public.usuarios set id = '0a000000-0000-0000-0000-000000000003'
+  where id = '0a000000-0000-0000-0000-000000000009'$$,
+  '42501', null, 'administrador não troca o id de um cadastro');
+select throws_ok($$update public.usuarios set troca_senha_obrigatoria = false
+  where id = '0a000000-0000-0000-0000-000000000003'$$,
+  '42501', null, 'administrador não dispensa a troca de senha provisória');
+select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome)
+  values ('0e000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'X')$$,
+  '42501', null, 'administrador não inclui alguém da equipe LicCONT na prefeitura');
+select throws_ok($$insert into public.secretarias (prefeitura_id, nome)
+  values ('22222222-2222-2222-2222-222222222222', 'Nova')$$,
+  '42501', null, 'administrador A não cadastra secretaria na prefeitura B');
+select lives_ok($$insert into public.secretarias (prefeitura_id, nome)
+  values ('11111111-1111-1111-1111-111111111111', 'Turismo')$$,
+  'administrador cadastra secretaria na própria prefeitura');
+select is_empty($$delete from public.vinculos
+  where usuario_id = '0b000000-0000-0000-0000-000000000001' returning id$$,
+  'administrador A não apaga vínculo da prefeitura B');
+select is_empty($$update public.prefeituras set nome = 'Alterada' returning id$$,
+  'administrador não altera a prefeitura');
+select throws_ok($$select public.encerrar_sessoes('0b000000-0000-0000-0000-000000000001')$$,
+  '42501', null, 'administrador A não encerra sessões de usuário da prefeitura B');
 select lives_ok($$select public.encerrar_sessoes('0a000000-0000-0000-0000-000000000002')$$,
   'administrador encerra as sessões do operador A');
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
@@ -217,6 +263,19 @@ select results_eq($$select count(*)::int from public.prefeituras where nome like
   array[3], 'equipe vê todas as prefeituras');
 select lives_ok($$insert into public.prefeituras (nome, cnpj) values ('Prefeitura Fictícia D', '00000000000434')$$,
   'equipe cadastra prefeitura');
+select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome, administrador)
+  values ('0e000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'X', true)$$,
+  '42501', null, 'equipe não se inclui como administradora de uma prefeitura');
+select throws_ok($$select public.cadastrar_primeiro_admin('11111111-1111-1111-1111-111111111111',
+  '0e000000-0000-0000-0000-000000000001', 'X')$$,
+  '42501', null, 'equipe não cadastra a si mesma como primeiro administrador');
+select throws_ok($$select public.cadastrar_primeiro_admin('11111111-1111-1111-1111-111111111111',
+  '0d000000-0000-0000-0000-000000000001', 'X')$$,
+  '42501', null, 'equipe não cadastra primeiro administrador em prefeitura que já tem usuários');
+select lives_ok($$select public.cadastrar_primeiro_admin(
+  (select id from public.prefeituras where cnpj = '00000000000434'),
+  '0d000000-0000-0000-0000-000000000001', 'Primeiro D')$$,
+  'equipe cadastra o primeiro administrador de prefeitura nova');
 select is_empty('select 1 from public.exemplo_acervo', 'equipe não lê acervo');
 select is_empty('select 1 from public.usuarios', 'equipe não lê cadastro de usuários');
 select is_empty('select 1 from public.auditoria', 'equipe não lê a auditoria das prefeituras');
@@ -237,6 +296,8 @@ select throws_ok('select 1 from public.usuarios', '42501', null, 'anon não lê 
 select throws_ok($$select public.login_bloqueado('0000000000000000000000000000000000000000000000000000000000000000', '203.0.113.7')$$,
   '42501', null, 'anon não consulta tentativas de login');
 select throws_ok($$select public.registrar_auditoria('teste')$$, '42501', null, 'anon não grava auditoria');
+select throws_ok($$select public.encerrar_sessoes('0a000000-0000-0000-0000-000000000002')$$,
+  '42501', null, 'anon não encerra sessões');
 
 -- ---------------------------------------------------------------------------
 -- Servidor: força bruta e auditoria de sistema
@@ -261,7 +322,18 @@ select results_eq($$select usuario_id::text, prefeitura_id::text from public.aud
   where acao = 'sessao.troca_secretaria'$$,
   $$values ('0a000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111')$$,
   'auditoria grava quem e de qual prefeitura a partir do banco');
+select is_empty($$select 1 from public.auditoria where alvo_id = 'forjado'$$,
+  'evento fora da lista fechada não é gravado');
+select is_empty($$select 1 from public.auditoria where usuario_id = '0a000000-0000-0000-0000-000000000004'$$,
+  'usuário bloqueado não grava auditoria');
+select results_eq($$select depois ? 'nome' from public.auditoria
+  where acao = 'usuarios.insert' and alvo_id = '0a000000-0000-0000-0000-000000000009'$$,
+  array[false], 'cadastro de usuário fica na auditoria por gatilho, sem o nome');
+select results_eq($$select (depois ->> 'troca_senha_obrigatoria')::boolean from public.auditoria
+  where acao = 'usuarios.insert' and alvo_id = '0d000000-0000-0000-0000-000000000001'$$,
+  array[true], 'primeiro administrador nasce com senha provisória');
 select throws_ok('update public.auditoria set acao = ''x''', 'P0001', null, 'auditoria não aceita UPDATE');
+select throws_ok('truncate public.auditoria', 'P0001', null, 'auditoria não aceita TRUNCATE');
 select throws_ok('delete from public.auditoria', 'P0001', null, 'auditoria não aceita DELETE');
 
 select * from finish();

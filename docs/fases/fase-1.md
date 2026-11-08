@@ -170,6 +170,12 @@ Regras:
   Confira os dados ou fale com o administrador da sua prefeitura."
 - Equipe LicCONT entra por um endereço próprio (`/equipe/entrar`), sem
   escolher prefeitura.
+- O primeiro administrador de uma prefeitura é cadastrado pela equipe por
+  `public.cadastrar_primeiro_admin` (só em prefeitura sem usuários; a equipe
+  não cadastra a si mesma).
+- Ninguém altera o próprio "administrador" ou "ativo" (evita ficar sem
+  administrador). Dispensar a troca de senha provisória só pelo servidor,
+  depois que a pessoa trocou.
 - Trocar de secretaria dentro do sistema, sem novo login, entre as que têm
   vínculo; fica na auditoria.
 - Tudo por Server Action com Zod. Nenhuma chave privilegiada no navegador.
@@ -182,7 +188,7 @@ Regras:
 | Senha vazada | Decidido: consulta ao Have I Been Pwned (gratuito) na hora de definir ou trocar senha, pelo servidor, enviando só os 5 primeiros caracteres do hash SHA-1 (k-anonimato). Se o serviço não responder, aceita a senha e registra o fato na auditoria (sem a senha). Decisão `docs/decisoes/0006-checagem-de-senha-vazada.md` e entrada em `docs/lgpd/suboperadores.md` como ferramenta sem dado pessoal |
 | Dois fatores | TOTP do Supabase Auth (gratuito), obrigatório para administrador e equipe, exigido também pelo banco (`aal2`) |
 | Cadastro público | Desligado: `enable_signup = false` no `config.toml` e no painel |
-| Força bruta | Além do limite do Supabase por IP: 5 falhas em 15 min por conta ou 20 por IP → bloqueio de 15 min, contado em `tentativas_login` |
+| Força bruta | Além do limite do Supabase por IP: 5 falhas em 15 min por conta ou 20 por IP → bloqueio de 15 min, contado em `tentativas_login`. O e-mail vira HMAC-SHA256 com segredo do servidor (`LOGIN_HASH_SEGREDO`, variável da Vercel) antes de gravar. Efeito aceito: alguém que saiba o e-mail consegue bloquear a conta por 15 min; a tela orienta a esperar ou falar com o administrador |
 | Inatividade | 30 min sem uso → sai. Cookie `HttpOnly` com a hora da última ação, conferido no `proxy.ts` do Next em toda requisição (o tempo de inatividade do Supabase é do plano pago) |
 | Encerrar sessões | Administrador encerra as sessões de um usuário (apaga em `auth.sessions` por função do servidor); o acesso cai na hora pela regra de `app.prefeitura_atual()` |
 | Navegador | CSP com hash do script de tema (pendência da Fase 0), `frame-ancestors 'none'`, HSTS, cookies `HttpOnly`, `Secure`, `SameSite=Lax` |
@@ -190,13 +196,20 @@ Regras:
 
 ## Auditoria básica
 
-Função única `app.registrar(acao, alvo, antes, depois, ip, aparelho)`,
-chamada pelo servidor. Eventos desta fase: entrada, falha de entrada (sem
-e-mail), saída, saída por inatividade, troca de secretaria, segundo fator
-ativado, usuário criado/alterado/bloqueado, vínculo criado/removido,
-sessões encerradas, prefeitura criada. `antes`/`depois` nunca levam senha.
-O administrador vê a auditoria da própria prefeitura; a tela de auditoria
-completa é de fase posterior.
+- **Alterações de cadastro** (prefeituras, secretarias, usuários,
+  vínculos) entram por gatilho no banco: não dependem do app e não dá para
+  forjar. Nome e matrícula não entram em `antes`/`depois`.
+- **Eventos de sessão** (entrada, saída, saída por inatividade, troca de
+  secretaria, segundo fator ativado, senha trocada): o próprio usuário logado
+  registra por `public.registrar_auditoria`, com lista fechada de ações;
+  quem e de qual prefeitura vêm do banco.
+- **Falha de login e eventos sem sessão:** o servidor registra por
+  `public.registrar_auditoria_sistema` (só `service_role`), sem e-mail.
+- Encerrar sessões registra o próprio evento.
+- Limites: `antes`/`depois` até 8 KB; o IP vem do servidor do app (quem
+  chamar a RPC direto pode informar outro IP — aceito na Fase 1).
+- O administrador vê a auditoria da própria prefeitura; a tela completa é
+  de fase posterior.
 
 ## Como o usuário recebe a senha (decidido: sem e-mail na Fase 1)
 

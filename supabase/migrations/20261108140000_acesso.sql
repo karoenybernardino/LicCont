@@ -80,8 +80,8 @@ create table public.auditoria (
   acao text not null check (acao ~ '^[a-z_]+(\.[a-z_]+)*$'),
   alvo_tabela text check (length(alvo_tabela) <= 63),
   alvo_id text check (length(alvo_id) <= 64),
-  antes jsonb,
-  depois jsonb,
+  antes jsonb check (pg_column_size(antes) <= 8192),
+  depois jsonb check (pg_column_size(depois) <= 8192),
   ip inet,
   aparelho text check (length(aparelho) <= 300),
   criado_em timestamptz not null default now()
@@ -177,7 +177,7 @@ as $$
   from public.secretarias s
   where s.prefeitura_id = app.prefeitura_atual()
     and (
-      app.eh_admin()
+      (select app.eh_admin())
       or exists (
         select 1 from public.vinculos v
         where v.secretaria_id = s.id and v.usuario_id = auth.uid()
@@ -209,6 +209,64 @@ create trigger auditoria_sem_truncate
   before truncate on public.auditoria
   for each statement execute function app.auditoria_imutavel();
 
+-- Pela Data API ninguém altera o próprio "administrador" nem "ativo": evita
+-- se bloquear, se rebaixar ou deixar a prefeitura sem administrador.
+create or replace function app.usuarios_protege_proprio()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.id = auth.uid()
+     and (new.administrador is distinct from old.administrador
+          or new.ativo is distinct from old.ativo) then
+    raise exception 'não é permitido alterar o próprio acesso' using errcode = '42501';
+  end if;
+  return new;
+end
+$$;
+revoke execute on function app.usuarios_protege_proprio() from public;
+create trigger usuarios_protege_proprio
+  before update on public.usuarios
+  for each row execute function app.usuarios_protege_proprio();
+
+-- Auditoria automática das tabelas de acesso: não depende do app e não dá
+-- para forjar. Nome e matrícula não entram (dado pessoal).
+create or replace function app.auditar_alteracao()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_antes jsonb := case when tg_op <> 'INSERT' then to_jsonb(old) - 'nome' - 'matricula' end;
+  v_depois jsonb := case when tg_op <> 'DELETE' then to_jsonb(new) - 'nome' - 'matricula' end;
+  v_linha jsonb := coalesce(v_depois, v_antes);
+begin
+  insert into public.auditoria (prefeitura_id, usuario_id, acao, alvo_tabela, alvo_id, antes, depois)
+  values (
+    case when tg_table_name = 'prefeituras' then (v_linha ->> 'id')::uuid
+         else (v_linha ->> 'prefeitura_id')::uuid end,
+    auth.uid(),
+    tg_table_name || '.' || lower(tg_op),
+    tg_table_name,
+    coalesce(v_linha ->> 'id', v_linha ->> 'usuario_id'),
+    v_antes,
+    v_depois
+  );
+  return null;
+end
+$$;
+revoke execute on function app.auditar_alteracao() from public;
+create trigger auditar_prefeituras after insert or update on public.prefeituras
+  for each row execute function app.auditar_alteracao();
+create trigger auditar_secretarias after insert or update on public.secretarias
+  for each row execute function app.auditar_alteracao();
+create trigger auditar_usuarios after insert or update on public.usuarios
+  for each row execute function app.auditar_alteracao();
+create trigger auditar_vinculos after insert or update or delete on public.vinculos
+  for each row execute function app.auditar_alteracao();
+
 -- ---------------------------------------------------------------------------
 -- RLS e GRANTs (nada automático: ver migração da convenção)
 -- ---------------------------------------------------------------------------
@@ -226,7 +284,8 @@ grant select, insert, update on public.prefeituras, public.secretarias,
 grant delete on public.vinculos to service_role;
 
 -- prefeituras
-grant select, insert, update on public.prefeituras to authenticated;
+grant select on public.prefeituras to authenticated;
+grant insert (nome, cnpj, status), update (nome, cnpj, status) on public.prefeituras to authenticated;
 create policy prefeituras_le on public.prefeituras for select to authenticated
   using (id = (select app.prefeitura_atual()) or (select app.eh_equipe()));
 create policy prefeituras_inclui on public.prefeituras for insert to authenticated
@@ -235,7 +294,8 @@ create policy prefeituras_altera on public.prefeituras for update to authenticat
   using ((select app.eh_equipe())) with check ((select app.eh_equipe()));
 
 -- secretarias (nome é visível a toda a prefeitura; o acervo é que é filtrado)
-grant select, insert, update on public.secretarias to authenticated;
+grant select on public.secretarias to authenticated;
+grant insert (prefeitura_id, nome, ativa), update (nome, ativa) on public.secretarias to authenticated;
 create policy secretarias_le on public.secretarias for select to authenticated
   using (prefeitura_id = (select app.prefeitura_atual()));
 create policy secretarias_inclui on public.secretarias for insert to authenticated
@@ -245,23 +305,34 @@ create policy secretarias_altera on public.secretarias for update to authenticat
   with check (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()));
 
 -- usuarios
-grant select, insert, update on public.usuarios to authenticated;
+-- troca_senha_obrigatoria e id: só o servidor (service_role) altera.
+grant select on public.usuarios to authenticated;
+grant insert (id, prefeitura_id, nome, matricula, administrador),
+  update (nome, matricula, administrador, ativo) on public.usuarios to authenticated;
 create policy usuarios_le on public.usuarios for select to authenticated
   using (
     (id = (select auth.uid()) and ativo and (select app.sessao_valida()))
     or (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()))
   );
+-- A equipe não inclui por aqui (ver public.cadastrar_primeiro_admin).
+-- Ninguém inclui a si mesmo nem alguém da equipe; todo usuário novo nasce
+-- com senha provisória.
 create policy usuarios_inclui on public.usuarios for insert to authenticated
   with check (
-    (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()))
-    or (select app.eh_equipe())
+    prefeitura_id = (select app.prefeitura_atual())
+    and (select app.eh_admin())
+    and id <> (select auth.uid())
+    and troca_senha_obrigatoria
+    and not exists (select 1 from public.equipe_liccont e where e.usuario_id = id)
   );
 create policy usuarios_altera on public.usuarios for update to authenticated
   using (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()))
   with check (prefeitura_id = (select app.prefeitura_atual()) and (select app.eh_admin()));
 
 -- vinculos
-grant select, insert, update, delete on public.vinculos to authenticated;
+grant select, delete on public.vinculos to authenticated;
+grant insert (prefeitura_id, usuario_id, secretaria_id, papel), update (papel)
+  on public.vinculos to authenticated;
 create policy vinculos_le on public.vinculos for select to authenticated
   using (
     prefeitura_id = (select app.prefeitura_atual())
@@ -321,8 +392,10 @@ $$;
 grant execute on function public.prefeituras_para_login(),
   public.secretarias_para_login(uuid) to anon, authenticated;
 
--- Registro pelo próprio usuário logado: quem e de qual prefeitura vêm do
--- banco, não do parâmetro.
+-- Registro pelo próprio usuário logado, só de eventos de sessão (lista
+-- fechada). Quem e de qual prefeitura vêm do banco. O IP é informado pelo
+-- servidor do app; quem chamar a RPC direto pode mentir o próprio IP.
+-- Alterações de cadastro são auditadas por gatilho (app.auditar_alteracao).
 create or replace function public.registrar_auditoria(
   p_acao text,
   p_alvo_tabela text default null,
@@ -340,11 +413,14 @@ set search_path = ''
 as $$
   insert into public.auditoria
     (prefeitura_id, usuario_id, acao, alvo_tabela, alvo_id, antes, depois, ip, aparelho)
-  select
-    (select u.prefeitura_id from public.usuarios u where u.id = auth.uid()),
-    auth.uid(), p_acao, p_alvo_tabela, p_alvo_id, p_antes, p_depois, p_ip,
+  select u.prefeitura_id, u.id, p_acao, p_alvo_tabela, p_alvo_id, p_antes, p_depois, p_ip,
     left(p_aparelho, 300)
-  where auth.uid() is not null and app.sessao_valida()
+  from public.usuarios u
+  where u.id = auth.uid()
+    and u.ativo
+    and app.sessao_valida()
+    and p_acao in ('sessao.entrada', 'sessao.saida', 'sessao.inatividade',
+                   'sessao.troca_secretaria', 'mfa.ativado', 'senha.trocada')
 $$;
 revoke execute on function public.registrar_auditoria(text, text, text, jsonb, jsonb, inet, text)
   from public, anon;
@@ -404,7 +480,7 @@ as $$
         and t.criado_em > now() - interval '15 minutes') >= 5
     or
     (select count(*) from public.tentativas_login t
-      where t.ip = p_ip and not t.sucesso
+      where t.ip is not distinct from p_ip and not t.sucesso
         and t.criado_em > now() - interval '15 minutes') >= 20
 $$;
 
@@ -431,8 +507,38 @@ begin
   end if;
 
   delete from auth.sessions where user_id = p_usuario;
-  perform public.registrar_auditoria('usuario.sessoes_encerradas', 'usuarios', p_usuario::text);
+  insert into public.auditoria (prefeitura_id, usuario_id, acao, alvo_tabela, alvo_id)
+  values (app.prefeitura_atual(), auth.uid(), 'usuarios.sessoes_encerradas', 'usuarios', p_usuario::text);
 end
 $$;
 revoke execute on function public.encerrar_sessoes(uuid) from public, anon;
 grant execute on function public.encerrar_sessoes(uuid) to authenticated;
+
+-- Equipe LicCONT cadastra o primeiro administrador de uma prefeitura sem
+-- usuários. A conta no Auth é criada antes pelo servidor. A equipe não pode
+-- cadastrar a si mesma nem outro membro da equipe.
+create or replace function public.cadastrar_primeiro_admin(
+  p_prefeitura uuid,
+  p_usuario uuid,
+  p_nome text
+)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+begin
+  if not app.eh_equipe()
+     or p_usuario = auth.uid()
+     or exists (select 1 from public.equipe_liccont e where e.usuario_id = p_usuario)
+     or exists (select 1 from public.usuarios u where u.prefeitura_id = p_prefeitura) then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
+
+  insert into public.usuarios (id, prefeitura_id, nome, administrador, troca_senha_obrigatoria)
+  values (p_usuario, p_prefeitura, p_nome, true, true);
+end
+$$;
+revoke execute on function public.cadastrar_primeiro_admin(uuid, uuid, text) from public, anon;
+grant execute on function public.cadastrar_primeiro_admin(uuid, uuid, text) to authenticated;
