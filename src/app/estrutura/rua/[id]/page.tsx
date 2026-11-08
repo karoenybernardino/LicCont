@@ -196,6 +196,12 @@ export default async function RuaDoGalpao({
                 </Formulario>
               )}
 
+              {editaCaixas && nivel.ativo && nivel.caixas >= nivel.capacidade && (
+                <p role="status" className="text-sm text-texto-suave">
+                  Nível cheio: não há posição livre.
+                </p>
+              )}
+
               {editaCaixas && caixas.length > 0 && (
                 <Formulario acao={alterarSituacao} botao="Desativar caixa" enviando="Salvando…" variante="secundario">
                   <input type="hidden" name="tabela" value="caixas" />

@@ -74,7 +74,9 @@ test("administrador cria rua, gera módulos e níveis pelas listas e a ocupaçã
   await page.getByRole("link", { name: "Gerenciar Módulo 1 · Nível 1" }).click();
   await page.getByLabel("Quantidade de caixas").selectOption("4");
   await page.getByRole("button", { name: "Cadastrar caixas" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "4 caixas cadastradas." })).toBeVisible();
+  // Nível cheio: o formulário sai e a tela diz que não há posição livre.
+  await expect(page.getByText("Nível cheio: não há posição livre.")).toBeVisible();
+  await expect(page.getByRole("row", { name: /^Nível 1\s*C-M1-N1/ })).toContainText("4 de 4");
   await expect(page.getByRole("button", { name: "Cadastrar caixas" })).toHaveCount(0);
   await page.getByRole("button", { name: "Desativar nível" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Ainda há caixas ativas aqui. Desative as caixas antes." })).toBeVisible();
