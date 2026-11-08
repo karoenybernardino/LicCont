@@ -121,3 +121,10 @@ export async function origemDaRequisicao() {
   const h = await headers();
   return { ip: ipDaRequisicao(h), aparelho: h.get("user-agent")?.slice(0, 300) ?? null };
 }
+
+// Telas e ações do administrador (com segundo fator, conferido em exigirSessao).
+export async function exigirAdmin() {
+  const sessao = await exigirSessao();
+  if (!sessao.usuario.administrador) redirect("/inicio");
+  return sessao;
+}

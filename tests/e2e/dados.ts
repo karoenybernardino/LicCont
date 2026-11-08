@@ -24,6 +24,9 @@ export const USUARIOS = {
   inatividade: { email: "inativo@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Obras"] },
   outra: { email: "operador.outra@exemplo.test", prefeitura: OUTRA_PREFEITURA, secretarias: ["Saúde"] },
   equipe: { email: "equipe@exemplo.test", equipe: true },
+  // Telas de administração (usuarios.spec.ts).
+  admin2: { email: "admin2@exemplo.test", prefeitura: OUTRA_PREFEITURA, administrador: true },
+  equipe2: { email: "equipe2@exemplo.test", equipe: true },
 } satisfies Record<string, UsuarioTeste>;
 
 export const temSupabase = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
