@@ -27,7 +27,8 @@ export const esquemaNovaSenha = z
       .string()
       .min(8, "A senha precisa ter pelo menos 8 caracteres.")
       .refine(
-        (s) => /[a-z]/.test(s) && /[A-Z]/.test(s) && /\d/.test(s) && /[^A-Za-z0-9]/.test(s),
+        // Mesma lista de símbolos que o Supabase Auth aceita.
+        (s) => /[a-z]/.test(s) && /[A-Z]/.test(s) && /\d/.test(s) && /[!@#$%^&*()_+\-=[\]{};'\\:"|<>?,./`~]/.test(s),
         "A senha precisa ter letra maiúscula, letra minúscula, número e símbolo.",
       )
       // bcrypt usa só os primeiros 72 bytes (acento ocupa mais de um).

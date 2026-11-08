@@ -29,6 +29,8 @@ describe("esquemaNovaSenha", () => {
     expect(ok("Abcdefg!")).toBe(false);
     expect(ok("Abcdefg1")).toBe(false);
     expect(ok("Abcdef1!", "Abcdef1?")).toBe(false);
+    expect(ok("Abcdef1é")).toBe(false);
+    expect(ok("Abcdef1 ")).toBe(false);
     expect(ok("Abcdef1!")).toBe(true);
   });
 });

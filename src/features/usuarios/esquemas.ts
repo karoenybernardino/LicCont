@@ -38,13 +38,13 @@ export function lerUsuario(formData: FormData) {
   });
 }
 
-// 12 caracteres com os 4 tipos exigidos, sem os que se confundem (l, I, 0, O).
+// 16 caracteres com os 4 tipos exigidos, sem os que se confundem (l, I, 0, O).
 // A pessoa troca no primeiro acesso.
 const TIPOS = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$%*-_"];
 export function senhaProvisoria() {
   const sortear = (s: string) => s[randomInt(s.length)];
   const todos = TIPOS.join("");
-  const letras = [...TIPOS.map(sortear), ...Array.from({ length: 8 }, () => sortear(todos))];
+  const letras = [...TIPOS.map(sortear), ...Array.from({ length: 12 }, () => sortear(todos))];
   for (let i = letras.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
     [letras[i], letras[j]] = [letras[j], letras[i]];

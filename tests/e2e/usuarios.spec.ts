@@ -38,7 +38,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await page.getByRole("checkbox", { name: "Obras" }).check();
   await expect(page.getByRole("checkbox", { name: "Cultura" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cadastrar" }).click();
-  expect((await page.getByTestId("senha-provisoria").textContent())!.trim()).toHaveLength(12);
+  expect((await page.getByTestId("senha-provisoria").textContent())!.trim()).toHaveLength(16);
   await page.reload();
   await expect(page.getByRole("cell", { name: "pessoa.nova@exemplo.test" })).toBeVisible();
 
@@ -52,7 +52,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await expect(page.getByRole("button", { name: "Bloquear usuário" })).toBeVisible();
   await page.getByRole("button", { name: "Redefinir senha" }).click();
   const senha = (await page.getByTestId("senha-provisoria").textContent())!.trim();
-  expect(senha).toHaveLength(12);
+  expect(senha).toHaveLength(16);
   await page.getByRole("button", { name: "Sair" }).click();
 
   // A pessoa nova não entra em Saúde (sem vínculo); entra em Obras e troca a senha.
@@ -96,7 +96,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await cartao.getByLabel("Nome do administrador").fill("Admin Fictício Novo");
   await cartao.getByLabel("E-mail do administrador").fill("admin.novo@exemplo.test");
   await cartao.getByRole("button", { name: "Cadastrar administrador" }).click();
-  await expect(cartao.getByTestId("senha-provisoria")).toHaveText(/^.{12}$/);
+  await expect(cartao.getByTestId("senha-provisoria")).toHaveText(/^.{16}$/);
 
   // Prefeitura com usuário não aceita outro "primeiro administrador".
   await cartao.getByLabel("Nome do administrador").fill("Outro Admin Fictício");

@@ -215,7 +215,9 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
       erro:
         error.code === "same_password"
           ? "A nova senha precisa ser diferente da atual."
-          : "Não foi possível salvar a senha. Tente de novo.",
+          : error.code === "weak_password"
+            ? "A senha precisa ter pelo menos 8 caracteres, com letra maiúscula, letra minúscula, número e símbolo."
+            : "Não foi possível salvar a senha. Tente de novo.",
     };
   }
 

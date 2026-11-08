@@ -184,7 +184,7 @@ Regras:
 
 | Controle | Como |
 | --- | --- |
-| Senha mínima de 12 | `minimum_password_length = 12` no `config.toml` e no painel do Supabase; Zod também checa |
+| Senha mínima | 8 caracteres com maiúscula, minúscula, número e símbolo (decisão 6): `config.toml` (`minimum_password_length = 8`, `password_requirements`) **e no painel do Supabase** (o `config.toml` não vale para a produção); Zod também checa |
 | Senha vazada | Decidido: consulta ao Have I Been Pwned (gratuito) na hora de definir ou trocar senha, pelo servidor, enviando só os 5 primeiros caracteres do hash SHA-1 (k-anonimato). Se o serviço não responder, aceita a senha e registra o fato na auditoria (sem a senha). Decisão `docs/decisoes/0006-checagem-de-senha-vazada.md` e entrada em `docs/lgpd/suboperadores.md` como ferramenta sem dado pessoal |
 | Dois fatores | TOTP do Supabase Auth (gratuito), obrigatório para administrador e equipe, exigido também pelo banco (`aal2`) |
 | Cadastro público | Desligado: `enable_signup = false` no `config.toml` e no painel |

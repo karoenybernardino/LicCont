@@ -3,7 +3,7 @@
 -- lê nem muda a chave pela API.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(12);
 
 insert into public.prefeituras (id, nome, cnpj, status) values
   ('88888888-8888-8888-8888-888888888888', 'Prefeitura Fictícia Chave', '00000000000888', 'ativa');
@@ -32,6 +32,8 @@ select ok(not has_table_privilege('authenticated', 'app.configuracao', 'select')
   'ninguém lê nem muda a chave pela API');
 select ok(not has_function_privilege('anon', 'public.segundo_fator_obrigatorio()', 'execute'),
   'anon não consulta a chave');
+select ok(not has_column_privilege('authenticated', 'app.configuracao', 'segundo_fator_obrigatorio', 'update'),
+  'authenticated não altera a coluna da chave');
 
 -- Desligada.
 update app.configuracao set segundo_fator_obrigatorio = false;
@@ -52,6 +54,13 @@ select ok(not app.eh_equipe(), 'chave ligada: equipe em aal1 não é equipe');
 select tst_chave_entrar('08000000-0000-0000-0000-000000000001', '58000000-0000-0000-0000-000000000001');
 select is_empty('select 1 from public.secretarias', 'chave ligada: administrador em aal1 não lê nada');
 select ok(not app.eh_admin(), 'chave ligada: administrador em aal1 não é administrador');
+
+-- Sem a linha da chave, vale o mais seguro: obrigatório.
+reset role;
+delete from app.configuracao;
+set local role authenticated;
+select ok(public.segundo_fator_obrigatorio(), 'sem a linha: app vê obrigatório');
+select ok(not app.eh_admin(), 'sem a linha: administrador em aal1 não é administrador');
 
 select * from finish();
 rollback;
