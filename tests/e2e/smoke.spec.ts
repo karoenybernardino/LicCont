@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("página inicial abre em português, com a marca e sem erros de acessibilidade", async ({ page }) => {
-  await page.goto("/");
+test("tela de entrada abre em português, com a marca e sem erros de acessibilidade", async ({ page }) => {
+  await page.goto("/entrar");
   await expect(page).toHaveTitle(/LicCONT/);
   await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
   await expect(page.getByRole("img", { name: "LicCONT" })).toBeVisible();
@@ -13,7 +13,7 @@ test("página inicial abre em português, com a marca e sem erros de acessibilid
 
 test("troca de tema persiste ao recarregar", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
-  await page.goto("/");
+  await page.goto("/entrar");
   await page.getByRole("button", { name: "Ativar tema escuro" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
@@ -25,7 +25,7 @@ test("troca de tema persiste ao recarregar", async ({ page }) => {
 
 test("com o sistema no escuro, o botão oferece o tema claro", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/");
+  await page.goto("/entrar");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("button", { name: "Ativar tema claro" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
@@ -34,7 +34,7 @@ test("com o sistema no escuro, o botão oferece o tema claro", async ({ page }) 
 
 test("segue a marca do canvas: IBM Plex Sans no texto, Sora nos títulos e fundos dos dois temas", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
-  await page.goto("/");
+  await page.goto("/entrar");
   const estilo = (seletor: string, prop: string) =>
     page.locator(seletor).first().evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
@@ -54,4 +54,22 @@ test("respostas trazem os cabeçalhos básicos de segurança", async ({ request 
   expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   expect(h["strict-transport-security"]).toContain("max-age=63072000");
   expect(h["x-powered-by"]).toBeUndefined();
+  // CSP com nonce por requisição (o hash sozinho bloqueia os scripts do Next).
+  expect(h["content-security-policy"]).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+});
+
+test("a página inicial manda para a tela de entrada", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/entrar$/);
+});
+
+test("nenhum script bloqueado pela CSP", async ({ page }) => {
+  const bloqueios: string[] = [];
+  page.on("console", (m) => {
+    if (m.type() === "error" && m.text().includes("Content Security Policy")) bloqueios.push(m.text());
+  });
+  await page.goto("/entrar");
+  await page.getByRole("button", { name: /Ativar tema/ }).click();
+  expect(bloqueios).toEqual([]);
 });

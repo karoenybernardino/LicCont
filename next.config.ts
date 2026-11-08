@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
-// Cabeçalhos básicos. CSP fica para antes do login (precisa do hash do
-// script de tema do layout) — pendência registrada em docs/fases/fase-0.md.
+// Cabeçalhos básicos. A CSP sai do src/proxy.ts, com nonce por requisição.
 const cabecalhosSeguranca = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -11,8 +10,8 @@ const cabecalhosSeguranca = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Sem cacheComponents: a CSP com nonce exige renderização por requisição
+  // (o shell estático não teria o nonce). Ver docs/fases/fase-1.md.
   turbopack: {
     rules: {
       "*.css": {

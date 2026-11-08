@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Sora } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["300", "600", "700"] });
@@ -13,7 +14,9 @@ export const metadata: Metadata = {
 // Aplica o tema salvo (ou o do sistema) antes da primeira pintura, sem piscar.
 const scriptTema = `(function(){try{var t=localStorage.getItem("tema");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Nonce da CSP, gerado no src/proxy.ts. Ler o cabeçalho torna toda página dinâmica.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang="pt-BR"
@@ -22,7 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
