@@ -8,10 +8,12 @@ import { membroEquipe, origemDaRequisicao } from "./dal";
 
 export async function sair() {
   const supabase = await clienteSessao();
+  let destino = "/entrar";
   if (supabase) {
     const { ip, aparelho } = await origemDaRequisicao();
     const equipe = await membroEquipe();
     if (equipe) {
+      destino = "/equipe/entrar";
       await clienteServico()?.rpc("registrar_auditoria_sistema", {
         p_prefeitura: null,
         p_usuario: equipe.id,
@@ -27,5 +29,5 @@ export async function sair() {
   const loja = await cookies();
   loja.delete(COOKIE_SECRETARIA);
   loja.delete(COOKIE_ATIVIDADE);
-  redirect("/entrar");
+  redirect(destino);
 }

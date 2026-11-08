@@ -25,7 +25,7 @@ export function Formulario({
     <form action={enviar} className={`flex flex-col gap-[18px] ${className}`}>
       {children}
       {estado?.erro && (
-        <p role="alert" className="text-sm text-erro">
+        <p role="alert" data-testid="erro-formulario" className="text-sm text-erro">
           {estado.erro}
         </p>
       )}

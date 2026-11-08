@@ -26,7 +26,8 @@ export const esquemaNovaSenha = z
     senha: z
       .string()
       .min(12, "A senha precisa ter pelo menos 12 caracteres.")
-      .max(72, "A senha pode ter no máximo 72 caracteres."),
+      // bcrypt usa só os primeiros 72 bytes (acento ocupa mais de um).
+      .refine((s) => new TextEncoder().encode(s).length <= 72, "A senha pode ter no máximo 72 caracteres."),
     confirmacao: z.string(),
   })
   .refine((d) => d.senha === d.confirmacao, {

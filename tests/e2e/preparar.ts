@@ -26,13 +26,9 @@ export default async function preparar() {
     const id = data.user.id;
 
     if (u.equipe) {
-      execFileSync("psql", [
-        process.env.E2E_DB_URL ?? "",
-        "-v",
-        "ON_ERROR_STOP=1",
-        "-c",
-        `insert into public.equipe_liccont (usuario_id) values ('${id}')`,
-      ]);
+      execFileSync("psql", [process.env.E2E_DB_URL ?? "", "-v", "ON_ERROR_STOP=1", "-v", `id=${id}`], {
+        input: "insert into public.equipe_liccont (usuario_id) values (:'id');",
+      });
       continue;
     }
 

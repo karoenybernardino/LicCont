@@ -4,6 +4,8 @@ import { PREFEITURA, SENHA, USUARIOS, temSupabase } from "./dados";
 
 // Critério 5 de docs/fases/fase-1.md. Precisa do Supabase local (job do CI).
 test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
+// Repetir um teste somaria falhas e bloquearia a conta de teste (limite de 5).
+test.describe.configure({ retries: 0 });
 
 const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administrador da sua prefeitura.";
 
@@ -36,7 +38,8 @@ test("login em duas etapas leva ao sistema na secretaria escolhida", async ({ pa
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Prefeitura").selectOption({ label: PREFEITURA });
   await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByText(PREFEITURA)).toBeVisible();
+  await expect(page).toHaveURL(/\/entrar\/dados$/);
+  await expect(page.getByRole("heading", { name: "Entrar", exact: true })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
 
   await entrar(page, { email: USUARIOS.operador.email });
@@ -50,14 +53,14 @@ test("mesma mensagem para e-mail inexistente, senha errada, secretaria sem vínc
 }) => {
   const casos = [
     { email: "ninguem@exemplo.test" },
-    { email: USUARIOS.operador.email, senha: "senha-errada-123" },
-    { email: USUARIOS.operador.email, secretaria: "Obras" },
-    { email: USUARIOS.operador.email, secretaria: "Todas as secretarias" },
+    { email: USUARIOS.falhas.email, senha: "senha-errada-123" },
+    { email: USUARIOS.falhas.email, secretaria: "Obras" },
+    { email: USUARIOS.falhas.email, secretaria: "Todas as secretarias" },
     { email: USUARIOS.outra.email },
   ];
   for (const caso of casos) {
     await entrar(page, caso);
-    await expect(page.getByRole("alert")).toHaveText(ERRO);
+    await expect(page.getByTestId("erro-formulario")).toHaveText(ERRO);
     await expect(page).toHaveURL(/\/entrar\/dados$/);
   }
 });
@@ -71,10 +74,10 @@ test("administrador entra em 'Todas as secretarias'", async ({ page }) => {
 test("bloqueia a conta depois de 5 falhas, mesmo com a senha certa", async ({ page }) => {
   for (let i = 0; i < 5; i++) {
     await entrar(page, { email: USUARIOS.bloqueio.email, senha: `errada-${i}-xxxxxx` });
-    await expect(page.getByRole("alert")).toHaveText(ERRO);
+    await expect(page.getByTestId("erro-formulario")).toHaveText(ERRO);
   }
   await entrar(page, { email: USUARIOS.bloqueio.email });
-  await expect(page.getByRole("alert")).toHaveText(ERRO);
+  await expect(page.getByTestId("erro-formulario")).toHaveText(ERRO);
   await expect(page).toHaveURL(/\/entrar\/dados$/);
 });
 
@@ -89,7 +92,7 @@ test("senha provisória obriga a criar uma nova antes de usar o sistema", async 
   await page.getByLabel("Nova senha", { exact: true }).fill("curta");
   await page.getByLabel("Repita a nova senha").fill("curta");
   await page.getByRole("button", { name: "Salvar senha" }).click();
-  await expect(page.getByRole("alert")).toHaveText("A senha precisa ter pelo menos 12 caracteres.");
+  await expect(page.getByTestId("erro-formulario")).toHaveText("A senha precisa ter pelo menos 12 caracteres.");
 
   const nova = `Nova-${crypto.randomUUID()}`;
   await page.getByLabel("Nova senha", { exact: true }).fill(nova);
@@ -140,10 +143,10 @@ test("equipe LicCONT entra pelo endereço próprio; usuário de prefeitura não"
   await page.goto("/equipe/entrar");
   await semFalhasDeAcessibilidade(page);
 
-  await page.getByLabel("E-mail").fill(USUARIOS.operador.email);
+  await page.getByLabel("E-mail").fill(USUARIOS.falhas.email);
   await page.getByLabel("Senha", { exact: true }).fill(SENHA);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("alert")).toHaveText(ERRO);
+  await expect(page.getByTestId("erro-formulario")).toHaveText(ERRO);
 
   await page.getByLabel("E-mail").fill(USUARIOS.equipe.email);
   await page.getByLabel("Senha", { exact: true }).fill(SENHA);

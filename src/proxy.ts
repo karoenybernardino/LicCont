@@ -69,7 +69,11 @@ export async function proxy(req: NextRequest) {
       } catch {
         // Sem rede com o Supabase: os cookies saem do mesmo jeito.
       }
-      const destino = NextResponse.redirect(new URL("/entrar?motivo=inatividade", req.url));
+      // 303 transforma o POST de uma Server Action (ex.: Sair) em GET.
+      const destino = NextResponse.redirect(
+        new URL("/entrar?motivo=inatividade", req.url),
+        req.method === "GET" ? 307 : 303,
+      );
       for (const c of req.cookies.getAll()) {
         if (ehCookieSupabase(c.name) || c.name === COOKIE_SECRETARIA || c.name === COOKIE_ATIVIDADE) {
           destino.cookies.delete(c.name);

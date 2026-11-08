@@ -4,7 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientePublico, clienteServico, clienteSessao } from "@/lib/supabase/servidor";
-import { COOKIE_ATIVIDADE, COOKIE_PREFEITURA, COOKIE_SECRETARIA, opcoesCookie } from "@/features/sessao/cookies";
+import {
+  COOKIE_ATIVIDADE,
+  COOKIE_PREFEITURA,
+  COOKIE_SECRETARIA,
+  ehCookieSupabase,
+  opcoesCookie,
+} from "@/features/sessao/cookies";
 import { origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
 import {
   MENSAGEM_ERRO_LOGIN,
@@ -42,6 +48,7 @@ type Conferir = (servico: SupabaseClient, usuarioId: string) => Promise<boolean>
 
 // Passos comuns ao login da prefeitura e da equipe: limite de tentativas,
 // senha no Supabase Auth e a conferência própria de cada tela.
+// `prefeitura` só vai para a auditoria se existir e estiver ativa.
 async function autenticar(email: string, senha: string, prefeitura: string | null, conferir: Conferir) {
   const segredo = process.env.LOGIN_HASH_SEGREDO;
   const supabase = await clienteSessao();
@@ -49,21 +56,24 @@ async function autenticar(email: string, senha: string, prefeitura: string | nul
   if (!segredo || segredo.length < 32 || !supabase || !servico) return "indisponivel" as const;
 
   const { ip, aparelho } = await origemDaRequisicao();
-  const emailHash = hashEmail(email, segredo);
 
-  // Erro na conferência do bloqueio também barra (falha fechada).
-  const { data: bloqueado, error: erroBloqueio } = await servico.rpc("login_bloqueado", {
-    p_email_hash: emailHash,
+  // Confere o bloqueio e já grava a tentativa como falha, num passo só
+  // (sem corrida entre pedidos paralelos). Erro aqui barra (falha fechada).
+  const { data: tentativa, error: erroTentativa } = await servico.rpc("iniciar_tentativa_login", {
+    p_email_hash: hashEmail(email, segredo),
     p_ip: ip,
   });
-  if (erroBloqueio || bloqueado !== false) return null;
+  if (erroTentativa || tentativa === null) return null;
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-  const aceito = !error && !!data.user && (await conferir(servico, data.user.id));
-  await servico.rpc("registrar_tentativa_login", { p_email_hash: emailHash, p_ip: ip, p_sucesso: aceito });
+  let aceito = !error && !!data.user && (await conferir(servico, data.user.id));
+  if (aceito) {
+    const { error: erroConclusao } = await servico.rpc("concluir_tentativa_login", { p_id: tentativa });
+    aceito = !erroConclusao;
+  }
 
   if (!aceito) {
-    if (data.user) await supabase.auth.signOut({ scope: "local" });
+    if (data.user) await sairSemRastro(supabase);
     await servico.rpc("registrar_auditoria_sistema", {
       p_prefeitura: prefeitura,
       p_usuario: null,
@@ -74,6 +84,13 @@ async function autenticar(email: string, senha: string, prefeitura: string | nul
     return null;
   }
   return { supabase, servico, usuarioId: data.user!.id, ip, aparelho };
+}
+
+// Encerra a sessão recém-aberta; se o Supabase falhar, apaga os cookies mesmo assim.
+async function sairSemRastro(supabase: SupabaseClient) {
+  await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+  const loja = await cookies();
+  for (const c of loja.getAll()) if (ehCookieSupabase(c.name)) loja.delete(c.name);
 }
 
 async function marcarAtividade() {
@@ -94,15 +111,21 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
   if (!dados.success) return falhar(inicio);
   const { secretaria, email, senha } = dados.data;
 
+  // Prefeitura escolhida em cookie: só entra na auditoria se existir e estiver ativa.
+  const servicoPrefeitura = clienteServico();
+  const { data: p } = servicoPrefeitura
+    ? await servicoPrefeitura.from("prefeituras").select("status").eq("id", prefeitura.data).maybeSingle()
+    : { data: null };
+  const ativa = p?.status === "ativa";
+
   let troca = false;
-  const sessao = await autenticar(email, senha, prefeitura.data, async (servico, id) => {
-    const { data: p } = await servico.from("prefeituras").select("status").eq("id", prefeitura.data).maybeSingle();
+  const sessao = await autenticar(email, senha, ativa ? prefeitura.data : null, async (servico, id) => {
     const { data: u } = await servico
       .from("usuarios")
       .select("prefeitura_id, administrador, ativo, troca_senha_obrigatoria")
       .eq("id", id)
       .maybeSingle();
-    if (p?.status !== "ativa" || !u?.ativo || u.prefeitura_id !== prefeitura.data) return false;
+    if (!ativa || !u?.ativo || u.prefeitura_id !== prefeitura.data) return false;
     troca = u.troca_senha_obrigatoria;
     if (secretaria === "todas") return u.administrador;
 
@@ -169,6 +192,8 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
   if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
   const usuario = await usuarioAtual();
   if (!usuario) redirect("/entrar");
+  // Troca voluntária (pedindo a senha atual) fica para depois: aqui só a provisória.
+  if (!usuario.trocaSenha) redirect("/inicio");
 
   const dados = esquemaNovaSenha.safeParse({
     senha: formData.get("senha"),
@@ -190,11 +215,13 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
   }
 
   // Só o servidor dispensa a troca obrigatória (a coluna não tem GRANT para authenticated).
-  const { error: erroTroca } = await servico
-    .from("usuarios")
-    .update({ troca_senha_obrigatoria: false })
-    .eq("id", usuario.id);
-  if (erroTroca) return { erro: "Não foi possível salvar a senha. Tente de novo." };
+  // A senha já mudou: tenta duas vezes, para a pessoa não ficar presa nesta tela.
+  const dispensar = () =>
+    servico.from("usuarios").update({ troca_senha_obrigatoria: false }).eq("id", usuario.id);
+  const { error: erroTroca } = (await dispensar()).error ? await dispensar() : { error: null };
+  if (erroTroca) return { erro: "Senha salva, mas não foi possível concluir. Saia e entre com a senha nova." };
+  // Outras sessões abertas com a senha provisória caem.
+  await supabase.auth.signOut({ scope: "others" });
 
   const { ip, aparelho } = await origemDaRequisicao();
   if (vazamento === "indisponivel") {

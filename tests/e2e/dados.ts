@@ -15,6 +15,8 @@ export type UsuarioTeste = {
 
 export const USUARIOS = {
   operador: { email: "operador.saude@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"] },
+  // Só para os casos de falha (não bloqueia as outras contas).
+  falhas: { email: "falhas@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"] },
   admin: { email: "admin@exemplo.test", prefeitura: PREFEITURA, administrador: true },
   novo: { email: "novo@exemplo.test", prefeitura: PREFEITURA, troca: true, secretarias: ["Educação"] },
   bloqueio: { email: "bloqueio@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"] },
