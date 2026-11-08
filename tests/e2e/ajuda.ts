@@ -8,6 +8,7 @@ import { codigoTotp } from "./totp";
 // Espera a tela "Carregando…" sair (a página chega aos poucos).
 export async function esperarCarregar(page: Page) {
   await expect(page.locator("main[aria-busy=true]")).toHaveCount(0);
+  await expect(page.locator("h1")).toBeVisible();
 }
 export const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administrador da sua prefeitura.";
 
