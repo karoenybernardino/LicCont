@@ -2,9 +2,12 @@
 
 ## Como reportar uma falha
 
-Não abra issue pública. Escreva para o contato de segurança do LicCONT
-(endereço a definir junto com o domínio próprio; até lá, pelo canal privado
-com os responsáveis) com:
+Não abra issue pública. Escreva para o contato de segurança do LicCONT com:
+
+> **Pendência:** o endereço de contato ainda não existe (depende do domínio
+> próprio). Responsáveis: os encarregados de dados do LicCONT. Definir antes
+> do piloto.
+
 
 - o que você encontrou e onde;
 - como reproduzir;
@@ -18,7 +21,7 @@ demonstrar a falha.
 - Confirmamos o recebimento em até 2 dias úteis.
 - Avaliamos, corrigimos e avisamos quem reportou.
 - Se houver dado pessoal envolvido, seguimos o plano de resposta a
-  incidentes (`docs/lgpd/`): conter, avaliar, avisar a prefeitura
+  incidentes (a escrever em `docs/lgpd/` antes do piloto): conter, avaliar, avisar a prefeitura
   (controladora) e apoiar a comunicação à ANPD e aos titulares no prazo da
   regulamentação.
 

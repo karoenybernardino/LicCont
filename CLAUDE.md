@@ -2,7 +2,7 @@
 
 Arquivo morto de licitações e contratos para prefeituras. Produto próprio,
 separado do Prummo. Plano completo: `docs/plano-de-desenvolvimento.md`.
-Fase atual: `docs/fases/`.
+Fase atual: `docs/fases/fase-0.md`.
 
 ## Regras fixas (não negociáveis)
 
