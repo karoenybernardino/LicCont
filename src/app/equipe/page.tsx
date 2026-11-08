@@ -3,7 +3,7 @@ import { Campo } from "@/ui/campo";
 import { Cartao } from "@/ui/cartao";
 import { Formulario } from "@/ui/formulario";
 import { Selecao } from "@/ui/selecao";
-import { clienteSessao } from "@/lib/supabase/servidor";
+import { listarPrefeituras } from "@/features/prefeituras/dados";
 import { CabecalhoSistema } from "@/features/sessao/cabecalho";
 import { exigirEquipe } from "@/features/sessao/dal";
 import { cadastrarPrefeitura, cadastrarPrimeiroAdmin, mudarStatus } from "@/features/prefeituras/acoes";
@@ -15,9 +15,7 @@ const SITUACOES = { implantacao: "Em implantação", ativa: "Ativa", suspensa: "
 // Painel mínimo da equipe LicCONT (Fase 1): prefeituras e primeiro administrador.
 export default async function PainelEquipe() {
   await exigirEquipe();
-  const supabase = (await clienteSessao())!;
-  const { data } = await supabase.from("prefeituras").select("id, nome, cnpj, status").order("nome");
-  const prefeituras = (data ?? []) as { id: string; nome: string; cnpj: string; status: keyof typeof SITUACOES }[];
+  const prefeituras = await listarPrefeituras();
 
   return (
     <>

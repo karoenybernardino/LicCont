@@ -6,6 +6,8 @@ import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { idSchema } from "@/features/login/esquemas";
 import { ipDaRequisicao } from "@/features/login/seguranca";
 import { COOKIE_SECRETARIA } from "./cookies";
+import { PREFEITURA_DEMO, SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
+import { perfilDemo } from "@/features/demo/sessao";
 
 // Camada de acesso: toda tela e ação confere a sessão aqui, no servidor.
 
@@ -24,6 +26,17 @@ export type Secretaria = { id: string | null; nome: string };
 // a sessão ainda existe no banco (RLS + app.sessao_valida): bloqueio e
 // sessão encerrada cortam o acesso mesmo com token dentro da validade.
 export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
+  if (emDemo()) {
+    const perfil = await perfilDemo();
+    if (!perfil || perfil === "equipe") return null;
+    return {
+      id: "de200000-0000-0000-0000-000000000099",
+      prefeituraId: PREFEITURA_DEMO,
+      nome: "Pessoa de demonstração",
+      administrador: perfil === "administrador",
+      trocaSenha: false,
+    };
+  }
   const supabase = await clienteSessao();
   if (!supabase) return null;
   const { data: token } = await supabase.auth.getClaims();
@@ -58,6 +71,7 @@ export const nivelSessao = cache(async () => {
 // Chave do banco (app.configuracao): o segundo fator está obrigatório?
 // Erro ou sem resposta conta como obrigatório.
 export const segundoFatorObrigatorio = cache(async () => {
+  if (emDemo()) return false;
   const servico = clienteServico();
   if (!servico) return true;
   const { data, error } = await servico.rpc("segundo_fator_obrigatorio");
@@ -72,6 +86,11 @@ export async function faltaSegundoFator() {
 // Secretarias que a pessoa pode escolher como filtro da tela: as dos
 // vínculos; para o administrador, todas as ativas e "Todas as secretarias".
 export const secretariasPermitidas = cache(async (u: Usuario): Promise<Secretaria[]> => {
+  if (emDemo()) {
+    const ativas = SECRETARIAS_DEMO.filter((s) => s.ativa && (u.administrador || VINCULOS_DEMO.includes(s.id)));
+    const lista = ativas.map(({ id, nome }) => ({ id, nome }));
+    return u.administrador ? [...lista, { id: null, nome: "Todas as secretarias" }] : lista;
+  }
   const supabase = await clienteSessao();
   if (!supabase) return [];
   let consulta = supabase.from("secretarias").select("id, nome").eq("ativa", true).order("nome");
@@ -109,6 +128,7 @@ export async function exigirSessao() {
 // Só diz se a pessoa é da equipe; NÃO confere o segundo fator. Porteiro de
 // tela ou ação da equipe é sempre exigirEquipe().
 export const membroEquipe = cache(async (): Promise<{ id: string } | null> => {
+  if (emDemo()) return (await perfilDemo()) === "equipe" ? { id: "de200000-0000-0000-0000-000000000098" } : null;
   const supabase = await clienteSessao();
   const servico = clienteServico();
   if (!supabase || !servico) return null;

@@ -1,6 +1,7 @@
 import "server-only";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import type { Perfil } from "./esquemas";
+import { SECRETARIAS_DEMO, USUARIOS_DEMO, emDemo } from "@/features/demo/dados";
 
 export type UsuarioLista = {
   id: string;
@@ -17,6 +18,9 @@ export type UsuarioLista = {
 // O e-mail fica só no Supabase Auth: vem pela service_role, filtrado pelos ids
 // que o RLS devolveu.
 export async function listarUsuarios(id?: string): Promise<UsuarioLista[]> {
+  if (emDemo()) {
+    return USUARIOS_DEMO.filter((u) => !id || u.id === id).map((u) => ({ ...u, matricula: null, secretarias: [...u.secretarias] }));
+  }
   const supabase = await clienteSessao();
   const servico = clienteServico();
   if (!supabase || !servico) return [];
@@ -52,6 +56,7 @@ export async function listarUsuarios(id?: string): Promise<UsuarioLista[]> {
 }
 
 export async function listarSecretarias(): Promise<{ id: string; nome: string; ativa: boolean }[]> {
+  if (emDemo()) return SECRETARIAS_DEMO;
   const supabase = await clienteSessao();
   if (!supabase) return [];
   const { data } = await supabase.from("secretarias").select("id, nome, ativa").order("nome");

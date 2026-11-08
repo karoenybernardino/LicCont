@@ -6,7 +6,7 @@ import { Campo } from "@/ui/campo";
 import { Cartao } from "@/ui/cartao";
 import { Formulario } from "@/ui/formulario";
 import { Selecao } from "@/ui/selecao";
-import { clientePublico } from "@/lib/supabase/servidor";
+import { prefeiturasParaLogin, secretariasParaLogin } from "@/features/login/listas";
 import { entrar } from "@/features/login/acoes";
 import { idSchema } from "@/features/login/esquemas";
 import { MolduraLogin } from "@/features/login/moldura";
@@ -14,19 +14,12 @@ import { COOKIE_PREFEITURA } from "@/features/sessao/cookies";
 
 export const metadata: Metadata = { title: "Entrar · LicCONT" };
 
-type Item = { id: string; nome: string };
-
 // Tela 2 do login (canvas "Login"): secretaria, e-mail e senha.
 export default async function DadosDeAcesso() {
   const id = idSchema.safeParse((await cookies()).get(COOKIE_PREFEITURA)?.value);
-  const publico = clientePublico();
-  if (!id.success || !publico) redirect("/entrar");
-
-  const [{ data: prefeituras }, { data: secretarias }] = await Promise.all([
-    publico.rpc("prefeituras_para_login"),
-    publico.rpc("secretarias_para_login", { p_prefeitura: id.data }),
-  ]);
-  const prefeitura = (prefeituras as Item[] | null)?.find((p) => p.id === id.data);
+  if (!id.success) redirect("/entrar");
+  const [prefeituras, secretarias] = await Promise.all([prefeiturasParaLogin(), secretariasParaLogin(id.data)]);
+  const prefeitura = prefeituras?.find((p) => p.id === id.data);
   if (!prefeitura) redirect("/entrar");
 
   return (
@@ -49,7 +42,7 @@ export default async function DadosDeAcesso() {
             required
             ajuda="Você verá só o acervo da secretaria escolhida."
           >
-            {((secretarias ?? []) as Item[]).map((s) => (
+            {secretarias.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nome}
               </option>

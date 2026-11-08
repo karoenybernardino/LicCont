@@ -7,6 +7,7 @@ import { exigirEquipe } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import { emailSchema, senhaProvisoria } from "@/features/usuarios/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
+import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 
 const FALHA = "Não foi possível salvar. Tente de novo.";
 const statusSchema = z.enum(["implantacao", "ativa", "suspensa"]);
@@ -28,6 +29,7 @@ async function contexto() {
 
 export async function cadastrarPrefeitura(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const supabase = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!supabase) return { erro: MENSAGEM_INDISPONIVEL };
   const dados = esquemaPrefeitura.safeParse({ nome: formData.get("nome"), cnpj: formData.get("cnpj") ?? "" });
   if (!dados.success) return { erro: dados.error.issues[0].message };
@@ -40,6 +42,7 @@ export async function cadastrarPrefeitura(_: EstadoAcao, formData: FormData): Pr
 
 export async function mudarStatus(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const supabase = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   if (!supabase) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   const status = statusSchema.safeParse(formData.get("status"));
@@ -57,6 +60,7 @@ export async function mudarStatus(_: EstadoAcao, formData: FormData): Promise<Es
 
 export async function cadastrarPrimeiroAdmin(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const supabase = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   const servico = clienteServico();
   if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));

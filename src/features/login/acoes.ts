@@ -3,7 +3,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { clientePublico, clienteServico, clienteSessao } from "@/lib/supabase/servidor";
+import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
+import { COOKIE_PERFIL_DEMO, emDemo } from "@/features/demo/dados";
+import { prefeiturasParaLogin } from "./listas";
 import {
   COOKIE_ATIVIDADE,
   COOKIE_PREFEITURA,
@@ -36,10 +38,8 @@ async function falhar(inicio: number): Promise<EstadoFormulario> {
 
 export async function escolherPrefeitura(formData: FormData) {
   const id = idSchema.safeParse(formData.get("prefeitura"));
-  const publico = clientePublico();
-  if (!id.success || !publico) redirect("/entrar");
-  const { data } = await publico.rpc("prefeituras_para_login");
-  if (!(data as { id: string }[] | null)?.some((p) => p.id === id.data)) redirect("/entrar");
+  if (!id.success) redirect("/entrar");
+  if (!(await prefeiturasParaLogin())?.some((p) => p.id === id.data)) redirect("/entrar");
   (await cookies()).set(COOKIE_PREFEITURA, id.data, { ...opcoesCookie, maxAge: 60 * 60 * 24 * 365 });
   redirect("/entrar/dados");
 }
@@ -111,6 +111,13 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
   if (!dados.success) return falhar(inicio);
   const { secretaria, email, senha } = dados.data;
 
+  // Demonstração: qualquer e-mail e senha entram como administrador.
+  if (emDemo()) {
+    loja.set(COOKIE_PERFIL_DEMO, "administrador", opcoesCookie);
+    loja.set(COOKIE_SECRETARIA, secretaria, opcoesCookie);
+    redirect("/inicio");
+  }
+
   // Prefeitura escolhida em cookie: só entra na auditoria se existir e estiver ativa.
   const servicoPrefeitura = clienteServico();
   const { data: p } = servicoPrefeitura
@@ -168,6 +175,10 @@ export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Pro
   const inicio = Date.now();
   const dados = esquemaLoginEquipe.safeParse({ email: formData.get("email"), senha: formData.get("senha") });
   if (!dados.success) return falhar(inicio);
+  if (emDemo()) {
+    (await cookies()).set(COOKIE_PERFIL_DEMO, "equipe", opcoesCookie);
+    redirect("/equipe");
+  }
 
   const sessao = await autenticar(dados.data.email, dados.data.senha, null, async (servico, id) => {
     const { data } = await servico.from("equipe_liccont").select("usuario_id").eq("usuario_id", id).maybeSingle();

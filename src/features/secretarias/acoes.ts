@@ -6,12 +6,14 @@ import { clienteSessao } from "@/lib/supabase/servidor";
 import { exigirAdmin } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
+import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 
 const nomeSchema = z.string().trim().min(2, "Informe o nome da secretaria.").max(120, "Nome muito longo.");
 
 // Grava pela sessão do administrador: o RLS confere prefeitura e aal2.
 export async function cadastrarSecretaria(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const { usuario } = await exigirAdmin();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   const supabase = await clienteSessao();
   if (!supabase) return { erro: MENSAGEM_INDISPONIVEL };
   const nome = nomeSchema.safeParse(formData.get("nome"));
@@ -29,6 +31,7 @@ export async function cadastrarSecretaria(_: EstadoAcao, formData: FormData): Pr
 
 export async function alternarSecretaria(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   await exigirAdmin();
+  if (emDemo()) return { aviso: AVISO_DEMO };
   const supabase = await clienteSessao();
   if (!supabase) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));

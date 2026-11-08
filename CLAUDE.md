@@ -21,6 +21,16 @@ Fase atual: `docs/fases/fase-0.md`.
 5. **Textos da interface em português**, com as fontes e cores da marca
    (`src/ui/`, guia em `docs/marca/`).
 
+## Modo demonstração
+
+- `LICCONT_DEMO=1`: telas com dados fictícios de `src/features/demo/`, sem
+  banco e sem salvar nada; a faixa amarela troca o perfil. Só em Preview na
+  Vercel e na prévia local (`.claude/launch.json`), **nunca em Production**
+  (o código recusa com `VERCEL_ENV=production`).
+- Tela nova com dados: ler pela camada de dados (`dal.ts`, `dados.ts`,
+  `listas.ts`) com o ramo da demonstração; ação que grava devolve
+  `AVISO_DEMO` em demonstração.
+
 ## Banco (Supabase)
 
 - Toda tabela com dado de cliente carrega `prefeitura_id`; as de acervo
