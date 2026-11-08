@@ -113,7 +113,7 @@ export async function entrar(_: EstadoFormulario, formData: FormData): Promise<E
 
   // Demonstração: qualquer e-mail e senha entram como administrador.
   if (emDemo()) {
-    loja.set(COOKIE_PERFIL_DEMO, "administrador", opcoesCookie);
+    loja.set(COOKIE_PERFIL_DEMO, "administrador", { ...opcoesCookie, maxAge: 8 * 60 * 60 });
     loja.set(COOKIE_SECRETARIA, secretaria, opcoesCookie);
     redirect("/inicio");
   }
@@ -176,7 +176,7 @@ export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Pro
   const dados = esquemaLoginEquipe.safeParse({ email: formData.get("email"), senha: formData.get("senha") });
   if (!dados.success) return falhar(inicio);
   if (emDemo()) {
-    (await cookies()).set(COOKIE_PERFIL_DEMO, "equipe", opcoesCookie);
+    (await cookies()).set(COOKIE_PERFIL_DEMO, "equipe", { ...opcoesCookie, maxAge: 8 * 60 * 60 });
     redirect("/equipe");
   }
 

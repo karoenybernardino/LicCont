@@ -1,8 +1,11 @@
 // Modo demonstração (LICCONT_DEMO=1): telas com dados fictícios, sem banco.
 // Nada aqui é dado real e nada é salvo. Nunca liga em Production na Vercel.
 
+// Falha fechada: só liga em prévia da Vercel ou em desenvolvimento local, e
+// nunca onde houver chave de servidor do Supabase.
 export function emDemo(ambiente: Record<string, string | undefined> = process.env) {
-  return ambiente.LICCONT_DEMO === "1" && ambiente.VERCEL_ENV !== "production";
+  const permitido = ambiente.VERCEL_ENV === "preview" || ambiente.NODE_ENV === "development";
+  return ambiente.LICCONT_DEMO === "1" && permitido && !ambiente.SUPABASE_SERVICE_ROLE_KEY;
 }
 
 export const AVISO_DEMO = "Modo demonstração: nada foi salvo.";

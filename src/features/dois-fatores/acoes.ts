@@ -6,6 +6,7 @@ import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { membroEquipe, nivelSessao, origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import { hashEmail } from "@/features/login/seguranca";
+import { emDemo } from "@/features/demo/dados";
 
 export type EstadoCadastro = { erro?: string; factorId?: string; qr?: string; segredo?: string } | undefined;
 type Estado = { erro?: string } | undefined;
@@ -16,6 +17,7 @@ const MENSAGEM_BLOQUEIO = "Muitas tentativas. Aguarde 15 minutos e tente de novo
 
 // Quem precisa do segundo fator: administrador de prefeitura e equipe LicCONT.
 async function contexto() {
+  if (emDemo()) redirect("/inicio");
   const supabase = await clienteSessao();
   const servico = clienteServico();
   const segredo = process.env.LOGIN_HASH_SEGREDO;
