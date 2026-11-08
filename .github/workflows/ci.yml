@@ -12,13 +12,94 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Imagens do Semgrep e do Gitleaks: o Dependabot não atualiza; revisar à mão.
+# Nomes dos jobs = checagens obrigatórias em docs/decisoes/0002-protecao-do-main.md.
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+
+  tipos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm run tipos
+
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm test
+
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   pgtap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
           version: 3.0.0
       - run: supabase db start
       - run: supabase test db
+
+  semgrep:
+    runs-on: ubuntu-latest
+    container: semgrep/semgrep:1.184.0
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      # CLI aberta, sem conta e sem envio de métricas.
+      - run: semgrep scan --metrics=off --error --config p/default --config p/typescript --config p/react --config p/nextjs
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # CLI aberta via imagem oficial (a action exige licença em organizações).
+      # Em PR, varre só os commits do PR; no main, o histórico inteiro.
+      - name: Buscar segredos
+        env:
+          INTERVALO: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || '' }}
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git /repo --redact --verbose ${INTERVALO:+--log-opts="$INTERVALO"}
