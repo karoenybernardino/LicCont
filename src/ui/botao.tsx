@@ -13,7 +13,7 @@ export function Botao({ variante = "principal", type = "button", className = "",
   return (
     <button
       type={type}
-      className={`rounded-lg px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:opacity-50 ${estilos[variante]} ${className}`}
+      className={`min-h-11 rounded-lg px-5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:opacity-50 ${estilos[variante]} ${className}`}
       {...props}
     />
   );
