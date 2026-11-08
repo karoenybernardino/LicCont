@@ -77,7 +77,7 @@ test("administrador cria rua, gera módulos e níveis pelas listas e a ocupaçã
   await expect(page.getByRole("status").filter({ hasText: "4 caixas cadastradas." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cadastrar caixas" })).toHaveCount(0);
   await page.getByRole("button", { name: "Desativar nível" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Ainda há caixas ativas aqui. Desative as caixas antes.");
+  await expect(page.getByRole("alert").filter({ hasText: "Ainda há caixas ativas aqui. Desative as caixas antes." })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
 
   await page.getByRole("link", { name: "Voltar para a estrutura" }).click();

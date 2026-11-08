@@ -90,8 +90,10 @@ set search_path = ''
 as $$
   select exists (
     select 1 from public.vinculos v
+    join public.secretarias s on s.id = v.secretaria_id
     where v.usuario_id = auth.uid()
       and v.papel = 'coordenador'
+      and s.ativa
       and v.prefeitura_id = app.prefeitura_atual()
   )
 $$;
@@ -103,6 +105,49 @@ grant execute on function app.eh_coordenador() to authenticated;
 -- traduz: LC001 sem posição, LC002 capacidade menor que as caixas,
 -- LC003 ainda tem caixas ativas, LC004 parte desativada.
 -- ---------------------------------------------------------------------------
+
+-- Inclusão pela Data API: o pai precisa ser da prefeitura de quem inclui
+-- (e estar ativo; para caixa, a regra de parte desativada é a LC004).
+-- Roda antes de tudo (nome começa com "a_"): sem isto, os códigos de erro
+-- (chave única, capacidade) revelariam dados de outra prefeitura a quem
+-- soubesse o id do pai. security invoker: lê o pai com o RLS de quem chama.
+-- Seed e migrações (sem token) não passam por esta regra.
+create or replace function app.estrutura_pai_confere()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_ok boolean;
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'authenticated' then
+    return new;
+  end if;
+  if new.prefeitura_id is distinct from app.prefeitura_atual() then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
+  v_ok := case tg_table_name
+    when 'ruas' then exists (select 1 from public.galpoes p where p.id = new.galpao_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
+    when 'modulos' then exists (select 1 from public.ruas p where p.id = new.rua_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
+    when 'niveis' then exists (select 1 from public.modulos p where p.id = new.modulo_id and p.prefeitura_id = new.prefeitura_id and p.ativo)
+    else exists (select 1 from public.niveis p where p.id = new.nivel_id and p.prefeitura_id = new.prefeitura_id)
+  end;
+  if not v_ok then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
+  return new;
+end
+$$;
+revoke execute on function app.estrutura_pai_confere() from public;
+grant execute on function app.estrutura_pai_confere() to authenticated;
+create trigger a_ruas_pai_confere before insert on public.ruas
+  for each row execute function app.estrutura_pai_confere();
+create trigger a_modulos_pai_confere before insert on public.modulos
+  for each row execute function app.estrutura_pai_confere();
+create trigger a_niveis_pai_confere before insert on public.niveis
+  for each row execute function app.estrutura_pai_confere();
+create trigger a_caixas_pai_confere before insert on public.caixas
+  for each row execute function app.estrutura_pai_confere();
 
 -- Caixa nova ou reativada: posição dentro da capacidade e toda a cadeia
 -- (nível, módulo, rua, galpão) ativa. Trava as linhas da cadeia (FOR SHARE)
@@ -127,7 +172,7 @@ begin
   join public.modulos m on m.id = n.modulo_id
   join public.ruas r on r.id = m.rua_id
   join public.galpoes g on g.id = r.galpao_id
-  where n.id = new.nivel_id
+  where n.id = new.nivel_id and n.prefeitura_id = new.prefeitura_id
   for share;
   if not coalesce(v_ativa, false) then
     raise exception 'parte da estrutura desativada' using errcode = 'LC004';
@@ -369,6 +414,7 @@ declare
   v_capacidade int;
   v_ativas int;
   v_reativadas int;
+  v_inseridas int;
 begin
   if p_quantidade not between 1 and 50 then
     raise exception 'quantidade fora do limite' using errcode = '22023';
@@ -388,7 +434,7 @@ begin
     where c.nivel_id = p_nivel and not c.ativo and c.numero <= v_capacidade
     order by c.numero limit p_quantidade
   )
-  update public.caixas c set ativo = true from reativar where c.id = reativar.id;
+  update public.caixas c set ativo = true from reativar where c.id = reativar.id and not c.ativo;
   get diagnostics v_reativadas = row_count;
 
   insert into public.caixas (prefeitura_id, nivel_id, numero)
@@ -397,7 +443,12 @@ begin
   where not exists (select 1 from public.caixas c where c.nivel_id = p_nivel and c.numero = livre.n)
   order by livre.n
   limit p_quantidade - v_reativadas;
+  get diagnostics v_inseridas = row_count;
 
+  -- O RLS pode filtrar a reativação sem erro: nunca dizer que gravou sem gravar.
+  if v_reativadas + v_inseridas < p_quantidade then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
   return p_quantidade;
 end
 $$;

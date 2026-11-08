@@ -38,8 +38,9 @@ export const ESTRUTURA_DEMO = montar();
 // Últimas alterações fictícias (como no canvas), com datas relativas a hoje.
 export function alteracoesDemo(agora = new Date()) {
   const dia = 24 * 60 * 60 * 1000;
-  const hoje = new Date(agora);
-  hoje.setHours(9, 40, 0, 0);
+  // 09:40 de hoje no horário de Brasília (o servidor da Vercel roda em UTC).
+  const data = agora.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const hoje = new Date(`${data}T09:40:00-03:00`);
   return [
     { titulo: "Módulo 5 adicionado", detalhe: "Rua D", quando: hoje, tipo: "Estrutura" as const },
     { titulo: "Nível 4 ajustado", detalhe: "Rua A · M2", quando: new Date(hoje.getTime() - dia), tipo: "Ajuste" as const },

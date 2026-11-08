@@ -248,3 +248,29 @@ Um PR (`fase-2/estrutura`), a pedido do responsável, em vez das 4 tarefas.
   cima). Fica para um PR próprio, depois desta fase.
 - **`service_role` sem privilégio** nas tabelas novas (revogado na
   migração): nenhuma tela do servidor precisa delas.
+
+### Revisões (código e segurança) e o que foi corrigido
+
+- **Erro que revelava dado de outra prefeitura** (quem soubesse o id de um
+  nível alheio descobria, pelo código do erro, capacidade e posições
+  ocupadas): gatilho `app.estrutura_pai_confere()` recusa com o mesmo erro
+  genérico qualquer inclusão cujo pai não seja da prefeitura de quem inclui
+  (ou esteja desativado), antes de qualquer outra regra. pgTAP prova que
+  posição ocupada e posição inexistente dão o mesmo erro.
+- Coordenador só vale com vínculo em secretaria **ativa**.
+- `adicionar_caixas` nunca diz que cadastrou sem cadastrar; reativação não
+  conta caixa já ativa.
+- Lista "Últimas alterações" acessível pelo teclado ao rolar; falha de
+  leitura da estrutura mostra erro em vez de ocupação errada; horário da
+  demonstração em Brasília.
+
+### Riscos aceitos na Fase 2 (decidir antes do piloto)
+
+- **Coordenador sem segundo fator** (como operador e consulta na Fase 1):
+  com a senha de um coordenador dá para desativar caixas. É reversível e
+  fica na auditoria.
+- Pelo acesso direto à API, o administrador consegue criar nível com até
+  20 níveis por módulo e capacidade até 200 (a tela limita a 10 e 50). Só
+  qualidade de dado; as regras de capacidade continuam valendo.
+- A busca dos módulos põe os ids das ruas na URL: serve até centenas de
+  ruas por galpão.

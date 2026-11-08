@@ -206,7 +206,7 @@ export default async function EstruturaFisica({
               {admin && (
                 <Painel className="flex-1">
                   <TituloPainel>Últimas alterações</TituloPainel>
-                  <div className="-mx-5 max-h-[200px] overflow-auto">
+                  <div tabIndex={0} role="region" aria-label="Últimas alterações" className="-mx-5 max-h-[200px] overflow-auto focus-visible:outline-2 focus-visible:outline-foco">
                     {alteracoes.length === 0 ? (
                       <p className="px-5 text-sm text-texto-suave">Nenhuma alteração registrada.</p>
                     ) : (

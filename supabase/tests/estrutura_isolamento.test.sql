@@ -133,6 +133,8 @@ select throws_ok($$insert into public.ruas (prefeitura_id, galpao_id, codigo) va
 select is_empty($$update public.niveis set capacidade = 10 returning id$$, 'operador A não altera capacidade');
 select throws_ok($$select public.adicionar_caixas('c3a00000-0000-0000-0000-000000000000', 1)$$,
   '42501', null, 'operador A não cadastra caixa');
+select throws_ok($$insert into public.caixas (prefeitura_id, nivel_id, numero) values ('11111111-1111-1111-1111-111111111111', 'c3a00000-0000-0000-0000-000000000000', 2)$$,
+  '42501', null, 'operador A não inclui caixa direto');
 
 -- ---------------------------------------------------------------------------
 -- Coordenador A: mexe em caixas, não monta a estrutura
@@ -156,6 +158,17 @@ select throws_ok($$select public.adicionar_modulos('c1a00000-0000-0000-0000-0000
 select is_empty($$update public.niveis set capacidade = 10 returning id$$, 'coordenador A não altera capacidade');
 select isnt_empty($$update public.caixas set ativo = false where id = 'c4a00000-0000-0000-0000-000000000001' returning id$$,
   'coordenador A desativa caixa');
+-- Sem oráculo: nível de outra prefeitura dá sempre o mesmo erro, qualquer que seja a posição.
+select throws_ok($$insert into public.caixas (prefeitura_id, nivel_id, numero) values ('11111111-1111-1111-1111-111111111111', 'c3b00000-0000-0000-0000-000000000000', 1)$$,
+  '42501', null, 'posição ocupada em nível da B: mesmo erro genérico');
+select throws_ok($$insert into public.caixas (prefeitura_id, nivel_id, numero) values ('11111111-1111-1111-1111-111111111111', 'c3b00000-0000-0000-0000-000000000000', 99)$$,
+  '42501', null, 'posição acima da capacidade em nível da B: mesmo erro genérico');
+select throws_ok($$insert into public.galpoes (prefeitura_id, nome) values ('11111111-1111-1111-1111-111111111111', 'Galpão do Coordenador')$$,
+  '42501', null, 'coordenador A não cria galpão');
+select throws_ok($$insert into public.niveis (prefeitura_id, modulo_id, numero, capacidade) values ('11111111-1111-1111-1111-111111111111', 'c2a00000-0000-0000-0000-000000000000', 5, 2)$$,
+  '42501', null, 'coordenador A não cria nível');
+select is_empty($$update public.ruas set ativo = false returning id$$, 'coordenador A não desativa rua');
+select throws_ok($$update public.caixas set numero = 2$$, '42501', null, 'número da caixa não muda pela API');
 
 -- ---------------------------------------------------------------------------
 -- Administrador A sem o segundo fator (obrigatório): não escreve
@@ -188,6 +201,12 @@ select is_empty($$update public.galpoes set nome = 'Alterado' where id = 'c0b000
 select throws_ok($$update public.galpoes set prefeitura_id = '22222222-2222-2222-2222-222222222222'$$,
   '42501', null, 'administrador A não muda a prefeitura do galpão');
 select throws_ok($$delete from public.galpoes$$, '42501', null, 'administrador A não apaga galpão');
+select throws_ok($$insert into public.modulos (prefeitura_id, rua_id, numero) values ('11111111-1111-1111-1111-111111111111', 'c1b00000-0000-0000-0000-000000000000', 1)$$,
+  '42501', null, 'administrador A não cria módulo em rua da B (mesmo número já usado lá: sem oráculo)');
+select throws_ok($$insert into public.caixas (prefeitura_id, nivel_id, numero) values ('22222222-2222-2222-2222-222222222222', 'c3b00000-0000-0000-0000-000000000000', 2)$$,
+  '42501', null, 'administrador A não inclui caixa na B');
+select is_empty($$update public.niveis set capacidade = 9 where id = 'c3b00000-0000-0000-0000-000000000000' returning id$$,
+  'administrador A não altera nível da B');
 
 -- Capacidade e desativação.
 select is(public.adicionar_caixas('c3a00000-0000-0000-0000-000000000000', 1), 1,
@@ -237,6 +256,8 @@ select is_empty($$select 1 from public.estrutura_ocupacao where prefeitura_id = 
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
 select is_empty('select 1 from public.galpoes', 'equipe não lê galpões');
 select is_empty('select 1 from public.caixas', 'equipe não lê caixas');
+select throws_ok($$insert into public.galpoes (prefeitura_id, nome) values ('11111111-1111-1111-1111-111111111111', 'Galpão da Equipe')$$,
+  '42501', null, 'equipe não cria galpão');
 
 reset role;
 select * from finish();

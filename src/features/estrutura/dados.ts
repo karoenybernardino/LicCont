@@ -13,14 +13,18 @@ import { NOMES, agrupar, type Alteracao, type LinhaAuditoria } from "./alteracoe
 const PAGINA = 1000; // limite de linhas por resposta da Data API
 
 // Busca todas as páginas de uma consulta (galpão grande passa de 1000 níveis).
-async function todas<T>(buscar: (de: number, ate: number) => PromiseLike<{ data: T[] | null }>) {
+// Falha no meio não vira ocupação errada em silêncio: a página mostra erro.
+async function todas<T>(buscar: (de: number, ate: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const linhas: T[] = [];
   for (let de = 0; ; de += PAGINA) {
-    const { data } = await buscar(de, de + PAGINA - 1);
+    const { data, error } = await buscar(de, de + PAGINA - 1);
+    if (error) throw new Error(FALHA);
     linhas.push(...(data ?? []));
     if (!data || data.length < PAGINA) return linhas;
   }
 }
+
+const FALHA = "Não foi possível ler a estrutura física.";
 
 const VAZIA: Estrutura = { galpoes: [], galpao: null, ruas: [], modulos: [], niveis: [] };
 
@@ -29,12 +33,13 @@ export const carregarEstrutura = cache(async (galpaoId?: string): Promise<Estrut
   const sb = await clienteSessao();
   if (!sb) return VAZIA;
 
-  const { data: galpoes } = await sb.from("galpoes").select("id, nome, ativo").order("nome");
+  const { data: galpoes, error } = await sb.from("galpoes").select("id, nome, ativo").order("nome");
+  if (error) throw new Error(FALHA);
   const lista = galpoes ?? [];
   const galpao = lista.find((g) => g.id === galpaoId) ?? lista.find((g) => g.ativo) ?? lista[0] ?? null;
   if (!galpao) return { ...VAZIA, galpoes: lista };
 
-  const [{ data: ruas }, niveis] = await Promise.all([
+  const [{ data: ruas, error: erroRuas }, niveis] = await Promise.all([
     sb.from("ruas").select("id, galpao_id, codigo, ativo").eq("galpao_id", galpao.id).order("codigo"),
     todas((de, ate) =>
       sb
@@ -45,6 +50,8 @@ export const carregarEstrutura = cache(async (galpaoId?: string): Promise<Estrut
         .range(de, ate),
     ),
   ]);
+  if (erroRuas) throw new Error(FALHA);
+  // shortcut: ids das ruas na URL; serve até centenas de ruas por galpão.
   const ids = (ruas ?? []).map((r) => r.id);
   const modulos = ids.length
     ? await todas((de, ate) =>
@@ -100,7 +107,7 @@ export async function ultimasAlteracoes(e: Estrutura): Promise<Alteracao[]> {
     .in("alvo_tabela", Object.keys(NOMES))
     .order("criado_em", { ascending: false })
     .order("id", { ascending: false })
-    .limit(300);
+    .limit(1000);
   return agrupar((data ?? []) as LinhaAuditoria[], e).slice(0, 6);
 }
 
