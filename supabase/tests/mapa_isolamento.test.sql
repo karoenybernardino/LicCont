@@ -94,7 +94,7 @@ select ok(not has_column_privilege('authenticated', 'public.planta_elementos', '
 select ok(not has_column_privilege('authenticated', 'public.planta_elementos', 'galpao_id', 'update'), 'elemento não muda de galpão');
 select ok(not has_function_privilege('anon', 'public.ocupacao_galpao(uuid)', 'execute'), 'anon não executa ocupacao_galpao');
 select ok(not has_function_privilege('anon', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'anon não executa mover_documentos');
-select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb)', 'execute'), 'anon não executa salvar_planta');
+select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb, numeric)', 'execute'), 'anon não executa salvar_planta');
 select ok(has_function_privilege('authenticated', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'authenticated executa mover_documentos');
 select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y)
   values ('11111111-1111-1111-1111-111111111111', 'c0b00000-0000-0000-0000-000000000000', 'pilar', 1, 1)$$,
