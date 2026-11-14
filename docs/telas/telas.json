@@ -1,0 +1,622 @@
+[
+ {
+  "quadro": "Lateral",
+  "titulo": "E3 — Pesquisa com painel do documento (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/pesquisa (painel do documento)",
+  "html": "html/Lateral.html",
+  "png": "png/Lateral.png"
+ },
+ {
+  "quadro": "Login",
+  "titulo": "Login — fundo E1",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/entrar/dados",
+  "html": "html/Login.html",
+  "png": "png/Login.png"
+ },
+ {
+  "quadro": "PesquisaClara",
+  "titulo": "Pesquisa com painel do documento (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/pesquisa (painel do documento)",
+  "html": "html/PesquisaClara.html",
+  "png": "png/PesquisaClara.png"
+ },
+ {
+  "quadro": "LoginClaro",
+  "titulo": "Login — versão clara",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/entrar/dados",
+  "html": "html/LoginClaro.html",
+  "png": "png/LoginClaro.png"
+ },
+ {
+  "quadro": "CadastroNovo",
+  "titulo": "Cadastro novo — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "/documentos/novo",
+  "html": "html/CadastroNovo.html",
+  "png": "png/CadastroNovo.png"
+ },
+ {
+  "quadro": "CadastroClaro",
+  "titulo": "Cadastro novo — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "/documentos/novo",
+  "html": "html/CadastroClaro.html",
+  "png": "png/CadastroClaro.png"
+ },
+ {
+  "quadro": "MapaEscuro",
+  "titulo": "Mapa 3D — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa",
+  "html": "html/MapaEscuro.html",
+  "png": "png/MapaEscuro.png"
+ },
+ {
+  "quadro": "MapaClaro",
+  "titulo": "Mapa 3D — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa",
+  "html": "html/MapaClaro.html",
+  "png": "png/MapaClaro.png"
+ },
+ {
+  "quadro": "InicioEscuro",
+  "titulo": "Início — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 940,
+  "rota": "/inicio",
+  "html": "html/InicioEscuro.html",
+  "png": "png/InicioEscuro.png"
+ },
+ {
+  "quadro": "InicioClaro",
+  "titulo": "Início — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 940,
+  "rota": "/inicio",
+  "html": "html/InicioClaro.html",
+  "png": "png/InicioClaro.png"
+ },
+ {
+  "quadro": "EmprestimosEscuro",
+  "titulo": "Empréstimos — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "(ainda sem rota)",
+  "html": "html/EmprestimosEscuro.html",
+  "png": "png/EmprestimosEscuro.png"
+ },
+ {
+  "quadro": "EmprestimosClaro",
+  "titulo": "Empréstimos — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "(ainda sem rota)",
+  "html": "html/EmprestimosClaro.html",
+  "png": "png/EmprestimosClaro.png"
+ },
+ {
+  "quadro": "TemporalidadeEscuro",
+  "titulo": "Temporalidade e descarte — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "(ainda sem rota)",
+  "html": "html/TemporalidadeEscuro.html",
+  "png": "png/TemporalidadeEscuro.png"
+ },
+ {
+  "quadro": "TemporalidadeClaro",
+  "titulo": "Temporalidade e descarte — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "(ainda sem rota)",
+  "html": "html/TemporalidadeClaro.html",
+  "png": "png/TemporalidadeClaro.png"
+ },
+ {
+  "quadro": "AuditoriaEscuro",
+  "titulo": "Auditoria — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "(ainda sem rota)",
+  "html": "html/AuditoriaEscuro.html",
+  "png": "png/AuditoriaEscuro.png"
+ },
+ {
+  "quadro": "AuditoriaClaro",
+  "titulo": "Auditoria — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "(ainda sem rota)",
+  "html": "html/AuditoriaClaro.html",
+  "png": "png/AuditoriaClaro.png"
+ },
+ {
+  "quadro": "UsuariosEscuro",
+  "titulo": "Usuários e perfis — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/usuarios",
+  "html": "html/UsuariosEscuro.html",
+  "png": "png/UsuariosEscuro.png"
+ },
+ {
+  "quadro": "UsuariosClaro",
+  "titulo": "Usuários e perfis — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/usuarios",
+  "html": "html/UsuariosClaro.html",
+  "png": "png/UsuariosClaro.png"
+ },
+ {
+  "quadro": "EtiquetasEscuro",
+  "titulo": "Etiquetas — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "(ainda sem rota)",
+  "html": "html/EtiquetasEscuro.html",
+  "png": "png/EtiquetasEscuro.png"
+ },
+ {
+  "quadro": "EtiquetasClaro",
+  "titulo": "Etiquetas — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "(ainda sem rota)",
+  "html": "html/EtiquetasClaro.html",
+  "png": "png/EtiquetasClaro.png"
+ },
+ {
+  "quadro": "EstruturaEscuro",
+  "titulo": "Estrutura física — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/estrutura",
+  "html": "html/EstruturaEscuro.html",
+  "png": "png/EstruturaEscuro.png"
+ },
+ {
+  "quadro": "EstruturaClaro",
+  "titulo": "Estrutura física — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/estrutura",
+  "html": "html/EstruturaClaro.html",
+  "png": "png/EstruturaClaro.png"
+ },
+ {
+  "quadro": "PrefeiturasEscuro",
+  "titulo": "Prefeituras (visão NOVVA) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/equipe (antiga, ver Equipe*)",
+  "html": "html/PrefeiturasEscuro.html",
+  "png": "png/PrefeiturasEscuro.png"
+ },
+ {
+  "quadro": "PrefeiturasClaro",
+  "titulo": "Prefeituras (visão NOVVA) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/equipe (antiga, ver Equipe*)",
+  "html": "html/PrefeiturasClaro.html",
+  "png": "png/PrefeiturasClaro.png"
+ },
+ {
+  "quadro": "CelularEscuro",
+  "titulo": "Caixa lida pelo celular — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "(ainda sem rota)",
+  "html": "html/CelularEscuro.html",
+  "png": "png/CelularEscuro.png"
+ },
+ {
+  "quadro": "CelularClaro",
+  "titulo": "Caixa lida pelo celular — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "(ainda sem rota)",
+  "html": "html/CelularClaro.html",
+  "png": "png/CelularClaro.png"
+ },
+ {
+  "quadro": "PlantaEscuro",
+  "titulo": "Mapa — planta baixa — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa (modo planta)",
+  "html": "html/PlantaEscuro.html",
+  "png": "png/PlantaEscuro.png"
+ },
+ {
+  "quadro": "PlantaClaro",
+  "titulo": "Mapa — planta baixa — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa (modo planta)",
+  "html": "html/PlantaClaro.html",
+  "png": "png/PlantaClaro.png"
+ },
+ {
+  "quadro": "LoginPrefeitura",
+  "titulo": "Login 1 — escolher prefeitura (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/entrar",
+  "html": "html/LoginPrefeitura.html",
+  "png": "png/LoginPrefeitura.png"
+ },
+ {
+  "quadro": "LoginPrefeituraClaro",
+  "titulo": "Login 1 — escolher prefeitura (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/entrar",
+  "html": "html/LoginPrefeituraClaro.html",
+  "png": "png/LoginPrefeituraClaro.png"
+ },
+ {
+  "quadro": "PesquisaNovaEscuro",
+  "titulo": "Pesquisa — filtros novos (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/pesquisa (filtros)",
+  "html": "html/PesquisaNovaEscuro.html",
+  "png": "png/PesquisaNovaEscuro.png"
+ },
+ {
+  "quadro": "PesquisaNovaClaro",
+  "titulo": "Pesquisa — filtros novos (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/pesquisa (filtros)",
+  "html": "html/PesquisaNovaClaro.html",
+  "png": "png/PesquisaNovaClaro.png"
+ },
+ {
+  "quadro": "InicioFaseEscuro",
+  "titulo": "Início — fase de implantação — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/inicio (fase de implantação)",
+  "html": "html/InicioFaseEscuro.html",
+  "png": "png/InicioFaseEscuro.png"
+ },
+ {
+  "quadro": "InicioFaseClaro",
+  "titulo": "Início — fase de implantação — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/inicio (fase de implantação)",
+  "html": "html/InicioFaseClaro.html",
+  "png": "png/InicioFaseClaro.png"
+ },
+ {
+  "quadro": "EquipePrefeiturasEscuro",
+  "titulo": "Equipe LicCONT · Prefeituras — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 600,
+  "rota": "/equipe",
+  "html": "html/EquipePrefeiturasEscuro.html",
+  "png": "png/EquipePrefeiturasEscuro.png"
+ },
+ {
+  "quadro": "EquipePrefeiturasClaro",
+  "titulo": "Equipe LicCONT · Prefeituras — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 600,
+  "rota": "/equipe",
+  "html": "html/EquipePrefeiturasClaro.html",
+  "png": "png/EquipePrefeiturasClaro.png"
+ },
+ {
+  "quadro": "EquipeNovaPrefeituraEscuro",
+  "titulo": "Equipe LicCONT · Nova prefeitura — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/equipe (nova prefeitura)",
+  "html": "html/EquipeNovaPrefeituraEscuro.html",
+  "png": "png/EquipeNovaPrefeituraEscuro.png"
+ },
+ {
+  "quadro": "EquipeNovaPrefeituraClaro",
+  "titulo": "Equipe LicCONT · Nova prefeitura — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/equipe (nova prefeitura)",
+  "html": "html/EquipeNovaPrefeituraClaro.html",
+  "png": "png/EquipeNovaPrefeituraClaro.png"
+ },
+ {
+  "quadro": "EquipePrefeituraDetalheEscuro",
+  "titulo": "Equipe LicCONT · Prefeitura e administradores — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/equipe (prefeitura)",
+  "html": "html/EquipePrefeituraDetalheEscuro.html",
+  "png": "png/EquipePrefeituraDetalheEscuro.png"
+ },
+ {
+  "quadro": "EquipePrefeituraDetalheClaro",
+  "titulo": "Equipe LicCONT · Prefeitura e administradores — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/equipe (prefeitura)",
+  "html": "html/EquipePrefeituraDetalheClaro.html",
+  "png": "png/EquipePrefeituraDetalheClaro.png"
+ },
+ {
+  "quadro": "SecretariasEscuro",
+  "titulo": "Secretarias da prefeitura — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/secretarias",
+  "html": "html/SecretariasEscuro.html",
+  "png": "png/SecretariasEscuro.png"
+ },
+ {
+  "quadro": "SecretariasClaro",
+  "titulo": "Secretarias da prefeitura — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/secretarias",
+  "html": "html/SecretariasClaro.html",
+  "png": "png/SecretariasClaro.png"
+ },
+ {
+  "quadro": "SecretariaNovaEscuro",
+  "titulo": "Nova secretaria — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/secretarias (nova)",
+  "html": "html/SecretariaNovaEscuro.html",
+  "png": "png/SecretariaNovaEscuro.png"
+ },
+ {
+  "quadro": "SecretariaNovaClaro",
+  "titulo": "Nova secretaria — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/secretarias (nova)",
+  "html": "html/SecretariaNovaClaro.html",
+  "png": "png/SecretariaNovaClaro.png"
+ },
+ {
+  "quadro": "RuaDetalheEscuro",
+  "titulo": "Detalhe da rua do galpão — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 970,
+  "rota": "/estrutura/rua/[id]",
+  "html": "html/RuaDetalheEscuro.html",
+  "png": "png/RuaDetalheEscuro.png"
+ },
+ {
+  "quadro": "RuaDetalheClaro",
+  "titulo": "Detalhe da rua do galpão — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 970,
+  "rota": "/estrutura/rua/[id]",
+  "html": "html/RuaDetalheClaro.html",
+  "png": "png/RuaDetalheClaro.png"
+ },
+ {
+  "quadro": "PdfViewerEscuro",
+  "titulo": "Visualizador de PDF — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/documentos/[id]/pdf",
+  "html": "html/PdfViewerEscuro.html",
+  "png": "png/PdfViewerEscuro.png"
+ },
+ {
+  "quadro": "PdfViewerClaro",
+  "titulo": "Visualizador de PDF — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/documentos/[id]/pdf",
+  "html": "html/PdfViewerClaro.html",
+  "png": "png/PdfViewerClaro.png"
+ },
+ {
+  "quadro": "ErroSessaoEscuro",
+  "titulo": "Erro · sessão expirada — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "sessão expirada",
+  "html": "html/ErroSessaoEscuro.html",
+  "png": "png/ErroSessaoEscuro.png"
+ },
+ {
+  "quadro": "ErroSessaoClaro",
+  "titulo": "Erro · sessão expirada — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "sessão expirada",
+  "html": "html/ErroSessaoClaro.html",
+  "png": "png/ErroSessaoClaro.png"
+ },
+ {
+  "quadro": "Erro404Escuro",
+  "titulo": "Erro · página não encontrada — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "not-found.tsx",
+  "html": "html/Erro404Escuro.html",
+  "png": "png/Erro404Escuro.png"
+ },
+ {
+  "quadro": "Erro404Claro",
+  "titulo": "Erro · página não encontrada — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "not-found.tsx",
+  "html": "html/Erro404Claro.html",
+  "png": "png/Erro404Claro.png"
+ },
+ {
+  "quadro": "Erro403Escuro",
+  "titulo": "Erro · sem permissão — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "sem permissão",
+  "html": "html/Erro403Escuro.html",
+  "png": "png/Erro403Escuro.png"
+ },
+ {
+  "quadro": "Erro403Claro",
+  "titulo": "Erro · sem permissão — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "sem permissão",
+  "html": "html/Erro403Claro.html",
+  "png": "png/Erro403Claro.png"
+ },
+ {
+  "quadro": "Erro500Escuro",
+  "titulo": "Erro · falha do sistema — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "error.tsx / global-error.tsx",
+  "html": "html/Erro500Escuro.html",
+  "png": "png/Erro500Escuro.png"
+ },
+ {
+  "quadro": "Erro500Claro",
+  "titulo": "Erro · falha do sistema — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "error.tsx / global-error.tsx",
+  "html": "html/Erro500Claro.html",
+  "png": "png/Erro500Claro.png"
+ },
+ {
+  "quadro": "MapaGirarOcupacaoEscuro",
+  "titulo": "Fase 4 · Mapa 3D com girar e ocupação — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 970,
+  "rota": "/mapa (girar + ocupação)",
+  "html": "html/MapaGirarOcupacaoEscuro.html",
+  "png": "png/MapaGirarOcupacaoEscuro.png"
+ },
+ {
+  "quadro": "MapaGirarOcupacaoClaro",
+  "titulo": "Fase 4 · Mapa 3D com girar e ocupação — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 970,
+  "rota": "/mapa (girar + ocupação)",
+  "html": "html/MapaGirarOcupacaoClaro.html",
+  "png": "png/MapaGirarOcupacaoClaro.png"
+ },
+ {
+  "quadro": "MapaMoverEscuro",
+  "titulo": "Fase 4 · Dentro da caixa: mover documentos — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa (dentro da caixa → mover)",
+  "html": "html/MapaMoverEscuro.html",
+  "png": "png/MapaMoverEscuro.png"
+ },
+ {
+  "quadro": "MapaMoverClaro",
+  "titulo": "Fase 4 · Dentro da caixa: mover documentos — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa (dentro da caixa → mover)",
+  "html": "html/MapaMoverClaro.html",
+  "png": "png/MapaMoverClaro.png"
+ },
+ {
+  "quadro": "EditorPlantaEscuro",
+  "titulo": "Fase 4 · Editor da planta — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa/editar",
+  "html": "html/EditorPlantaEscuro.html",
+  "png": "png/EditorPlantaEscuro.png"
+ },
+ {
+  "quadro": "EditorPlantaClaro",
+  "titulo": "Fase 4 · Editor da planta — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/mapa/editar",
+  "html": "html/EditorPlantaClaro.html",
+  "png": "png/EditorPlantaClaro.png"
+ }
+]

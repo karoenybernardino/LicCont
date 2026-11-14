@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Login — prefeitura</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif}
+button,textarea{font-family:inherit;cursor:pointer}
+a{color:inherit}
+input,select{font-family:'IBM Plex Sans',sans-serif}
+.sc::-webkit-scrollbar{width:6px}
+.sc::-webkit-scrollbar-thumb{background:#2dd4bf;border-radius:3px}
+:root{--ring:#2dd4bf;--glow:rgba(45,212,191,.32)}
+.hv,.hvr,.hvi,.hvp{transition:box-shadow .15s,border-color .15s}
+.hv:hover,.hv:focus,.hv:focus-visible,.hv.on{border-color:var(--ring)!important;box-shadow:0 0 0 1px var(--ring)}
+.hvr:hover,.hvr.on{box-shadow:inset 0 0 0 1.5px var(--ring)}
+.hvi:hover{box-shadow:0 0 0 1.5px var(--ring)}
+.hvp:hover{box-shadow:0 0 0 3px var(--glow)}
+.zb:nth-child(even){background:rgba(14,116,144,.035)}
+.card:hover,.card.on{border-color:var(--ring)!important;box-shadow:0 0 0 1px var(--ring),0 0 24px var(--glow)!important}
+</style>
+</helmet>
+<div style="min-height:820px;background:radial-gradient(900px 520px at 6% -8%,#0f5568 0%,rgba(15,85,104,0) 70%),radial-gradient(700px 400px at 100% 100%,#0b2e3a 0%,rgba(11,46,58,0) 70%),#05090b;color:#eef5f6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;box-sizing:border-box;gap:28px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="52" height="50" viewBox="0 0 66 64" aria-hidden="true"><g fill="#8cc5cf"><rect x="4" y="6" width="15" height="15" rx="3"/><rect x="22.5" y="6" width="15" height="15" rx="3"/><rect x="41" y="6" width="15" height="15" rx="3"/><rect x="4" y="24.5" width="15" height="15" rx="3"/><rect x="22.5" y="24.5" width="15" height="15" rx="3"/><rect x="4" y="43" width="15" height="15" rx="3"/><rect x="22.5" y="43" width="15" height="15" rx="3"/><rect x="41" y="43" width="15" height="15" rx="3"/></g><rect x="41" y="24.5" width="15" height="15" rx="3" fill="#285a66"/><rect x="47" y="21.5" width="15" height="15" rx="3" fill="#2dd4bf"/></svg>
+<div style="font-family:'Sora',sans-serif;font-size:34px;letter-spacing:1px;text-transform:uppercase;line-height:1"><span style="font-weight:300">Lic</span><span style="font-weight:700">Cont</span></div>
+<div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#9bb8bf">Arquivo de licitações e contratos</div></div>
+<form style="width:100%;max-width:400px;background:#0b1418;border:1px solid #1f3239;border-radius:14px;padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+<h1 style="margin:0;font-family:'Sora',sans-serif;font-weight:600;font-size:20px">Escolha a prefeitura</h1>
+<div style="font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:#9bb8bf;margin-top:-8px">Você entra no acervo da prefeitura escolhida.</div>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:#9bb8bf">Prefeitura</span><select class="hv" style="background:#070d10;border:1px solid #1f3239;border-radius:8px;min-height:48px;padding:0 14px;color:#eef5f6;font-size:15px;outline:0;box-sizing:border-box;width:100%;font-family:'IBM Plex Sans',sans-serif"><option>Prefeitura de Caririaçu</option><option>Prefeitura de Juazeiro do Norte</option></select></label>
+<button class="hvp" style="background:#2dd4bf;color:#0b2e3a;border:0;border-radius:8px;padding:0 20px;min-height:44px;font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;width:100%">Continuar</button>
+</form>
+<div style="font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:#9bb8bf;text-align:center;line-height:20px">Acesso restrito a servidores autorizados do órgão.<br>Cada ação fica registrada na auditoria.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
