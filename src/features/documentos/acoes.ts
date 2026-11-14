@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { clienteSessao } from "@/lib/supabase/servidor";
+import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -102,6 +102,17 @@ export type Envio =
   | { erro: string }
   | { arquivoId: string; urlPdf: string; urlMiniatura: string | null; limiteMb: number };
 
+// Envios sem conferência há mais de 1 hora: o banco marca "recusado" e o servidor apaga os objetos.
+async function limparEnviosAbandonados(usuarioId: string) {
+  const servico = clienteServico();
+  if (!servico) return;
+  const { data } = await servico.rpc("limpar_envios", { p_usuario: usuarioId });
+  const velhos = (data ?? []) as { caminho: string; miniatura: string }[];
+  if (!velhos.length) return;
+  await servico.storage.from("acervo").remove(velhos.map((v) => v.caminho));
+  await servico.storage.from("miniaturas").remove(velhos.map((v) => v.miniatura));
+}
+
 export async function iniciarEnvio(entrada: { documento: string; nome: string; tamanho: number; miniatura: boolean }): Promise<Envio> {
   const { usuario } = await exigirSessao();
   const dados = esquemaEnvio.safeParse(entrada);
@@ -116,6 +127,7 @@ export async function iniciarEnvio(entrada: { documento: string; nome: string; t
 
   const { data: doc } = await sb.from("documentos").select("secretaria_id").eq("id", dados.data.documento).maybeSingle();
   if (!doc) return { erro: "Você não tem permissão para esta ação." };
+  await limparEnviosAbandonados(usuario.id);
   const { data: arq, error } = await sb
     .from("arquivos")
     .insert({
@@ -194,7 +206,11 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
     motivo = "incompleto";
   }
   const res = motivo ? ({ ok: false, motivo } as const) : conf.fim();
-  const { error } = await sb.rpc("concluir_conferencia", {
+  // Só o servidor conclui (service_role): o hash e o tamanho saíram da leitura acima.
+  const servico = clienteServico();
+  if (!servico) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
+  const { error } = await servico.rpc("concluir_conferencia", {
+    p_usuario: usuario.id,
     p_arquivo: dados.data.arquivo,
     p_pronto: res.ok,
     p_sha256: res.ok ? res.sha256 : null,

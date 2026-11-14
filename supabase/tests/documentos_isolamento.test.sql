@@ -96,7 +96,7 @@ select ok(not has_column_privilege('authenticated', 'public.arquivos', 'situacao
 select ok(not has_column_privilege('authenticated', 'public.arquivos', 'caminho', 'insert'), 'caminho do arquivo é do banco');
 select ok(not has_function_privilege('anon', 'public.ocupacao_caixas(uuid[])', 'execute'), 'anon não vê ocupação');
 select ok(not has_function_privilege('anon', 'public.proxima_caixa_livre(uuid, uuid, uuid)', 'execute'), 'anon não pede próxima caixa');
-select ok(not has_function_privilege('anon', 'public.concluir_conferencia(uuid, boolean, text, bigint, int, text, text[], boolean)', 'execute'), 'anon não conclui conferência');
+select ok(not has_function_privilege('anon', 'public.concluir_conferencia(uuid, uuid, boolean, text, bigint, int, text, text[], boolean)', 'execute'), 'anon não conclui conferência');
 
 -- A chave composta amarra o arquivo ao documento, prefeitura e secretaria (mesmo como dono).
 select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
@@ -172,12 +172,31 @@ select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, do
   '42501', null, 'operador A não anexa na Saúde');
 select throws_ok($$update public.arquivos set situacao = 'pronto'$$, '42501', null, 'ninguém muda a situação do arquivo direto');
 select lives_ok($$select public.marcar_conferindo((select id from public.arquivos limit 1))$$, 'o próprio operador marca "conferindo"');
-select lives_ok($$select public.concluir_conferencia((select id from public.arquivos limit 1), true,
-  repeat('a', 64), 5000, 12, null, array['sem_pdfa'], true)$$, 'concluir conferência do próprio arquivo');
+select throws_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos limit 1), true,
+  repeat('a', 64), 5000, 12, null, '{}', false)$$, '42501', null, 'o operador não conclui a conferência direto (só o servidor)');
+-- O servidor (service_role) conclui depois de ler o PDF.
+reset role;
+set local role service_role;
+select lives_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos where situacao = 'conferindo'), true,
+  repeat('a', 64), 5000, 12, null, array['sem_pdfa'], true)$$, 'o servidor conclui a conferência');
+select throws_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos where situacao = 'pronto' limit 1), true,
+  repeat('a', 64), 5000, 12, null, '{}', false)$$, '42501', null, 'não conclui duas vezes');
+reset role;
+set local role authenticated;
 select results_eq($$select situacao, ativo, paginas from public.arquivos$$, $$values ('pronto'::text, true, 12)$$,
   'arquivo conferido fica pronto e ativo');
-select throws_ok($$select public.concluir_conferencia((select id from public.arquivos limit 1), true,
-  repeat('a', 64), 5000, 12, null, '{}', false)$$, '42501', null, 'não conclui duas vezes');
+
+select throws_ok($$select * from public.limpar_envios('0a000000-0000-0000-0000-000000000003')$$, '42501', null, 'o operador não limpa envios direto');
+reset role;
+set local role service_role;
+select is_empty($$select * from public.limpar_envios('0b000000-0000-0000-0000-000000000001')$$, 'envio recente não é limpo');
+reset role;
+update public.arquivos set enviado_em = now() - interval '2 hours' where id = 'f0b10000-0000-0000-0000-000000000000';
+set local role service_role;
+select results_eq($$select count(*)::int from public.limpar_envios('0b000000-0000-0000-0000-000000000001')$$, array[1], 'envio parado há 2 horas é limpo');
+select is_empty($$select * from public.limpar_envios('0b000000-0000-0000-0000-000000000001')$$, 'e só uma vez');
+reset role;
+set local role authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Ocupação e "próxima livre": só números, contando todas as secretarias

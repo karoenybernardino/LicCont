@@ -384,7 +384,7 @@ $$;
 -- conferindo -> pronto | recusado. Ao ficar pronto o arquivo vira o ativo
 -- do documento e o anterior deixa de ser (a troca é uma só transação).
 create or replace function public.concluir_conferencia(
-  p_arquivo uuid, p_pronto boolean, p_sha256 text, p_tamanho bigint, p_paginas int,
+  p_usuario uuid, p_arquivo uuid, p_pronto boolean, p_sha256 text, p_tamanho bigint, p_paginas int,
   p_motivo text, p_avisos text[], p_miniatura boolean)
 returns void
 language plpgsql
@@ -396,17 +396,16 @@ declare
   v_limite_mb int;
 begin
   select * into a from public.arquivos x
-  where x.id = p_arquivo and x.situacao = 'conferindo' and x.enviado_por = auth.uid()
-    and x.prefeitura_id = app.prefeitura_atual() and app.pode_cadastrar(x.secretaria_id)
+  where x.id = p_arquivo and x.situacao = 'conferindo' and x.enviado_por = p_usuario
   for update;
   if a.id is null then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
   -- Trava o documento: dois envios ao mesmo tempo não disputam o "ativo".
   perform 1 from public.documentos d where d.id = a.documento_id for update;
-  -- shortcut: o SHA-256, o tamanho e o formato vêm do servidor da aplicação (SQL não lê
-  -- o objeto; o dono desta função não enxerga storage.objects por RLS). Fechar a chamada
-  -- direta com um papel só do servidor antes de guardar PDF real.
+  -- Só o servidor da aplicação chama esta função (service_role): ele leu o PDF inteiro e
+  -- calculou o SHA-256, o tamanho e a verificação do formato. A pessoa já passou por
+  -- marcar_conferindo, que checa dono e permissão de cadastro.
   select p.limite_pdf_mb into v_limite_mb from public.prefeituras p where p.id = a.prefeitura_id;
   if p_pronto and p_tamanho > v_limite_mb::bigint * 1024 * 1024 then
     p_pronto := false;
@@ -431,10 +430,30 @@ begin
   end if;
 end
 $$;
-revoke execute on function public.marcar_conferindo(uuid),
-  public.concluir_conferencia(uuid, boolean, text, bigint, int, text, text[], boolean) from public, anon;
-grant execute on function public.marcar_conferindo(uuid),
-  public.concluir_conferencia(uuid, boolean, text, bigint, int, text, text[], boolean) to authenticated;
+revoke execute on function public.marcar_conferindo(uuid) from public, anon;
+grant execute on function public.marcar_conferindo(uuid) to authenticated;
+revoke execute on function public.concluir_conferencia(uuid, uuid, boolean, text, bigint, int, text, text[], boolean)
+  from public, anon, authenticated;
+grant execute on function public.concluir_conferencia(uuid, uuid, boolean, text, bigint, int, text, text[], boolean)
+  to service_role;
+
+-- Envios abandonados (sem conferência há mais de 1 hora) viram "recusado" e devolvem
+-- os caminhos para o servidor apagar os objetos do Storage. Chamada pelo servidor
+-- (service_role) quando a mesma pessoa inicia um envio novo.
+create or replace function public.limpar_envios(p_usuario uuid)
+returns table (caminho text, miniatura text)
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.arquivos a
+  set situacao = 'recusado', motivo_recusa = 'incompleto', conferido_em = now()
+  where a.enviado_por = p_usuario and a.situacao in ('enviando', 'conferindo')
+    and a.enviado_em < now() - interval '1 hour'
+  returning a.caminho, replace(a.caminho, '.pdf', '.webp');
+$$;
+revoke execute on function public.limpar_envios(uuid) from public, anon, authenticated;
+grant execute on function public.limpar_envios(uuid) to service_role;
 
 -- ---------------------------------------------------------------------------
 -- Ocupação das caixas e "próxima livre" (security definer: só números)

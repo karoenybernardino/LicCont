@@ -123,7 +123,11 @@ select is_empty($$select 1 from storage.objects where bucket_id = 'acervo'$$, 'o
 select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal1');
 select public.marcar_conferindo('f0a20000-0000-0000-0000-000000000000');
 select throws_ok($$delete from storage.objects where bucket_id = 'acervo'$$, null, null, 'em conferência o objeto não se apaga');
-select public.concluir_conferencia('f0a20000-0000-0000-0000-000000000000', true, repeat('b', 64), 100, 1, null, '{}', false);
+reset role;
+set local role service_role;
+select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', 'f0a20000-0000-0000-0000-000000000000', true, repeat('b', 64), 100, 1, null, '{}', false);
+reset role;
+set local role authenticated;
 select throws_ok($$delete from storage.objects where bucket_id = 'acervo'$$, null, null, 'arquivo pronto não se apaga');
 
 reset role;
