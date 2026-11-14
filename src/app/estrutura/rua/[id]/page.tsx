@@ -11,6 +11,7 @@ import { caixasDoNivel, carregarEstrutura, galpaoDaRua, podeCaixas } from "@/fea
 import { LIMITES } from "@/features/estrutura/esquemas";
 import { codigoPosicao, numeroBR, percentual, resumir } from "@/features/estrutura/ocupacao";
 import { BotaoAcao } from "@/features/estrutura/botao-acao";
+import { LegendaFrente, VistaFrente } from "@/features/estrutura/vista-frente";
 import {
   BarraOcupacao,
   Painel,
@@ -52,6 +53,7 @@ export default async function RuaDoGalpao({
   const moduloDoNivel = nivel && modulos.find((m) => m.id === nivel.moduloId);
   const caixas = nivel ? await caixasDoNivel(nivel.id) : [];
   const resumo = resumir(e, rua.id);
+  const caixasPorNivel = new Map(await Promise.all(niveisDaRua.map(async (n) => [n.id, await caixasDoNivel(n.id)] as const)));
 
   return (
     <PaginaSistema
@@ -67,7 +69,16 @@ export default async function RuaDoGalpao({
       }
     >
       <Painel>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <span aria-hidden className="flex size-[52px] items-center justify-center rounded-[14px] bg-[linear-gradient(145deg,#5eead4,#0e7490)] font-mono text-[22px] font-medium text-white">
+              {rua.codigo}
+            </span>
+            <div>
+              <div className="font-titulo text-xl font-bold">Rua {rua.codigo}</div>
+              <div className="text-[13px] text-texto-suave">{e.galpao?.nome ?? "Galpão"}</div>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-4">
             <Dado rotulo="Módulos" valor={resumo.modulos} />
             <Dado rotulo="Níveis" valor={resumo.niveis} />
@@ -86,6 +97,14 @@ export default async function RuaDoGalpao({
           )}
         </div>
         {!rua.ativo && <p className="text-sm text-texto-suave">Esta rua está desativada.</p>}
+      </Painel>
+
+      <Painel>
+        <Rotulo>Vista de frente · clique numa caixa</Rotulo>
+        <div className="rounded-xl border border-linha bg-white/40 px-2.5 pt-3.5 pb-2 dark:bg-white/[.02]">
+          <VistaFrente rua={rua.codigo} ruaId={rua.id} modulos={modulos} niveis={niveisDaRua} caixas={caixasPorNivel} selecionado={nivel?.id} />
+        </div>
+        <LegendaFrente />
       </Painel>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1.5fr_1fr]">
