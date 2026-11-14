@@ -109,6 +109,11 @@ export async function PainelDocumento({ doc, usuario, inteiro = false }: { doc: 
           </Link>
         )}
         {gere && <BotoesGestao documentoId={doc.id} conferido={doc.conferido} ativo={doc.ativo} />}
+        {doc.caixaId && (
+          <Link href={`/mapa?caixa=${doc.caixaId}&doc=${doc.id}`} className={classeBotao}>
+            Ir para o mapa 3D
+          </Link>
+        )}
         {!inteiro && (
           <Link href={`/documentos/${doc.id}`} className={classeBotao}>
             Abrir em tela inteira

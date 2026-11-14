@@ -67,3 +67,16 @@ select '5eed0000-0000-0000-0000-000000000002', sec.id, cx.id, 'licitacao', 'disp
 from generate_series(1, 6) g
 join sec on sec.rn = 1 + g % 2
 join cx on cx.rn = 1 + g % (select count(*) from cx);
+
+-- Planta fictícia (Fase 4): galpão de 14 x 8 células, entrada na frente, duas
+-- ruas posicionadas, um pilar e uma porta lateral.
+update public.galpoes set planta_largura = 14, planta_profundidade = 8,
+  entrada_lado = 'frente', entrada_posicao = 2
+where id = '5eed1000-0000-0000-0000-000000000001';
+update public.ruas set planta_x = 2, planta_y = 1, planta_giro = 0
+where id = '5eed2000-0000-0000-0000-000000000001';
+update public.ruas set planta_x = 2, planta_y = 4, planta_giro = 0
+where id = '5eed2000-0000-0000-0000-000000000002';
+insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, rotulo, x, y, largura, profundidade) values
+  ('5eed0000-0000-0000-0000-000000000001', '5eed1000-0000-0000-0000-000000000001', 'pilar', null, 8, 3, 1, 1),
+  ('5eed0000-0000-0000-0000-000000000001', '5eed1000-0000-0000-0000-000000000001', 'porta', 'Porta lateral', 13, 4, 1, 2);

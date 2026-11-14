@@ -13,6 +13,8 @@ export type DocumentoDemo = ItemPesquisa & {
 };
 
 const SEC = Object.fromEntries(SECRETARIAS_DEMO.map((s) => [s.nome, s.id])) as Record<string, string>;
+// Capacidade de documentos de cada caixa da demonstração (como no canvas: "de 20").
+export const CAPACIDADE_CAIXA_DEMO = 20;
 export const idDocumentoDemo = (n: number) => `de500000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 
 // Caixa da demonstração: mesma conta dos níveis (de3X...), prefixo de4.
@@ -42,6 +44,24 @@ const CANVAS: Linha[] = [
   ["licitacao", "dispensa", "027/2021", 2021, "Administração", "Serviço de dedetização", "Higiene Total Fictícia", 7800, "concluida", "D-M5-N4-C04", "", ""],
 ];
 
+// A caixa do canvas (B-M3-N3-C02) tem 14 documentos: o primeiro é o da linha
+// acima e estes são os outros 13, de várias secretarias (o operador vê parte).
+const CAIXA_DO_CANVAS: Linha[] = [
+  ["licitacao", "pregao_eletronico", "016/2023", 2023, "Saúde", "Aquisição de materiais odontológicos", "OdontoVida Fictícia", 21800, "concluida", "B-M3-N3-C02", "", ""],
+  ["licitacao", "dispensa", "021/2023", 2023, "Saúde", "Manutenção de equipamentos de imagem", "ImagemMed Fictícia", 9600, "concluida", "B-M3-N3-C02", "", ""],
+  ["contrato", null, "012/2023", 2023, "Saúde", "Locação de ambulâncias", "Resgate Fictícia Ltda.", 188000, "vigente", "B-M3-N3-C02", "2023-02-01", "2028-01-31"],
+  ["licitacao", "concorrencia", "004/2023", 2023, "Saúde", "Reforma do pronto atendimento", "Obra Certa Fictícia", 640000, "concluida", "B-M3-N3-C02", "", ""],
+  ["licitacao", "pregao_eletronico", "030/2023", 2023, "Educação", "Aquisição de carteiras escolares", "Móveis Escolares Fictícia", 54000, "concluida", "B-M3-N3-C02", "", ""],
+  ["licitacao", "pregao_eletronico", "031/2023", 2023, "Educação", "Fornecimento de livros didáticos", "Livraria Central Fictícia", 132000, "concluida", "B-M3-N3-C02", "", ""],
+  ["contrato", null, "019/2023", 2023, "Educação", "Transporte escolar rural", "Via Escolar Fictícia", 310000, "vigente", "B-M3-N3-C02", "2023-02-15", "2026-12-31"],
+  ["licitacao", "dispensa", "035/2023", 2023, "Educação", "Aquisição de material esportivo", null, 6400, "concluida", "B-M3-N3-C02", "", ""],
+  ["licitacao", "concorrencia", "009/2023", 2023, "Educação", "Construção de creche", "Construtora Beta Fictícia", 1250000, "em_andamento", "B-M3-N3-C02", "", ""],
+  ["licitacao", "tomada_de_precos", "007/2023", 2023, "Obras", "Pavimentação da avenida central", "Asfalto Sul Fictícia", 480000, "concluida", "B-M3-N3-C02", "", ""],
+  ["contrato", null, "022/2023", 2023, "Obras", "Manutenção de praças", "Jardim Vivo Fictícia", 72000, "vigente", "B-M3-N3-C02", "2023-04-01", "2027-03-31"],
+  ["licitacao", "pregao_eletronico", "040/2023", 2023, "Administração", "Aquisição de papel e toner", "Papelaria Central Fictícia", 15600, "concluida", "B-M3-N3-C02", "", ""],
+  ["licitacao", "dispensa", "041/2023", 2023, "Administração", "Serviço de chaveiro", null, 2300, "concluida", "B-M3-N3-C02", "", ""],
+];
+
 const OBJETOS = [
   "Aquisição de medicamentos", "Pavimentação de vias urbanas", "Fornecimento de merenda escolar", "Locação de veículos",
   "Serviço de limpeza urbana", "Aquisição de computadores", "Reforma de unidade de saúde", "Manutenção de iluminação pública",
@@ -56,7 +76,7 @@ function posicao(i: number) {
 }
 
 function montar(): DocumentoDemo[] {
-  const linhas: Linha[] = [...CANVAS];
+  const linhas: Linha[] = [...CANVAS, ...CAIXA_DO_CANVAS];
   for (let i = 0; i < 35; i++) {
     const contrato = i % 4 === 3;
     const ano = 2012 + ((i * 5) % 14);

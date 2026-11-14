@@ -14,7 +14,7 @@ const PAGINA = 1000; // limite de linhas por resposta da Data API
 
 // Busca todas as páginas de uma consulta (galpão grande passa de 1000 níveis).
 // Falha no meio não vira ocupação errada em silêncio: a página mostra erro.
-async function todas<T>(buscar: (de: number, ate: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
+export async function todas<T>(buscar: (de: number, ate: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const linhas: T[] = [];
   for (let de = 0; ; de += PAGINA) {
     const { data, error } = await buscar(de, de + PAGINA - 1);

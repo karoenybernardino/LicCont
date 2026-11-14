@@ -138,6 +138,11 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
         <section aria-label="Resultados" className="overflow-hidden rounded-[14px] border border-linha bg-superficie">
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] text-texto-suave">
             <span><b className="font-semibold text-texto">{r.total}</b> resultados</span>
+            {r.itens.length > 0 && (
+              <Link href={`/mapa?codigos=${r.itens.slice(0, 50).map((i) => i.codigo).join(",")}`} className="rounded-lg border border-linha px-2.5 py-1 text-xs hover:border-destaque focus-visible:outline-2 focus-visible:outline-foco">
+                Ver no mapa 3D
+              </Link>
+            )}
             <nav aria-label="Ordem" className="flex gap-1.5">
               {([["recentes", "Mais recentes"], ["antigos", "Mais antigos"], ["maior_valor", "Maior valor"]] as const).map(([k, nome]) => (
                 <Link key={k} href={`/pesquisa?${base({ ordem: k })}`} aria-current={f.ordem === k ? "true" : undefined} className={`rounded-lg border px-2.5 py-1 text-xs focus-visible:outline-2 focus-visible:outline-foco ${f.ordem === k ? "border-destaque text-texto" : "border-linha"}`}>

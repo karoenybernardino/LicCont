@@ -12,7 +12,7 @@ const PRINCIPAIS: ItemMenu[] = [
   { href: "/inicio", rotulo: "Início", icone: "inicio" },
   { href: "/pesquisa", rotulo: "Pesquisa", icone: "pesquisa", prefixos: ["/documentos/"] },
   { href: "/estrutura", rotulo: "Estrutura física", icone: "estrutura" },
-  { rotulo: "Mapa 3D", icone: "mapa" },
+  { href: "/mapa", rotulo: "Mapa 3D", icone: "mapa" },
   { rotulo: "Empréstimos", icone: "emprestimos" },
   { rotulo: "Temporalidade", icone: "temporalidade" },
   { rotulo: "Auditoria", icone: "auditoria" },
