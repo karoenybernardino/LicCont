@@ -17,10 +17,10 @@ Segue `docs/plano-de-desenvolvimento.md`:
 
 Telas de referência: canvas "LicCONT — Telas do sistema", quadros **Mapa 3D**
 (claro e escuro), **Mapa — planta baixa** (claro e escuro) e **Detalhe da rua
-do galpão** (claro e escuro). As telas devem ficar **iguais ao canvas**
-(decisão 12, seção "Fidelidade ao canvas"). O que esta fase acrescenta e o
-canvas ainda não tem (editor da planta, girar, ocupação, mover em lote) é
-desenhado no canvas **antes** do código (tarefa 0).
+do galpão** (claro e escuro), e os quadros desenhados para esta fase (claro
+e escuro): **Fase 4 · Mapa 3D com girar e ocupação**, **Fase 4 · Dentro da
+caixa: mover documentos** e **Fase 4 · Editor da planta**. As telas devem
+ficar **iguais ao canvas** (decisão 12, seção "Fidelidade ao canvas").
 
 ## Por quê
 
@@ -69,26 +69,39 @@ abre a caixa, e o documento emprestado aparece como tal no mapa.
    SELECIONADA", e o painel abre. "Voltar ao documento" aparece só quando se
    chegou por um documento.
 3. **Girar**: arrastar com o botão direito (ou dois dedos no celular) gira a
-   vista; os botões ↺ e ↻ giram 90° com animação; "Centralizar" volta ao
-   ângulo do canvas. A caixa selecionada continua selecionada e visível.
+   vista; os botões "Girar 90° para a esquerda" e "Girar 90° para a
+   direita" giram com animação; o indicador "Ângulo 0°" mostra o ângulo;
+   "Centralizar" volta ao ângulo do canvas. A caixa selecionada continua
+   selecionada e visível.
 4. **Ocupação**: "Mostrar ocupação" pinta cada caixa pela faixa de
    ocupação (abaixo de 50%, 50% a 89%, 90% a 100%, acima de 100%, os mesmos
    cortes do cadastro da Fase 3), com legenda em texto. A planta pinta cada
    módulo pela média. Desligar volta às cores do canvas.
-5. **Editor da planta** (`/mapa/editar`, administrador e coordenador):
+5. **Editor da planta** (`/mapa/editar`, administrador e coordenador),
+   como o quadro "Fase 4 · Editor da planta":
    - define o tamanho do galpão (em células de módulo), arrasta cada rua,
-     gira 90°, marca a entrada e coloca portas, pilares, paredes e áreas;
-   - recusa rua sobreposta a outra ou fora das paredes, com mensagem fixa;
+     gira 90°, marca a entrada (lado e posição) e coloca portas, pilares,
+     paredes e áreas com nome;
+   - mostra "N alterações não salvas", Desfazer, Refazer, "Descartar" e
+     "Salvar planta";
+   - rua fora das paredes ou sobreposta aparece como "Passa da parede", com
+     o aviso "Rua D passa da parede. Arraste para dentro do galpão ou gire
+     90° para salvar.", e "Salvar planta" é recusado (na tela e no
+     servidor);
    - salva, e o 3D e a planta passam a usar as posições salvas;
    - rua sem posição salva cai no desenho automático (ruas lado a lado na
      ordem do código, entrada na frente);
    - Operador e Consulta não abrem o editor e são recusados no servidor.
-6. **Mover em lote**: no painel "Dentro da caixa", quem pode cadastrar
-   marca documentos, escolhe "Mover N documentos", aponta a caixa destino
-   (clicando no mapa ou pelas listas Rua → Módulo → Nível → Caixa, com
-   "Próxima livre") e confirma. Todos mudam ou nenhum muda. Cada documento
-   movido entra na auditoria. Caixa destino cheia avisa e deixa (regra 5 da
-   Fase 3).
+6. **Mover em lote**, como o quadro "Fase 4 · Dentro da caixa: mover
+   documentos": no painel, quem pode cadastrar marca documentos ("Marcar
+   todos", "3 marcados") e escolhe "Mover 3 documentos". A janela "Mover
+   documentos" mostra De e Para, as listas Rua → Módulo → Nível → Caixa com
+   "Próxima livre" (ou clique numa caixa no mapa), a "Ocupação da caixa
+   destino" ("9 → 12 de 20"), os documentos marcados, o texto "Todos mudam
+   ou nenhum muda. Cada documento movido fica registrado na auditoria, com
+   a caixa de antes e a de depois.", "Cancelar" e "Mover 3 documentos".
+   Todos mudam ou nenhum muda. Caixa destino cheia avisa e deixa (regra 5
+   da Fase 3).
 7. **pgTAP — isolamento e regras do banco** (tudo o que esta fase cria, ver
    "Modelo de dados"):
    - `planta_elementos` (`supabase/tests/planta_isolamento.test.sql`):
@@ -298,8 +311,13 @@ Colunas novas (só adicionam, todas opcionais; vazio = desenho automático):
 | `galpoes` | `planta_largura`, `planta_profundidade` | `smallint`, de 4 a 200 células |
 | `galpoes` | `entrada_lado` | `frente`, `fundo`, `esquerda`, `direita` |
 | `galpoes` | `entrada_posicao` | `smallint`, célula onde a entrada começa |
-| `ruas` | `planta_x`, `planta_y` | `smallint`, de 0 a 199: canto da rua na grade |
+| `ruas` | `planta_x`, `planta_y` | `smallint`, de 0 a 199: canto da rua na grade (Coluna x, Linha y no editor) |
 | `ruas` | `planta_giro` | `smallint`, só 0, 90, 180 ou 270 |
+
+Uma rua ocupa **módulos × 2 células** (como o quadro mostra: "7 módulos",
+"Tamanho 7 × 2 células"); girada 90°, 2 × módulos. No editor, cada rua tem
+um estado: "Posicionada" (tem posição salva), "Automática" (sem posição,
+desenho automático) ou "Passa da parede".
 
 - GRANT de UPDATE nessas colunas a `authenticated`. Hoje a política de
   UPDATE de `galpoes` e `ruas` aceita só o administrador. O coordenador
@@ -441,9 +459,15 @@ Reutiliza `carregarEstrutura()`, `codigoPosicao`, `VistaFrente`, `Painel`,
 "Mapa 3D" da barra lateral (`src/features/sessao/pagina.tsx`) ganha o link
 `/mapa` e deixa de estar "em breve".
 
-- **Mapa 3D** (`/mapa`, todos os perfis da prefeitura). Igual ao quadro do
-  canvas (ver "Fidelidade ao canvas"), mais os controles da tarefa 0 (↺,
-  ↻, "Mostrar ocupação", "Ver em lista").
+- **Mapa 3D** (`/mapa`, todos os perfis da prefeitura). Igual ao quadro
+  "Fase 4 · Mapa 3D com girar e ocupação" (que segue o quadro "Mapa 3D"
+  original): busca, "Voltar ao documento", "Perspectiva | Planta |
+  Corredor", "Mostrar ocupação", "Ver em lista", +, −, "Centralizar", os
+  dois botões de girar, "Ângulo 0°", a dica "Arraste para andar · botão
+  direito ou dois dedos para girar · roda do mouse para zoom", e a legenda
+  (Caixa selecionada, Caixa-arquivo guardada, Estante de aço, Faixa de
+  segurança; com a ocupação ligada, "Ocupação da caixa": Abaixo de 50%, 50%
+  a 89%, 90% a 100%, Acima de 100%).
 - **Planta baixa** (`/mapa?vista=planta`). Igual ao quadro do canvas: botão
   "Perspectiva | Planta | Corredor", ruas como faixas, módulos como
   quadrados de 52 px (com caixas: degradê; sem caixa: "Posição livre"
@@ -453,8 +477,18 @@ Reutiliza `carregarEstrutura()`, `codigoPosicao`, `VistaFrente`, `Painel`,
 - **Corredor** (`/mapa?vista=corredor`): a vista de frente da rua da caixa
   escolhida (a `VistaFrente` da Fase 2), com a caixa em laranja. É o
   terceiro botão do quadro da planta.
-- **Editor da planta** (`/mapa/editar`, administrador e coordenador): como
-  o quadro novo da tarefa 0.
+- **Editor da planta** (`/mapa/editar`, administrador e coordenador). Igual
+  ao quadro "Fase 4 · Editor da planta": trilha "Mapa do galpão › Editar
+  planta"; grade de três colunas (`230px minmax(0,1fr) 260px`); à esquerda,
+  "Tamanho do galpão" (Largura, Profundidade, "Medidas em células. 1 célula
+  = largura de um módulo de estante."), "Entrada" (Lado, Posição) e
+  "Ferramentas" (Selecionar e arrastar, Porta, Pilar, Parede, Área com
+  nome); no meio, a grade com régua em células, "ENTRADA", as ruas e as
+  áreas, a dica "Arraste as ruas na grade · clique no ícone laranja para
+  girar · Delete remove o elemento" e o aviso de rua fora; à direita,
+  "Selecionado" (Coluna x, Linha y, Giro 0°/90°/180°/270°, Módulos "da
+  estrutura", Tamanho, Caixas, "Girar 90°") e a lista "Ruas" com o estado
+  de cada uma.
 - **Detalhe da rua** (`/estrutura/rua/[id]`): ganha o que o quadro do
   canvas mostra e ainda falta: trilha "Mapa do galpão › Rua B", "Voltar ao
   mapa" e "Frente | Planta | 3D". Clicar numa caixa abre o painel "Dentro
@@ -533,7 +567,9 @@ O responsável quer as telas **iguais ao que foi desenhado**. Regras:
 5. **Diferenças inevitáveis**, listadas no PR com o motivo: "Voltar ao
    documento" só aparece quando se chegou por um documento; o 3D é
    iluminado pelo three.js (no ângulo do canvas, os tons das faces batem,
-   mas a sombra de contato é nova); controles novos da tarefa 0.
+   mas a sombra de contato é nova). Os quadros da Fase 4 valem sobre os
+   originais onde os dois mostram a mesma tela (por exemplo, a dica e os
+   botões do Mapa 3D).
 6. **Prova**: o PR traz capturas do Playwright de cada tela (1280×880,
    claro e escuro) ao lado da captura do quadro do canvas, e o
    `revisor-design` confere a lista acima item a item antes do PR.
@@ -567,7 +603,7 @@ tarefa, na ordem abaixo. Cada tarefa começa pelo teste que falha.
 
 | # | Entrega | Como provar |
 | --- | --- | --- |
-| 0 | **Canvas primeiro**: quadros novos no canvas "LicCONT — Telas do sistema", claro e escuro: "Editor da planta"; o Mapa 3D com ↺, ↻, "Mostrar ocupação", "Ver em lista" e a legenda da ocupação; o painel "Dentro da caixa" com as caixas de marcar e a confirmação "Mover documentos". **Aprovação do responsável antes de seguir.** | Link dos quadros no PR |
+| 0 | **Canvas primeiro**: quadros "Fase 4 · Mapa 3D com girar e ocupação", "Fase 4 · Dentro da caixa: mover documentos" e "Fase 4 · Editor da planta", claro e escuro. **Feito pelo responsável em 2026-11-14.** | Quadros no canvas |
 | 1 | Migração: colunas da planta, `app.planta_confere()`, políticas de UPDATE, `planta_elementos`, `ocupacao_galpao`, `mover_documentos`, auditoria, `seed.sql` com planta fictícia | pgTAP do critério 7; `EXPLAIN ANALYZE` no PR |
 | 2 | `geometria.ts`, `codigo.ts`, `url.ts`, `cores.ts`, `ocupacao.ts`, gerador do galpão grande | Vitest do critério 10 e do leiaute do critério 8 |
 | 3 | Dependências e decisão 0008; `/mapa` com o 3D (instâncias, câmera, giro, ir até, seleção), painel, lista, teclado, ocupação, fallback sem WebGL, menu, demonstração | Playwright: clicar mostra os documentos, giro, ocupação, isolamento, teclado, axe |
@@ -593,12 +629,9 @@ começar. No fechamento, a seção "Resultado" é preenchida neste arquivo.
 | Política de UPDATE de `galpoes`/`ruas` aberta ao coordenador | Coordenador renomeando galpão ou desativando rua | Gatilho `app.planta_confere()` e pgTAP |
 | Movimento em lote grande travando o banco | Lentidão | Limite de 200 por vez |
 | Editor salvo e depois a rua ganha módulos | Rua passando da parede | Aviso no mapa e no editor; o banco não bloqueia |
-| Quadros novos do canvas atrasando o código | Fase mais longa | Tarefa 0 é curta e libera as outras; as tarefas 1 e 2 não dependem dela |
 
 ## O que você precisa fazer
 
-- **Aprovar os quadros novos do canvas** (tarefa 0) antes do código das
-  telas novas.
 - **Nenhuma chave nova.** A migração é aplicada pelo CI no merge (decisão
   0005). Se alguma tarefa descobrir que falta algo, o PR lista o que é e
   onde colar. Nunca no chat.
@@ -639,7 +672,7 @@ Em 2026-11-14 o responsável respondeu:
 | 9 | **Os dois** | No celular, 3D e planta disponíveis; abre no 3D e lembra a última escolha. (Interpretação: se "os dois" quis dizer as duas vistas ao mesmo tempo, uma acima da outra, o responsável avisa no PR.) |
 | 10 | Aprovada | `?galpao=grande` na demonstração. |
 | 11 | Aprovada | Seletor de galpão. |
-| 12 | **Conferir tudo; o canvas igual ao desenhado** | Seção "Fidelidade ao canvas", tarefa 0 (quadros novos antes do código) e tarefa 8 (capturas lado a lado). |
+| 12 | **Conferir tudo; o canvas igual ao desenhado** | Seção "Fidelidade ao canvas", quadros da Fase 4 já desenhados pelo responsável (tarefa 0) e tarefa 8 (capturas lado a lado). |
 | — | **Não descartar three.js / react-three-fiber**: "quero um 3D bonito e que funcione" | O 3D passa a ser three.js + react-three-fiber + drei (decisão 0008 no PR da implementação). SVG fica para a planta baixa e para o fallback sem WebGL. |
 
 ## Resultado
