@@ -207,6 +207,7 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
   if (error) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
   if (!res.ok) {
     await sb.storage.from("acervo").remove([arq.caminho as string]);
+    await sb.storage.from("miniaturas").remove([(arq.caminho as string).replace(/\.pdf$/, ".webp")]);
     return { ok: false, erro: MOTIVOS[res.motivo] };
   }
   atualizar();
@@ -224,7 +225,7 @@ export async function linkDoPdf(documentoId: string, baixar: boolean): Promise<{
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
   const { data: arq } = await sb
     .from("arquivos")
-    .select("caminho, nome_original")
+    .select("id, caminho, nome_original")
     .eq("documento_id", documentoId)
     .eq("ativo", true)
     .eq("situacao", "pronto")
@@ -234,6 +235,8 @@ export async function linkDoPdf(documentoId: string, baixar: boolean): Promise<{
     .from("acervo")
     .createSignedUrl(arq.caminho as string, 300, baixar ? { download: arq.nome_original as string } : undefined);
   if (error || !data) return { erro: MENSAGEM_INDISPONIVEL };
+  // Trilha de acesso: quem abriu ou baixou (só o id do arquivo, nunca o nome).
+  await sb.rpc("registrar_auditoria", { p_acao: baixar ? "arquivos.baixar" : "arquivos.ver", p_alvo_tabela: "arquivos", p_alvo_id: arq.id as string });
   return { url: data.signedUrl };
 }
 

@@ -410,7 +410,7 @@ até o passo 4 terminar.
 
 O pdf.js e o tus-js-client (se o envio retomável funcionar) rodam no
 navegador e não enviam dado a ninguém. Não são suboperadores, mas entram
-como dependência nova pela decisão 0004 (registro em `docs/decisoes/`).
+como dependência nova pela decisão 0007 (registro em `docs/decisoes/`).
 O pdf.js também pede ajuste na CSP (`worker-src` do próprio site e
 `connect-src` para o Storage), feito no PR do visualizador.
 
@@ -543,7 +543,7 @@ canvas, no claro e no escuro.
 | 3 | `fase-3/cadastro` | Tela Cadastrar e editar (sem PDF), listas dependentes da caixa, ocupação, "Próxima livre", conferir, desativar, menu, demonstração | Vitest (esquemas, título). Playwright: o operador cadastra e edita; Consulta é recusada no servidor; axe. |
 | 4 | `fase-3/pesquisa` | Tela Pesquisa com busca, abas, filtros, URL, painel do documento, lista paginada, demonstração | Vitest (filtros). Playwright: filtros, contagens, Limpar, link copiado, Obras não acha a Saúde; axe. |
 | 5 | `fase-3/envio-pdf` | Envio direto ao Storage, avisos no navegador, conferência no servidor (hash, marcas, senha), miniatura, "Trocar", "Enviar de novo" | Vitest (conferência). Playwright: PDF fictício aceito com miniatura; `.pdf` falso recusado; PDF com senha recusado. |
-| 6 | `fase-3/visualizador` | Visualizador pdf.js por partes, "Baixar original", CSP, registro das dependências (decisão 0004) | Playwright: abre a página 2, aplica zoom; o download tem o mesmo SHA-256; axe. |
+| 6 | `fase-3/visualizador` | Visualizador pdf.js por partes, "Baixar original", CSP, registro das dependências (decisão 0007) | Playwright: abre a página 2, aplica zoom; o download tem o mesmo SHA-256; axe. |
 
 Cada tarefa:
 

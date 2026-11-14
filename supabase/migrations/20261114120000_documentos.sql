@@ -230,7 +230,6 @@ begin
 end
 $$;
 revoke execute on function app.documento_confere() from public;
-grant execute on function app.documento_confere() to authenticated;
 create trigger a_documentos_confere before insert or update on public.documentos
   for each row execute function app.documento_confere();
 
@@ -246,9 +245,17 @@ begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'authenticated' then
     return new;
   end if;
-  if (new.conferido_em is distinct from old.conferido_em or new.ativo is distinct from old.ativo)
+  if ((new.conferido_em is distinct from old.conferido_em and new.conferido_em is not null)
+      or new.ativo is distinct from old.ativo)
      and not app.eh_coordenador_de(new.secretaria_id) then
     raise exception 'sem permissão' using errcode = '42501';
+  end if;
+  -- Quem não é coordenador e muda o conteúdo desfaz a conferência.
+  if old.conferido_em is not null and new.conferido_em is not distinct from old.conferido_em
+     and not app.eh_coordenador_de(new.secretaria_id)
+     and to_jsonb(new) - array['atualizado_em','conferido_em','conferido_por','ativo','texto_busca']
+         is distinct from to_jsonb(old) - array['atualizado_em','conferido_em','conferido_por','ativo','texto_busca'] then
+    new.conferido_em := null;
   end if;
   if new.conferido_em is distinct from old.conferido_em then
     new.conferido_em := case when new.conferido_em is null then null else now() end;
@@ -260,7 +267,6 @@ begin
 end
 $$;
 revoke execute on function app.documento_conferir() from public;
-grant execute on function app.documento_conferir() to authenticated;
 create trigger documentos_conferir before update on public.documentos
   for each row execute function app.documento_conferir();
 
@@ -368,7 +374,7 @@ as $$
 begin
   update public.arquivos a set situacao = 'conferindo'
   where a.id = p_arquivo and a.situacao = 'enviando' and a.enviado_por = auth.uid()
-    and a.prefeitura_id = app.prefeitura_atual();
+    and a.prefeitura_id = app.prefeitura_atual() and app.pode_cadastrar(a.secretaria_id);
   if not found then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
@@ -391,10 +397,23 @@ declare
 begin
   select * into a from public.arquivos x
   where x.id = p_arquivo and x.situacao = 'conferindo' and x.enviado_por = auth.uid()
-    and x.prefeitura_id = app.prefeitura_atual()
+    and x.prefeitura_id = app.prefeitura_atual() and app.pode_cadastrar(x.secretaria_id)
   for update;
   if a.id is null then
     raise exception 'sem permissão' using errcode = '42501';
+  end if;
+  -- Trava o documento: dois envios ao mesmo tempo não disputam o "ativo".
+  perform 1 from public.documentos d where d.id = a.documento_id for update;
+  -- O objeto precisa existir no Storage; o tamanho vale o que o Storage registrou.
+  -- shortcut: o SHA-256 e o formato vêm do servidor da aplicação (não dá para
+  -- conferir em SQL); fechar a chamada direta com papel próprio quando houver 2º serviço.
+  if p_pronto then
+    select coalesce((o.metadata ->> 'size')::bigint, p_tamanho) into p_tamanho
+    from storage.objects o where o.bucket_id = 'acervo' and o.name = a.caminho;
+    if not found then
+      p_pronto := false;
+      p_motivo := 'corrompido';
+    end if;
   end if;
   select p.limite_pdf_mb into v_limite_mb from public.prefeituras p where p.id = a.prefeitura_id;
   if p_pronto and p_tamanho > v_limite_mb::bigint * 1024 * 1024 then
@@ -403,6 +422,10 @@ begin
   end if;
   if p_pronto then
     update public.arquivos set ativo = false where documento_id = a.documento_id and ativo;
+    -- PDF novo no lugar de outro: a conferência anterior não vale mais.
+    update public.documentos set conferido_em = null, conferido_por = null
+    where id = a.documento_id and conferido_em is not null
+      and exists (select 1 from public.arquivos z where z.documento_id = a.documento_id and z.situacao = 'pronto');
     update public.arquivos set
       situacao = 'pronto', ativo = true, sha256 = p_sha256, tamanho = p_tamanho,
       paginas = p_paginas, avisos = coalesce(p_avisos, '{}'), conferido_em = now(),

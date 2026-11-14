@@ -25,7 +25,7 @@ function politica(nonce: string) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${storage()}`,
     "font-src 'self'",
     // Envio e leitura do PDF vão direto ao Storage (links assinados); o pdf.js
     // roda num worker do próprio site.
