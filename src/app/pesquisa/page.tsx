@@ -7,6 +7,7 @@ import { PaginaSistema } from "@/features/sessao/pagina";
 import { cursorDoBanco, obterDocumento, pesquisar } from "@/features/documentos/dados";
 import { esquemaId } from "@/features/documentos/esquemas";
 import { FAIXAS_VALOR, faixaDeValor, lerFiltros, paraQuery, filtrosAtivos, type Aba, type Filtros } from "@/features/documentos/filtros";
+import { EscolhaCompacta } from "@/features/documentos/escolha-compacta";
 import { PainelDocumento, tomSituacao } from "@/features/documentos/painel";
 import { MODALIDADES, SITUACOES, SITUACOES_CONTRATO } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
@@ -67,6 +68,8 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
   const pedido = typeof params.doc === "string" && esquemaId.safeParse({ id: params.doc }).success ? params.doc : null;
   // Como no quadro: sem documento escolhido, o primeiro da lista já aparece no detalhe.
   const idDoc = pedido ?? r.itens[0]?.id ?? null;
+  // Com um documento escolhido, a coluna da esquerda fica compacta (quadro "painel do documento").
+  const compacto = pedido !== null;
   const doc = idDoc ? await obterDocumento(idDoc) : null;
   const base = (mudar: Partial<Filtros>) => paraQuery({ ...f, cursor: null, ...mudar });
   const comDoc = (id: string) => `/pesquisa?${[paraQuery({ ...f }), `doc=${id}`].filter(Boolean).join("&")}`;
@@ -87,6 +90,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Pesquisa">
+      {!compacto && (
       <form
         action="/pesquisa"
         role="search"
@@ -185,11 +189,67 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
           </div>
         </div>
       </form>
+      )}
 
       <div className="grid min-h-[520px] flex-1 gap-6 lg:min-h-0 lg:grid-cols-[minmax(340px,460px)_1fr] lg:items-stretch">
         <section aria-label="Resultados" className="flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-linha bg-superficie max-lg:max-h-[70vh]">
+          {compacto && (
+            <form action="/pesquisa" role="search" aria-label="Pesquisa e filtros" className="flex shrink-0 flex-col gap-3 border-b border-linha p-4">
+              <input type="hidden" name="aba" value={f.aba} />
+              <input type="hidden" name="doc" value={idDoc ?? ""} />
+              {f.de === null && f.ate !== null && <input type="hidden" name="ate" value={f.ate} />}
+              {f.vmin !== null && <input type="hidden" name="vmin" value={f.vmin} />}
+              {f.vmax !== null && <input type="hidden" name="vmax" value={f.vmax} />}
+              {f.vigencia && <input type="hidden" name="vigencia" value={f.vigencia} />}
+              {f.ordem !== "recentes" && <input type="hidden" name="ordem" value={f.ordem} />}
+              <label className="flex min-h-11 items-center gap-2.5 rounded-lg border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco">
+                <Ico tam={18} cor="currentColor"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Ico>
+                <span className="sr-only">Buscar</span>
+                <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número, objeto ou empresa" className="min-w-0 flex-1 bg-transparent text-[15px] outline-0" />
+              </label>
+              <nav aria-label="Tipo de documento" className="flex gap-1 rounded-[13px] border border-linha bg-superficie-2 p-[3px]">
+                {abas.map(([k, nome, n]) => {
+                  const ativa = f.aba === k;
+                  return (
+                    <Link
+                      key={k}
+                      href={`/pesquisa?${base({ aba: k })}&doc=${idDoc}`}
+                      aria-current={ativa ? "page" : undefined}
+                      className={`flex min-h-[38px] flex-1 items-center justify-center gap-2 rounded-[10px] border text-[13px] hover:border-[#0e7490] focus-visible:outline-2 focus-visible:outline-foco ${ativa ? "border-[#0e7490] bg-[linear-gradient(90deg,rgba(45,212,191,.2),rgba(45,212,191,0))] font-semibold dark:border-[#2dd4bf]" : "border-transparent"}`}
+                    >
+                      {nome}
+                      <span className={`rounded-[9px] px-[7px] py-px font-mono text-[11px] font-medium ${ativa ? "bg-[#2dd4bf] text-[#0b2e3a]" : "bg-superficie-2 text-texto-suave"}`}>{n}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="grid grid-cols-4 items-center gap-2">
+                {f.de !== null && (
+                  <Link href={`/pesquisa?${base({ de: null, ate: null })}&doc=${idDoc}`} aria-label={`Remover filtro Ano: ${f.de}`} className="flex h-[34px] items-center gap-2 rounded-lg border-2 border-[#0e7490] bg-campo px-2.5 text-[13px] dark:border-[#2dd4bf]">
+                    Ano: {f.de}
+                    <span aria-hidden>×</span>
+                  </Link>
+                )}
+                {f.de === null && <EscolhaCompacta nome="de" rotulo="Ano" valor={null} opcoes={anos} />}
+                <EscolhaCompacta nome="secretaria" rotulo="Secretaria" valor={f.secretaria} opcoes={[...nomes.entries()]} />
+                <EscolhaCompacta nome="situacao" rotulo="Situação" valor={f.situacao} opcoes={Object.entries(SITUACOES_CONTRATO)} />
+                <EscolhaCompacta nome="modalidade" rotulo="Modalidade" valor={f.modalidade} opcoes={Object.entries(MODALIDADES)} />
+                <noscript>
+                  <button type="submit">Aplicar</button>
+                </noscript>
+              </div>
+            </form>
+          )}
           <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 text-[13px] text-texto-suave">
-            <span><b className="font-semibold text-texto">{r.total}</b> resultados</span>
+            <span>
+              <b className="font-semibold text-texto">{r.total}</b> resultados
+              {compacto && ativos > 0 && (
+                <>
+                  {" · "}
+                  <Link href={`/pesquisa?doc=${idDoc}`} className="text-destaque hover:underline">Limpar filtros</Link>
+                </>
+              )}
+            </span>
             <details className="relative">
               <summary className="flex min-h-8 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-linha px-2.5 text-xs text-texto hover:border-[#0e7490] focus-visible:outline-2 focus-visible:outline-foco [&::-webkit-details-marker]:hidden">
                 {ordemAtual}
