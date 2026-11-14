@@ -91,3 +91,25 @@ h3 {
   font-family: var(--font-sora);
   font-weight: 600;
 }
+
+/* Rolagem interna dos quadros (lista de resultados, painéis): barra fina turquesa, como no canvas. */
+.sc {
+  scrollbar-width: thin;
+  scrollbar-color: #2dd4bf transparent;
+}
+.sc::-webkit-scrollbar {
+  width: 6px;
+}
+.sc::-webkit-scrollbar-thumb {
+  background: #2dd4bf;
+  border-radius: 3px;
+}
+
+/* Telas do sistema: a página tem o tamanho da janela (faixa da demonstração incluída); só os quadros rolam. */
+@media (min-width: 768px) {
+  body:has([data-moldura]) {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}

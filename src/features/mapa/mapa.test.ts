@@ -180,3 +180,13 @@ describe("demonstração", () => {
     expect(DOCUMENTOS_DEMO.filter((d) => d.caixa_id === idCaixaDemo(n3.id, 2))).toHaveLength(14);
   });
 });
+
+describe("medidas em metros", () => {
+  it("formata com vírgula e no máximo duas casas", async () => {
+    const { formatarMetros } = await import("./tipos");
+    expect(formatarMetros(16.8)).toBe("16,8 m");
+    expect(formatarMetros(7.2)).toBe("7,2 m");
+    expect(formatarMetros(28)).toBe("28 m");
+    expect(formatarMetros(1.2345)).toBe("1,23 m");
+  });
+});

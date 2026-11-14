@@ -29,14 +29,25 @@ export type Planta = {
   profundidade: number | null;
   entradaLado: LadoEntrada | null;
   entradaPosicao: number | null;
+  /** Metros que uma célula de módulo mede no galpão real (null = padrão). */
+  metrosCelula: number | null;
   ruas: Record<string, PosicaoRua>;
   elementos: ElementoPlanta[];
 };
 
-export const PLANTA_VAZIA: Planta = { largura: null, profundidade: null, entradaLado: null, entradaPosicao: null, ruas: {}, elementos: [] };
+export const PLANTA_VAZIA: Planta = { largura: null, profundidade: null, entradaLado: null, entradaPosicao: null, metrosCelula: null, ruas: {}, elementos: [] };
 
 // Caixa ativa do galpão, na forma compacta que vai ao navegador.
 export type CaixaCompacta = { id: string; nivelId: string; numero: number };
+
+/** Largura usual de um módulo de estante de arquivo, em metros. */
+export const PADRAO_METROS_CELULA = 1.2;
+export const LIMITES_METROS_CELULA = { min: 0.25, max: 5 } as const;
+
+/** 7,2 m, com vírgula e no máximo duas casas. */
+export function formatarMetros(m: number): string {
+  return `${(Math.round(m * 100) / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} m`;
+}
 
 export const LIMITES_PLANTA = { minGalpao: 4, maxGalpao: 200, maxCelula: 199, maxElementos: 200 } as const;
 

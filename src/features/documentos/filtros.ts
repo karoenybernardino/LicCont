@@ -33,8 +33,24 @@ const numero = (v: string | null) => {
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const faixaLida = (v: string | null): [number | null, number | null] => {
+  const m = v === null ? null : /^(\d{0,12})-(\d{0,12})$/.exec(v);
+  return m ? [m[1] ? Number(m[1]) : null, m[2] ? Number(m[2]) : null] : [null, null];
+};
+
 export const temFiltroDeContrato = (f: Pick<Filtros, "situacao" | "vmin" | "vmax" | "vigencia">) =>
   f.situacao !== null || f.vmin !== null || f.vmax !== null || f.vigencia !== null;
+
+// Faixas de valor da pesquisa ("min-max", vazio = sem limite). A tela escolhe uma
+// faixa; a URL guarda vmin e vmax, que também valem sozinhos.
+export const FAIXAS_VALOR: [string, string][] = [
+  ["0-50000", "Até R$ 50 mil"],
+  ["50000-200000", "R$ 50 mil a R$ 200 mil"],
+  ["200000-1000000", "R$ 200 mil a R$ 1 milhão"],
+  ["1000000-", "Acima de R$ 1 milhão"],
+];
+export const faixaDeValor = (vmin: number | null, vmax: number | null) =>
+  vmin === null && vmax === null ? "" : `${vmin ?? ""}-${vmax ?? ""}`;
 
 // Lê e saneia: valor desconhecido vira "sem filtro" (a URL é entrada do usuário).
 export function lerFiltros(p: Params): Filtros {
@@ -52,8 +68,8 @@ export function lerFiltros(p: Params): Filtros {
     modalidade: modalidade && modalidade in MODALIDADES ? modalidade : null,
     secretaria: secretaria && uuid.test(secretaria) ? secretaria : null,
     situacao: situacao && situacao in SITUACOES_CONTRATO ? situacao : null,
-    vmin: numero(um(p, "vmin")),
-    vmax: numero(um(p, "vmax")),
+    vmin: numero(um(p, "vmin")) ?? faixaLida(um(p, "valor"))[0],
+    vmax: numero(um(p, "vmax")) ?? faixaLida(um(p, "valor"))[1],
     vigencia: vigencia === "vigentes" || vigencia === "vencidos" || vigencia === "vencem_30" ? vigencia : null,
     ordem: ordem === "antigos" || ordem === "maior_valor" ? ordem : "recentes",
     cursor: um(p, "cursor"),

@@ -94,7 +94,7 @@ select ok(not has_column_privilege('authenticated', 'public.planta_elementos', '
 select ok(not has_column_privilege('authenticated', 'public.planta_elementos', 'galpao_id', 'update'), 'elemento não muda de galpão');
 select ok(not has_function_privilege('anon', 'public.ocupacao_galpao(uuid)', 'execute'), 'anon não executa ocupacao_galpao');
 select ok(not has_function_privilege('anon', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'anon não executa mover_documentos');
-select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb)', 'execute'), 'anon não executa salvar_planta');
+select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb, numeric)', 'execute'), 'anon não executa salvar_planta');
 select ok(has_function_privilege('authenticated', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'authenticated executa mover_documentos');
 select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y)
   values ('11111111-1111-1111-1111-111111111111', 'c0b00000-0000-0000-0000-000000000000', 'pilar', 1, 1)$$,
@@ -213,6 +213,17 @@ select results_eq($$select count(*)::int from public.planta_elementos where galp
 select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb,
   '[{"id":"e0b00000-0000-0000-0000-000000000001","tipo":"pilar","x":1,"y":1,"largura":1,"profundidade":1,"giro":0}]'::jsonb)$$,
   '42501', null, 'elemento de outra prefeitura na lista é recusado');
+-- Metros por célula: o coordenador grava; fora de 0,25 a 5 é recusado.
+select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb, 1.5)$$,
+  'coordenador A grava os metros por célula');
+select results_eq($$select planta_metros_celula from public.galpoes where id = 'c0a00000-0000-0000-0000-000000000000'$$,
+  $$values (1.50::numeric)$$, 'os metros por célula ficaram salvos');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb, 0.1)$$,
+  '23514', null, 'célula menor que 0,25 m é recusada');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb, 9)$$,
+  '23514', null, 'célula maior que 5 m é recusada');
+select throws_ok($$update public.galpoes set nome = 'Outro nome', planta_metros_celula = 2 where id = 'c0a00000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'coordenador A não renomeia o galpão junto com os metros');
 select throws_ok($$select public.salvar_planta('c0b00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,
   '42501', null, 'galpão de outra prefeitura é recusado');
 select throws_ok($$select public.salvar_planta('c0f00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,

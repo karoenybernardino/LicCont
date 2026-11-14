@@ -129,7 +129,7 @@ export function BarraLateral({
   return (
     <aside
       aria-label="Menu"
-      className="flex shrink-0 gap-3 rounded-[34px] border border-white/18 bg-[linear-gradient(180deg,#0b2e3a,#0f4252)] p-3 max-md:flex-row max-md:items-center max-md:overflow-x-auto md:sticky md:top-4 md:h-[min(880px,calc(100vh-32px))] md:self-start md:w-[68px] md:flex-col md:items-center md:px-0 md:py-[18px] dark:border-[#1b3a44] dark:bg-[linear-gradient(180deg,#0b2e3a,#02090c)]"
+      className="flex shrink-0 gap-3 rounded-[34px] border border-white/18 bg-[linear-gradient(180deg,#0b2e3a,#0f4252)] p-3 max-md:flex-row max-md:items-center max-md:overflow-x-auto md:h-full md:overflow-y-auto md:[scrollbar-width:none] md:w-[68px] md:flex-col md:items-center md:px-0 md:py-[18px] dark:border-[#1b3a44] dark:bg-[linear-gradient(180deg,#0b2e3a,#02090c)]"
     >
       <Link
         href="/inicio"

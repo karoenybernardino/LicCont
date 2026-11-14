@@ -22,7 +22,7 @@ import { MoverDocumentos } from "./mover";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { CaixaSelecionada, DentroDaCaixa, estilos } from "./painel-caixa";
 import { PlantaSvg } from "./planta";
-import { FAIXAS, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
+import { FAIXAS, PADRAO_METROS_CELULA, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
 import { caminhoDeVolta, urlMapa } from "./url";
 import { useMovimentoReduzido, useTema } from "./usar-tema";
 
@@ -281,8 +281,8 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   const fundo = { background: `linear-gradient(180deg, ${paleta.fundo[0]}, ${paleta.fundo[1]})` };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_330px] items-start gap-4 max-lg:grid-cols-1">
-      <section aria-label="Mapa do galpão" className={`${estilos.cartao} !p-4`}>
+    <div className="grid grid-cols-[minmax(0,1fr)_330px] items-stretch gap-4 max-lg:grid-cols-1 lg:h-full lg:min-h-0">
+      <section aria-label="Mapa do galpão" className={`${estilos.cartao} !p-4 lg:min-h-0`}>
         <div className="flex flex-wrap items-center gap-2.5">
           <form onSubmit={irPara} role="search" className="flex min-w-60 flex-1 items-center gap-2">
             <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-[10px] border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco max-md:h-11">
@@ -382,7 +382,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
               aria-describedby="teclado-3d"
               onKeyDown={aoTeclar}
               data-3d-pronto={pronto ? "sim" : "nao"}
-              className={`relative h-[560px] overflow-hidden rounded-[14px] border border-linha max-md:h-[60vh] ${estilos.foco}`}
+              className={`relative h-[560px] overflow-hidden rounded-[14px] border border-linha max-md:h-[60vh] lg:h-auto lg:min-h-[320px] lg:flex-1 ${estilos.foco}`}
               style={fundo}
             >
               <Mapa3D
@@ -406,8 +406,9 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         )}
 
         {vista === "planta" && (
-          <div className="rounded-[14px] border border-linha p-3.5" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
+          <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
             <PlantaSvg
+              metrosCelula={planta.metrosCelula ?? PADRAO_METROS_CELULA}
               leiaute={leiaute}
               elementos={planta.elementos}
               tema={tema}
@@ -422,7 +423,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         )}
 
         {vista === "corredor" && (
-          <div className="rounded-[14px] border border-linha p-3.5" style={fundo}>
+          <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={fundo}>
             <Corredor rua={ruaSel} tema={tema} selecionada={selecionada} onSelecionar={(id) => escolher(id)} />
           </div>
         )}
@@ -460,7 +461,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         <p className="sr-only">{resumo}</p>
       </section>
 
-      <aside ref={painelRef} className="flex min-w-0 flex-col gap-4 scroll-mt-4">
+      <aside ref={painelRef} className="sc flex min-w-0 flex-col gap-4 scroll-mt-4 lg:min-h-0 lg:overflow-y-auto">
         {selecionada && detalhe === null ? (
           <section aria-label="Caixa selecionada" className={estilos.cartao}>
             <p role="status" className="text-sm">Caixa não encontrada.</p>
