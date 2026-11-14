@@ -12,6 +12,7 @@ test.describe.configure({ mode: "serial", retries: 0 });
 
 test("o operador escolhe uma caixa pela lista, vê o painel e troca de vista sem perder a seleção", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.getByRole("link", { name: "Mapa 3D", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Mapa 3D" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
@@ -37,6 +38,7 @@ test("o operador escolhe uma caixa pela lista, vê o painel e troca de vista sem
 
 test("a busca do mapa aceita o código da caixa e mostra erro para código que não existe", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa?vista=planta");
   const busca = page.getByLabel("Ir para caixa, rua ou documento");
   await busca.fill("a m1 n1 c2");
@@ -49,6 +51,7 @@ test("a busca do mapa aceita o código da caixa e mostra erro para código que n
 
 test("isolamento: caixa de outra prefeitura e caixa que não existe dão a mesma resposta", async ({ page }) => {
   await entrar(page, { email: USUARIOS.outra.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa?caixa=5eed4000-0000-0000-0000-000000000001");
   await expect(page.getByText("Caixa não encontrada.").first()).toBeVisible();
   await page.goto("/mapa?caixa=ffffffff-ffff-ffff-ffff-ffffffffffff");
@@ -57,6 +60,7 @@ test("isolamento: caixa de outra prefeitura e caixa que não existe dão a mesma
 
 test("o editor da planta abre para o coordenador e não para o operador", async ({ page }) => {
   await entrar(page, { email: USUARIOS.coordEstrutura.email, secretaria: "Obras" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa/editar");
   await expect(page.getByRole("heading", { level: 1, name: "Editar planta" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Salvar planta" })).toBeDisabled();
@@ -65,12 +69,14 @@ test("o editor da planta abre para o coordenador e não para o operador", async 
 
 test("operador não abre o editor da planta", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa/editar");
   await expect(page).toHaveURL(/\/mapa$/);
 });
 
 test("consulta não vê as caixas de marcar documentos", async ({ page }) => {
   await entrar(page, { email: USUARIOS.consultaDocs.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa?vista=planta");
   await expect(page.getByRole("heading", { level: 1, name: "Mapa 3D" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Marcar todos" })).toHaveCount(0);
