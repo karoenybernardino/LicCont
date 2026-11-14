@@ -77,7 +77,7 @@ export async function PaginaSistema({
         }
       />
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
+        <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
           <div>
             {trilha && <div className="text-xs text-texto-suave">{trilha}</div>}
             <h1 className="font-titulo text-[21px] font-bold">{titulo}</h1>
@@ -95,7 +95,7 @@ export async function PaginaSistema({
             </span>
             <SeletorTema />
           </div>
-        </div>
+        </header>
         <main className="flex min-w-0 flex-1 flex-col gap-4 pr-2">{children}</main>
       </div>
     </div>

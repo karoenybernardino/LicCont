@@ -106,7 +106,7 @@ select results_eq($$select count(*)::int from storage.objects where bucket_id = 
 select throws_ok($$insert into storage.objects (bucket_id, name) values ('acervo',
   '11111111-1111-1111-1111-111111111111/a2000000-0000-0000-0000-000000000000/f0a20000-0000-0000-0000-000000000000.pdf')$$,
   null, null, 'consulta não grava');
-select is_empty($$delete from storage.objects where bucket_id = 'acervo' returning id$$, 'consulta não apaga');
+select throws_ok($$delete from storage.objects where bucket_id = 'acervo'$$, null, null, 'consulta não apaga');
 
 -- Operador B: não lê nem grava na prefeitura A.
 select tst_entrar('0b000000-0000-0000-0000-000000000003', '5b000000-0000-0000-0000-000000000003', 'aal1');
@@ -122,9 +122,9 @@ select is_empty($$select 1 from storage.objects where bucket_id = 'acervo'$$, 'o
 -- Apagar: só quem enviou, e só "enviando" ou "recusado".
 select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal1');
 select public.marcar_conferindo('f0a20000-0000-0000-0000-000000000000');
-select is_empty($$delete from storage.objects where bucket_id = 'acervo' returning id$$, 'em conferência o objeto não se apaga');
+select throws_ok($$delete from storage.objects where bucket_id = 'acervo'$$, null, null, 'em conferência o objeto não se apaga');
 select public.concluir_conferencia('f0a20000-0000-0000-0000-000000000000', true, repeat('b', 64), 100, 1, null, '{}', false);
-select is_empty($$delete from storage.objects where bucket_id = 'acervo' returning id$$, 'arquivo pronto não se apaga');
+select throws_ok($$delete from storage.objects where bucket_id = 'acervo'$$, null, null, 'arquivo pronto não se apaga');
 
 reset role;
 select * from finish();

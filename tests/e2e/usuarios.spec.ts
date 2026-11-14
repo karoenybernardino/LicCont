@@ -16,7 +16,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await expect(page).toHaveURL(/\/inicio$/);
 
   // Secretarias: cadastrar e desativar.
-  await page.getByRole("link", { name: "Secretarias" }).click();
+  await page.getByRole("link", { name: "Secretarias", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome da secretaria").fill("Obras");
@@ -29,7 +29,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await expect(page.getByRole("button", { name: "Reativar Cultura" })).toBeVisible();
 
   // Usuários: cadastrar operador só em Obras.
-  await page.getByRole("link", { name: "Usuários e perfis" }).click();
+  await page.getByRole("link", { name: "Usuários e perfis", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Usuários e perfis" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("E-mail").fill("pessoa.nova@exemplo.test");
@@ -66,7 +66,7 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await page.getByRole("button", { name: "Salvar senha" }).click();
   await expect(page).toHaveURL(/\/inicio$/);
   await expect(secretariaEmUso(page)).toHaveText("Obras");
-  await expect(page.getByRole("link", { name: "Usuários e perfis" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Usuários e perfis", exact: true })).toHaveCount(0);
   await page.goto("/usuarios");
   await expect(page).toHaveURL(/\/inicio$/);
   await page.getByRole("button", { name: "Sair" }).click();

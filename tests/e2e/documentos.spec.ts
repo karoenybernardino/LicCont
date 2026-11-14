@@ -26,6 +26,7 @@ async function preencher(page: Page, numero: string, objeto: string) {
 test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
   await page.getByRole("link", { name: "Cadastrar documento" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Cadastrar documento" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await preencher(page, "901/2024", "Aquisição fictícia de teste do PDF");
   await page.getByLabel("Escolher o PDF").setInputFiles(PDF);
@@ -58,7 +59,7 @@ test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({
 
 test("a pesquisa filtra por abas e filtros, e o filtro fica na URL", async ({ page }) => {
   await entrar(page, { email: USUARIOS.adminEstrutura.email, secretaria: "Saúde" });
-  await page.getByRole("link", { name: "Pesquisa" }).click();
+  await page.getByRole("link", { name: "Pesquisa", exact: true }).click();
   await semFalhasDeAcessibilidade(page);
   await expect(page.getByRole("status").filter({ hasText: "documentos encontrados" })).toBeVisible();
   const todos = await page.getByRole("link", { name: /^Todos/ }).innerText();
