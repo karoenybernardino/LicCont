@@ -595,6 +595,7 @@ Em 2026-11-14 o responsável aprovou as 12 recomendações acima, com estas muda
 
 - **Número de processo repetido** na prefeitura: o índice único vale para a prefeitura inteira e o aviso pode revelar que o número existe em outra secretaria. Aceito: o número do processo é público por natureza.
 - **PDF de documento desativado** continua acessível a quem lê (desativar não apaga). Aceito para a Fase 3.
+- **Tela 403** do canvas não é usada de propósito: documento de outra secretaria pedido por endereço responde 404, para não revelar que existe.
 - **Conferência do PDF** só é concluída pelo servidor (`service_role`); envios parados há mais de 1 hora são limpos no próximo envio da pessoa.
 
 ## Resultado
