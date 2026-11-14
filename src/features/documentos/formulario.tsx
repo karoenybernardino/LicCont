@@ -185,6 +185,14 @@ export function FormularioDocumento({
       const r = await salvarDocumento(dados);
       if (r.erro) {
         setEtapa(null);
+        // Liga o erro ao campo (leitor de tela) e leva o foco até ele.
+        const el = r.campo ? document.querySelector<HTMLElement>(`[name="${r.campo}"]`) : null;
+        if (el) {
+          el.setAttribute("aria-invalid", "true");
+          el.setAttribute("aria-describedby", "erro-formulario");
+          el.addEventListener("input", () => el.removeAttribute("aria-invalid"), { once: true });
+          el.focus();
+        }
         return setErro(r.erro);
       }
       if (!r.id) {
@@ -241,8 +249,17 @@ export function FormularioDocumento({
                   type="button"
                   role="radio"
                   aria-checked={tipo === t}
+                  tabIndex={tipo === t ? 0 : -1}
                   disabled={!!inicial}
                   onClick={() => setTipo(t)}
+                  onKeyDown={(e) => {
+                    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+                    e.preventDefault();
+                    const outro = t === "licitacao" ? "contrato" : "licitacao";
+                    setTipo(outro);
+                    (e.currentTarget.parentElement?.querySelector(`[data-tipo="${outro}"]`) as HTMLElement | null)?.focus();
+                  }}
+                  data-tipo={t}
                   className={`min-h-[34px] rounded-[18px] px-[18px] text-[13px] focus-visible:outline-2 focus-visible:outline-foco disabled:opacity-70 ${tipo === t ? "bg-aqua font-semibold text-petroleo" : "text-texto-suave"}`}
                 >
                   {t === "licitacao" ? "Licitação" : "Contrato"}
@@ -455,7 +472,7 @@ export function FormularioDocumento({
           )}
         </section>
 
-        {erro && <p role="alert" className="text-sm text-erro">{erro}</p>}
+        {erro && <p id="erro-formulario" role="alert" className="text-sm text-erro">{erro}</p>}
         {aviso && <p role="status" className="rounded-lg border border-linha bg-superficie-2 p-3 text-sm">{aviso}</p>}
         {etapa && <p role="status" className="text-sm text-texto-suave">{etapa}</p>}
 

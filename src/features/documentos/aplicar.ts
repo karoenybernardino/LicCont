@@ -23,7 +23,7 @@ export function aplicarFiltros(
   const base = docs.filter((d) => {
     if (busca) {
       const texto = semAcento([d.numero, d.objeto, d.empresa ?? "", d.cnpj ?? ""].join(" "));
-      const ok = busca.length >= 3 ? texto.includes(busca) : semAcento(d.numero) === busca || (!!digitos && d.cnpj === digitos);
+      const ok = busca.length >= 3 ? texto.includes(busca) || (digitos.length >= 8 && !!d.cnpj && d.cnpj.startsWith(digitos)) : semAcento(d.numero) === busca || (!!digitos && d.cnpj === digitos);
       if (!ok) return false;
     }
     if (f.de !== null && d.ano < f.de) return false;

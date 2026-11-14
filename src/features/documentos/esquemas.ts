@@ -39,6 +39,10 @@ const valor = z.preprocess(
   z.number({ error: "Valor inválido." }).min(0, "Valor inválido.").max(9_999_999_999_999).nullable(),
 );
 
+// CPF nunca entra em texto livre (objeto, empresa): o campo só aceita dado de pessoa jurídica.
+const temCpf = (t: string | null) => !t || !/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/.test(t);
+const MSG_CPF = "Não informe CPF. Use só dados de pessoa jurídica.";
+
 const anoMax = () => new Date().getFullYear() + 1;
 
 export const esquemaDocumento = z
@@ -47,8 +51,8 @@ export const esquemaDocumento = z
     modalidade: z.preprocess(vazioParaNulo, z.enum(Object.keys(MODALIDADES) as [string, ...string[]]).nullable()),
     numero: z.string().trim().min(1, "Informe o número do processo.").max(30, "No máximo 30 caracteres."),
     ano: z.coerce.number().int().min(1950, "Ano inválido.").max(anoMax(), "Ano inválido."),
-    objeto: z.string().trim().min(3, "Descreva o objeto.").max(2000, "No máximo 2.000 caracteres."),
-    empresa: z.preprocess(vazioParaNulo, z.string().trim().max(200, "No máximo 200 caracteres.").nullable()),
+    objeto: z.string().trim().min(3, "Descreva o objeto.").max(2000, "No máximo 2.000 caracteres.").refine(temCpf, MSG_CPF),
+    empresa: z.preprocess(vazioParaNulo, z.string().trim().max(200, "No máximo 200 caracteres.").refine(temCpf, MSG_CPF).nullable()),
     cnpj,
     valor,
     secretaria: uuid,

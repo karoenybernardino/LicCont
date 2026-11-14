@@ -96,3 +96,11 @@ describe("conferência do PDF", () => {
     expect(conferir([])).toEqual({ ok: false, motivo: "nao_pdf" });
   });
 });
+
+describe("CPF em texto livre", () => {
+  it("recusa CPF no objeto e na empresa, aceita CNPJ e números comuns", () => {
+    expect(esquemaDocumento.safeParse({ ...base, objeto: "Serviço para João CPF 123.456.789-09" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, empresa: "Fulano 12345678909" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, objeto: "Contrato com 12.345.678/0001-95 e 5.000 itens" }).success).toBe(true);
+  });
+});

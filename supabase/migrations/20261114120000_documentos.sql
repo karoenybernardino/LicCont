@@ -550,7 +550,8 @@ begin
     from public.documentos d
     where d.ativo
       and (v_busca = ''
-           or (length(v_busca) >= 3 and d.texto_busca like '%' || v_busca || '%')
+           or (length(v_busca) >= 3 and (d.texto_busca like '%' || v_busca || '%'
+                                        or (length(v_digitos) >= 8 and d.cnpj like v_digitos || '%')))
            or (length(v_busca) < 3 and (app.sem_acento(d.numero) = v_busca or d.cnpj = nullif(v_digitos, ''))))
       and (p_ano_de is null or d.ano >= p_ano_de)
       and (p_ano_ate is null or d.ano <= p_ano_ate)

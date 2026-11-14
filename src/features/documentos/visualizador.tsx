@@ -77,7 +77,7 @@ export function VisualizadorPdf({ documentoId, voltar }: { documentoId: string; 
     <div
       className="flex flex-col gap-3"
       onKeyDown={(e) => {
-        if (e.target instanceof HTMLInputElement) return;
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement) return;
         if (e.key === "ArrowRight" || e.key === "PageDown") ir(pagina + 1);
         if (e.key === "ArrowLeft" || e.key === "PageUp") ir(pagina - 1);
       }}
@@ -118,7 +118,7 @@ export function VisualizadorPdf({ documentoId, voltar }: { documentoId: string; 
         ) : !pdf ? (
           <p role="status" className="self-center text-sm text-texto-suave">Abrindo o PDF…</p>
         ) : (
-          <canvas ref={tela} aria-label={`Página ${pagina} de ${total}`} role="img" className="h-auto max-w-none bg-white shadow-[0_6px_24px_rgba(0,0,0,.25)]" />
+          <canvas ref={tela} aria-label={`Página ${pagina} de ${total}. Para ler o texto, use Baixar original.`} role="img" className="h-auto max-w-none bg-white shadow-[0_6px_24px_rgba(0,0,0,.25)]" />
         )}
       </div>
     </div>

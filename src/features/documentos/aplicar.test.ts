@@ -18,6 +18,13 @@ describe("pesquisa em memória (mesmas regras do banco)", () => {
     expect(buscar({ q: "TECNOMED" }).contagens.todos).toBeGreaterThan(0);
     expect(buscar({ q: "ILUMINACAO" }).contagens.todos).toBeGreaterThan(0);
   });
+  it("acha pelo CNPJ colado com pontuação", () => {
+    const d = docs.find((x) => x.cnpj);
+    expect(d).toBeTruthy();
+    const c = d!.cnpj!;
+    const formatado = `${c.slice(0, 2)}.${c.slice(2, 5)}.${c.slice(5, 8)}/${c.slice(8, 12)}-${c.slice(12)}`;
+    expect(buscar({ q: formatado }).itens.map((i) => i.id)).toContain(d!.id);
+  });
   it("modalidade só restringe licitações; contratos continuam", () => {
     const r = buscar({ modalidade: "dispensa" });
     expect(r.contagens.contrato).toBe(buscar({}).contagens.contrato);

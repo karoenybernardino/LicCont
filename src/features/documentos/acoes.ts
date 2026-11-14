@@ -14,7 +14,7 @@ import { esquemaDocumento, esquemaEnvio, esquemaId, mensagemDocumento } from "./
 // os gatilhos do banco conferem de novo prefeitura, secretaria e papel.
 // Nunca vai nome de arquivo, empresa nem conteúdo para log.
 
-export type Retorno = { erro?: string; aviso?: string; id?: string };
+export type Retorno = { erro?: string; aviso?: string; id?: string; campo?: string };
 
 const SEM_PERMISSAO: Retorno = { erro: "Você não tem permissão para esta ação." };
 const INVALIDO: Retorno = { erro: "Confira os dados e tente de novo." };
@@ -29,7 +29,7 @@ function atualizar(id?: string) {
 export async function salvarDocumento(formData: FormData): Promise<Retorno> {
   const { usuario } = await exigirSessao();
   const dados = esquemaDocumento.safeParse(Object.fromEntries(formData));
-  if (!dados.success) return { erro: dados.error.issues[0].message };
+  if (!dados.success) return { erro: dados.error.issues[0].message, campo: String(dados.error.issues[0].path[0] ?? "") };
   const d = dados.data;
   const idEdicao = formData.get("id");
   const editar = typeof idEdicao === "string" && idEdicao !== "";

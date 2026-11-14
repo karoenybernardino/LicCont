@@ -583,7 +583,7 @@ responsável preferir, as 6 tarefas viram 3 PRs (pergunta 9).
 | 9 | **Seis PRs ou menos?** | **Três PRs**, cada um com a demonstração para aprovar: (a) banco + Storage, (b) cadastro + pesquisa, (c) envio do PDF + visualizador. A Fase 3 é bem maior que a 2, e um PR único ficaria difícil de revisar. |
 | 10 | **Botões de fases futuras** no canvas ("Ver no mapa 3D", "Imprimir etiqueta", "Registrar empréstimo")? | **Escondidos** até a fase deles. Botão desabilitado confunde quem usa e o leitor de tela. A prévia da etiqueta no cadastro aparece, porque mostra onde a caixa está. |
 | 11 | **Quem vê qual secretaria** na pesquisa? | Como na Fase 1: **operador, coordenador e consulta veem as secretarias vinculadas; o administrador vê todas.** A pesquisa mostra **todas as permitidas** de uma vez, e o filtro Secretaria restringe. O seletor do cabeçalho só define a secretaria padrão do cadastro. A ocupação da caixa conta documentos de todas as secretarias (só o número, nunca o conteúdo). |
-| 12 | **Credor pessoa física** (CPF)? | **Não aceitar nesta fase.** O CPF é dado pessoal e exige base legal e cuidado na pesquisa. O nome do credor pode ser registrado em "Empresa". Se precisar, entra depois, com máscara e decisão de LGPD. |
+| 12 | **Credor pessoa física** (CPF)? | **Não aceitar nesta fase.** O CPF é dado pessoal e exige base legal e cuidado na pesquisa. Credor pessoa física não entra: "Empresa" é para razão social (CPF é recusado também no texto livre). Se precisar, entra depois, com máscara e decisão de LGPD. |
 
 ## Decisões do responsável
 
@@ -592,6 +592,10 @@ Em 2026-11-14 o responsável aprovou as 12 recomendações acima, com estas muda
 - **Um PR só** (PR 31) em vez de três, junto com a moldura e as telas refeitas pelo canvas.
 - **Ícones de fases futuras aparecem desabilitados** ("em breve") na barra lateral.
 - As telas sem quadro antes (rua, visualizador de PDF, erros) seguem o canvas atual.
+
+- **Número de processo repetido** na prefeitura: o índice único vale para a prefeitura inteira e o aviso pode revelar que o número existe em outra secretaria. Aceito: o número do processo é público por natureza.
+- **PDF de documento desativado** continua acessível a quem lê (desativar não apaga). Aceito para a Fase 3.
+- **Conferência do PDF** só é concluída pelo servidor (`service_role`); envios parados há mais de 1 hora são limpos no próximo envio da pessoa.
 
 ## Resultado
 
