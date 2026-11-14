@@ -373,7 +373,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
               <button type="button" onClick={() => comandos.current?.centralizar()} className={botao}>Centralizar</button>
               <button type="button" aria-label="Girar 90° para a esquerda" onClick={() => comandos.current?.girar(-1)} className={botao}>↺</button>
               <button type="button" aria-label="Girar 90° para a direita" onClick={() => comandos.current?.girar(1)} className={botao}>↻</button>
-              <span className="ml-1 font-mono text-[13px]" role="status">Ângulo {angulo}°</span>
+              <span className="ml-1 font-mono text-[13px]">Ângulo {angulo}°</span>
             </div>
             <div
               tabIndex={0}

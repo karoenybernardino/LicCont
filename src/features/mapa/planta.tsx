@@ -6,7 +6,7 @@
 import type { PointerEvent, Ref } from "react";
 import { CORES, type Tema } from "./cores";
 import type { Leiaute, ModuloLeiaute } from "./geometria";
-import type { ElementoPlanta, Faixa } from "./tipos";
+import { FAIXAS, type ElementoPlanta, type Faixa } from "./tipos";
 
 export const PX = 64; // pixels por célula no SVG
 export const MARGEM = 44; // espaço para os rótulos das ruas
@@ -54,7 +54,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
       ref={editor?.svgRef}
       viewBox={`0 0 ${largura} ${altura}`}
       width="100%"
-      role="img"
+      role={onModulo || editor ? "group" : "img"}
       aria-label={resumo}
       className={editor ? "block touch-none select-none" : "block select-none"}
       onPointerDown={editor?.onFundo}
@@ -148,7 +148,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
                     data-modulo={`${r.codigo}-M${m.numero}`}
                     role={interativo ? "button" : undefined}
                     tabIndex={interativo ? 0 : undefined}
-                    aria-label={interativo ? `${sel && codigoCaixa ? codigoCaixa : `M${m.numero}`}, Rua ${r.codigo}, módulo ${m.numero}, ${m.caixas} caixas` : undefined}
+                    aria-label={interativo ? `${sel && codigoCaixa ? codigoCaixa : `M${m.numero}`}, Rua ${r.codigo}, módulo ${m.numero}, ${m.caixas} caixas${faixa !== null ? `, ocupação ${FAIXAS.find((f) => f.faixa === faixa)?.rotulo ?? ""}` : ""}` : undefined}
                     onClick={interativo ? () => onModulo?.(m) : undefined}
                     onKeyDown={interativo ? (ev) => (ev.key === "Enter" || ev.key === " ") && (ev.preventDefault(), onModulo?.(m)) : undefined}
                     style={interativo ? { cursor: "pointer" } : undefined}

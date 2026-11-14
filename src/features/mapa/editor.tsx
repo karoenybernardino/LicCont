@@ -277,7 +277,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
           </aside>
 
           <section aria-label="Planta do galpão" className={estilos.cartao}>
-            <div className="rounded-xl border border-linha p-2" tabIndex={0} aria-describedby="dica-editor">
+            <div className="rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
               <PlantaSvg
                 leiaute={leiaute}
                 elementos={atual.elementos}

@@ -135,7 +135,10 @@ export function DentroDaCaixa({
       )}
       {oculto > 0 && (
         <p className="text-xs text-texto-suave">
-          Você vê {visiveis}. {oculto === 1 ? "O outro 1 é de uma secretaria sem acesso." : `Os outros ${oculto} são de secretarias sem acesso.`}
+          {visiveis >= 200
+            ? "Mostrando os 200 documentos mais recentes da caixa. Para ver os demais, use a pesquisa."
+            : `Você vê ${visiveis}. `}
+          {visiveis >= 200 ? null : oculto === 1 ? "O outro 1 é de uma secretaria sem acesso." : `Os outros ${oculto} são de secretarias sem acesso.`}
         </p>
       )}
     </section>
