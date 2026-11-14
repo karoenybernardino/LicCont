@@ -34,3 +34,36 @@ select public.adicionar_modulos('5eed2000-0000-0000-0000-000000000003', 1, 2, 4)
 select public.adicionar_caixas(n.id, 2)
 from public.niveis n join public.modulos m on m.id = n.modulo_id
 where m.rua_id = '5eed2000-0000-0000-0000-000000000001';
+
+-- Documentos fictícios (Fase 3): 30 na prefeitura de exemplo (Rua A, todas as
+-- secretarias) e 6 na de teste, só para provar o isolamento. Nada é real.
+with sec as (
+  select id, row_number() over (order by nome) as rn from public.secretarias
+  where prefeitura_id = '5eed0000-0000-0000-0000-000000000001'
+), cx as (
+  select c.id, row_number() over (order by c.id) as rn
+  from public.caixas c join public.niveis n on n.id = c.nivel_id join public.modulos m on m.id = n.modulo_id
+  where m.rua_id = '5eed2000-0000-0000-0000-000000000001'
+)
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, empresa, situacao)
+select '5eed0000-0000-0000-0000-000000000001', sec.id, cx.id, 'licitacao', 'pregao_eletronico',
+       lpad(g::text, 3, '0') || '/' || (2015 + g % 10), 2015 + g % 10,
+       'Objeto fictício número ' || g, 'Empresa Fictícia ' || g, 'concluida'
+from generate_series(1, 30) g
+join sec on sec.rn = 1 + g % 4
+join cx on cx.rn = 1 + g % (select count(*) from cx);
+
+with sec as (
+  select id, row_number() over (order by nome) as rn from public.secretarias
+  where prefeitura_id = '5eed0000-0000-0000-0000-000000000002'
+), cx as (
+  select c.id, row_number() over (order by c.id) as rn
+  from public.caixas c join public.niveis n on n.id = c.nivel_id join public.modulos m on m.id = n.modulo_id
+  where m.rua_id = '5eed2000-0000-0000-0000-000000000003'
+)
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
+select '5eed0000-0000-0000-0000-000000000002', sec.id, cx.id, 'licitacao', 'dispensa',
+       lpad(g::text, 3, '0') || '/2024', 2024, 'Objeto fictício da prefeitura de teste ' || g, 'concluida'
+from generate_series(1, 6) g
+join sec on sec.rn = 1 + g % 2
+join cx on cx.rn = 1 + g % (select count(*) from cx);

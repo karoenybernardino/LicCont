@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { CartaoResumo, Pilula } from "@/ui/canvas";
+import { pesquisar } from "@/features/documentos/dados";
+import { lerFiltros } from "@/features/documentos/filtros";
 import { carregarEstrutura } from "@/features/estrutura/dados";
 import { Painel, Rotulo } from "@/features/estrutura/componentes";
 import { exigirSessao, nomePrefeitura, secretariasPermitidas } from "@/features/sessao/dal";
@@ -17,11 +19,12 @@ const botaoHero =
 export default async function Inicio() {
   const { usuario, secretaria } = await exigirSessao();
   const admin = usuario.administrador;
-  const [prefeitura, usuarios, secretarias, estrutura] = await Promise.all([
+  const [prefeitura, usuarios, secretarias, estrutura, acervo] = await Promise.all([
     nomePrefeitura(usuario),
     admin ? listarUsuarios() : Promise.resolve(null),
     admin ? listarSecretarias() : secretariasPermitidas(usuario).then((l) => l.filter((s) => s.id).map((s) => ({ ...s, ativa: true }))),
     carregarEstrutura(),
+    pesquisar(usuario, lerFiltros({})),
   ]);
   const caixas = estrutura.niveis.reduce((soma, n) => soma + n.caixas, 0);
   const ativas = secretarias.filter((s) => s.ativa).length;
@@ -33,7 +36,7 @@ export default async function Inicio() {
       ? [{ rotulo: "Usuários", valor: usuarios.length, legenda: `${usuarios.length - bloqueados} ativos · ${provisorios} com senha provisória`, cor: "teal" as const, icone: ic("usuarios") }]
       : []),
     { rotulo: "Secretarias", valor: secretarias.length, legenda: admin ? `${ativas} ativas` : "com o seu acesso", cor: "aco" as const, icone: ic("secretarias") },
-    { rotulo: "Documentos", valor: 0, legenda: "chega na Fase 3", cor: "ambar" as const, icone: ic("cadastro") },
+    { rotulo: "Documentos", valor: acervo.contagens.todos, legenda: `${acervo.contagens.licitacao} licitações · ${acervo.contagens.contrato} contratos`, cor: "ambar" as const, icone: ic("cadastro") },
     { rotulo: "Caixas", valor: caixas, legenda: `${estrutura.niveis.length} níveis cadastrados`, cor: "vermelho" as const, icone: ic("emprestimos") },
   ];
 
@@ -43,7 +46,7 @@ export default async function Inicio() {
       : []),
     { titulo: "Secretarias", texto: "Cadastre as secretarias desta prefeitura", feito: ativas > 0 },
     { titulo: "Estrutura física", texto: "Ruas, módulos, níveis e caixas", feito: caixas > 0 },
-    { titulo: "Documentos", texto: "Cadastro e pesquisa do acervo", feito: false, futuro: true },
+    { titulo: "Documentos", texto: "Cadastro e pesquisa do acervo", feito: acervo.contagens.todos > 0 },
   ];
 
   return (
@@ -55,8 +58,7 @@ export default async function Inicio() {
           </p>
           <p className="font-titulo text-[26px] leading-[1.25] font-bold">Vamos montar o acervo da prefeitura.</p>
           <p className="text-sm leading-[21px] text-white/82">
-            Comece pela estrutura física e pelos usuários. O cadastro de documentos e a pesquisa chegam nas próximas
-            fases.
+            Comece pela estrutura física e pelos usuários. Depois cadastre os documentos e pesquise o acervo.
           </p>
           <div className="mt-1.5 flex flex-wrap gap-2.5">
             {admin ? (
@@ -93,7 +95,7 @@ export default async function Inicio() {
                 <p className="text-sm font-semibold">{p.titulo}</p>
                 <p className="text-[12.5px] text-texto-suave">{p.texto}</p>
               </div>
-              <Pilula tom={p.feito ? "ok" : "aviso"}>{p.feito ? "Concluído" : p.futuro ? "Próxima fase" : "Pendente"}</Pilula>
+              <Pilula tom={p.feito ? "ok" : "aviso"}>{p.feito ? "Concluído" : "Pendente"}</Pilula>
             </li>
           ))}
         </ol>
