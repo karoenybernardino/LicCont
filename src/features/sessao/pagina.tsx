@@ -3,20 +3,21 @@ import { BotaoEnviar } from "@/ui/botao-enviar";
 import { SeletorTema } from "@/ui/seletor-tema";
 import { sair } from "./acoes";
 import { BarraLateral, Icone, type ItemMenu } from "./barra-lateral";
+import { podeCadastrar } from "@/features/documentos/dados";
 import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
 
 // Menu do canvas. Sem "href": tela de fase futura, aparece apagada.
 const PRINCIPAIS: ItemMenu[] = [
   { href: "/inicio", rotulo: "Início", icone: "inicio" },
-  { rotulo: "Pesquisa", icone: "pesquisa" },
+  { href: "/pesquisa", rotulo: "Pesquisa", icone: "pesquisa", prefixos: ["/documentos/"] },
   { href: "/estrutura", rotulo: "Estrutura física", icone: "estrutura" },
   { rotulo: "Mapa 3D", icone: "mapa" },
-  { rotulo: "Cadastro", icone: "cadastro" },
   { rotulo: "Empréstimos", icone: "emprestimos" },
   { rotulo: "Temporalidade", icone: "temporalidade" },
   { rotulo: "Auditoria", icone: "auditoria" },
 ];
+const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", icone: "cadastro" };
 const ADMIN: ItemMenu[] = [
   { href: "/usuarios", rotulo: "Usuários e perfis", icone: "usuarios" },
   { href: "/secretarias", rotulo: "Secretarias", icone: "secretarias" },
@@ -51,7 +52,10 @@ export async function PaginaSistema({
   children: ReactNode;
 }) {
   const prefeitura = await nomePrefeitura(usuario);
-  const principais = PRINCIPAIS;
+  // Cadastrar só aparece para quem cadastra (o servidor também confere).
+  const principais = (await podeCadastrar(usuario))
+    ? [...PRINCIPAIS.slice(0, 3), CADASTRO, ...PRINCIPAIS.slice(3)]
+    : PRINCIPAIS;
   const admin = usuario.administrador ? ADMIN : [];
   return (
     <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">

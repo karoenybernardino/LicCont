@@ -91,7 +91,8 @@ export function BarraLateral({
 }) {
   const caminho = usePathname();
   const ativo = (i: ItemMenu) =>
-    !!i.href && (caminho === i.href || caminho.startsWith(`${i.href}/`) || !!i.prefixos?.some((p) => caminho.startsWith(p)));
+    !!i.href &&
+    (caminho !== "/documentos/novo" || i.href === "/documentos/novo") && (caminho === i.href || caminho.startsWith(`${i.href}/`) || !!i.prefixos?.some((p) => caminho.startsWith(p)));
 
   function renderItem(i: ItemMenu) {
     if (!i.href) {
