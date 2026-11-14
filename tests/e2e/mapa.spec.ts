@@ -37,7 +37,7 @@ test("o operador escolhe uma caixa pela lista, vê o painel e troca de vista sem
 
 test("a busca do mapa aceita o código da caixa e mostra erro para código que não existe", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
-  await page.goto("/mapa");
+  await page.goto("/mapa?vista=planta");
   const busca = page.getByLabel("Ir para caixa, rua ou documento");
   await busca.fill("a m1 n1 c2");
   await page.getByRole("button", { name: "Ir", exact: true }).click();
