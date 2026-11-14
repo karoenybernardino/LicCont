@@ -44,9 +44,10 @@ test("a busca do mapa aceita o código da caixa e mostra erro para código que n
   await busca.fill("a m1 n1 c2");
   await page.getByRole("button", { name: "Ir", exact: true }).click();
   await expect(page.getByRole("region", { name: "Caixa selecionada" })).toContainText("A-M1-N1-C02");
+  await expect(page.getByRole("region", { name: "Dentro da caixa" })).toBeVisible();
   await busca.fill("Z-M9-N9-C09");
   await page.getByRole("button", { name: "Ir", exact: true }).click();
-  await expect(page.getByText("Caixa não encontrada.")).toBeVisible();
+  await expect(page.getByText("Caixa não encontrada.").first()).toBeVisible();
 });
 
 test("isolamento: caixa de outra prefeitura e caixa que não existe dão a mesma resposta", async ({ page }) => {
