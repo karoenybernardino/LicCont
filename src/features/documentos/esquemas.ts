@@ -3,7 +3,7 @@ import { lerValor } from "./formato";
 import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO } from "./tipos";
 
 const uuid = z.guid("Escolha uma opção da lista.");
-const vazioParaNulo = (v: unknown) => (typeof v === "string" && v.trim() === "" ? null : v);
+const vazioParaNulo = (v: unknown) => (v === undefined || (typeof v === "string" && v.trim() === "") ? null : v);
 
 // CNPJ com dígito verificador. CPF (11 dígitos) é recusado de propósito.
 export function cnpjValido(digitos: string) {
