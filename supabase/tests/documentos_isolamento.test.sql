@@ -175,11 +175,12 @@ select lives_ok($$select public.marcar_conferindo((select id from public.arquivo
 select throws_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos limit 1), true,
   repeat('a', 64), 5000, 12, null, '{}', false)$$, '42501', null, 'o operador não conclui a conferência direto (só o servidor)');
 -- O servidor (service_role) conclui depois de ler o PDF.
+select set_config('t.arq', (select id::text from public.arquivos limit 1), false);
 reset role;
 set local role service_role;
-select lives_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos where situacao = 'conferindo'), true,
+select lives_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', current_setting('t.arq')::uuid, true,
   repeat('a', 64), 5000, 12, null, array['sem_pdfa'], true)$$, 'o servidor conclui a conferência');
-select throws_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', (select id from public.arquivos where situacao = 'pronto' limit 1), true,
+select throws_ok($$select public.concluir_conferencia('0a000000-0000-0000-0000-000000000003', current_setting('t.arq')::uuid, true,
   repeat('a', 64), 5000, 12, null, '{}', false)$$, '42501', null, 'não conclui duas vezes');
 reset role;
 set local role authenticated;
