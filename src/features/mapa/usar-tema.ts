@@ -26,7 +26,7 @@ export function useTema(): Tema {
   return useSyncExternalStore(assinar, atual, () => "claro");
 }
 
-export function usarMovimentoReduzido(): boolean {
+export function useMovimentoReduzido(): boolean {
   return useSyncExternalStore(
     (aviso) => {
       const m = window.matchMedia("(prefers-reduced-motion: reduce)");

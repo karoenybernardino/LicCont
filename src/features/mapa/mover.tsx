@@ -55,9 +55,14 @@ export function MoverDocumentos({
   }
   const limpar = (de: "rua" | "modulo" | "nivel", v: string) => {
     onDestino(null);
-    if (de === "rua") (setRua(v), setModulo(""), setNivel(""));
-    if (de === "modulo") (setModulo(v), setNivel(""));
-    if (de === "nivel") setNivel(v);
+    if (de === "rua") {
+      setRua(v);
+      setModulo("");
+      setNivel("");
+    } else if (de === "modulo") {
+      setModulo(v);
+      setNivel("");
+    } else setNivel(v);
   };
 
   return (

@@ -24,7 +24,7 @@ import { CaixaSelecionada, DentroDaCaixa, estilos } from "./painel-caixa";
 import { PlantaSvg } from "./planta";
 import { FAIXAS, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
 import { caminhoDeVolta, urlMapa } from "./url";
-import { usarMovimentoReduzido, useTema } from "./usar-tema";
+import { useMovimentoReduzido, useTema } from "./usar-tema";
 
 const Mapa3D = dynamic(() => import("./mapa-3d"), {
   ssr: false,
@@ -56,7 +56,7 @@ type Props = {
 export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inicial, podeEditar, podeMover, grande }: Props) {
   const router = useRouter();
   const tema = useTema();
-  const reduzir = usarMovimentoReduzido();
+  const reduzir = useMovimentoReduzido();
   const leiaute = useMemo(() => calcularLeiaute(estrutura, caixas, planta), [estrutura, caixas, planta]);
   const arvore = useMemo(() => montarArvore(estrutura, caixas), [estrutura, caixas]);
   const porCodigo = useMemo(() => indicePorCodigo(arvore), [arvore]);

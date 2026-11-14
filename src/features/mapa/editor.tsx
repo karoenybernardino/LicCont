@@ -320,7 +320,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             <ul className="flex flex-col gap-1.5">
               {leiaute.ruas.map((r) => (
                 <li key={r.id}>
-                  <button type="button" onClick={() => (setRuaSel(r.id), setElSel(null))} aria-pressed={ruaSel === r.id} className={`${estilos.botaoBorda} w-full justify-between ${ruaSel === r.id ? "!border-[#ff9f1c]" : ""}`}>
+                  <button type="button" onClick={() => (setRuaSel(r.id), setElSel(null))} aria-pressed={ruaSel === r.id} className={`${estilos.botaoBorda} w-full justify-between gap-3 ${ruaSel === r.id ? "!border-[#ff9f1c]" : ""}`}>
                     <span className="font-mono">Rua {r.codigo}</span>
                     <span className={`text-xs ${r.problema ? "text-erro" : "text-texto-suave"}`}>
                       {r.problema === "fora" ? "Passa da parede" : r.problema === "sobreposta" ? "Sobreposta" : r.estado === "posicionada" ? "Posicionada" : "Automática"}

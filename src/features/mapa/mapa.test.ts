@@ -171,3 +171,12 @@ describe("galpão grande (15.360 caixas)", () => {
     expect(ms).toBeLessThan(150);
   });
 });
+
+describe("demonstração", () => {
+  it("a caixa do canvas (B-M3-N3-C02) tem 14 documentos", () => {
+    const ruaB = ESTRUTURA_DEMO.ruas.find((r) => r.codigo === "B")!;
+    const m3 = ESTRUTURA_DEMO.modulos.find((m) => m.ruaId === ruaB.id && m.numero === 3)!;
+    const n3 = ESTRUTURA_DEMO.niveis.find((n) => n.moduloId === m3.id && n.numero === 3)!;
+    expect(DOCUMENTOS_DEMO.filter((d) => d.caixa_id === idCaixaDemo(n3.id, 2))).toHaveLength(14);
+  });
+});
