@@ -130,7 +130,7 @@ export async function iniciarEnvio(entrada: { documento: string; nome: string; t
   if (error || !arq) return { erro: mensagemDocumento(error?.code) };
 
   const pdf = await sb.storage.from("acervo").createSignedUploadUrl(arq.caminho as string);
-  if (pdf.error || !pdf.data) return { erro: `${MENSAGEM_INDISPONIVEL} [url:${pdf.error?.message?.slice(0, 60)}]` };
+  if (pdf.error || !pdf.data) return { erro: MENSAGEM_INDISPONIVEL };
   let urlMiniatura: string | null = null;
   if (entrada.miniatura) {
     const caminho = (arq.caminho as string).replace(/\.pdf$/, ".webp");
@@ -204,7 +204,7 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
     p_avisos: res.ok ? dados.data.avisos : [],
     p_miniatura: res.ok && dados.data.miniatura,
   });
-  if (error) return { ok: false, erro: `${MENSAGEM_INDISPONIVEL} [rpc:${error.code}:${error.message.slice(0, 60)}]` }; // TODO tirar: diagnóstico temporário
+  if (error) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
   if (!res.ok) {
     await sb.storage.from("acervo").remove([arq.caminho as string]);
     await sb.storage.from("miniaturas").remove([(arq.caminho as string).replace(/\.pdf$/, ".webp")]);

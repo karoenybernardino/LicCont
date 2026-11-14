@@ -63,7 +63,7 @@ jobs:
       # Supabase local com o seed fictício; os usuários de teste nascem no
       # tests/e2e/preparar.ts. Nada aqui toca o projeto de produção.
       - name: Subir o Supabase local
-        run: supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,postgres-meta,supavisor,mailpit
+        run: supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,postgres-meta,supavisor,mailpit
       - name: Variáveis do Supabase local
         run: |
           supabase status -o env > "$RUNNER_TEMP/supabase.env"
