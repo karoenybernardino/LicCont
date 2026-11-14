@@ -31,7 +31,12 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
   await preencher(page, "901/2024", "Aquisição fictícia de teste do PDF");
   await page.getByLabel("Escolher o PDF").setInputFiles(PDF);
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Pregão Eletrônico 901/2024" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1, name: "Pregão Eletrônico 901/2024" }))
+    .toBeVisible({ timeout: 30_000 })
+    .catch(async (e) => {
+      const avisos = await page.locator('[role="alert"], [role="status"]').allInnerTexts();
+      throw new Error(`${page.url()} :: ${JSON.stringify(avisos)} :: ${e.message.slice(0, 80)}`);
+    });
   await expect(page.getByText("3 páginas")).toBeVisible();
   await expect(page.getByRole("img", { name: "Primeira página do PDF" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
