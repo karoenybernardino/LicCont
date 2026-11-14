@@ -1,65 +1,101 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { CabecalhoSistema } from "./cabecalho";
+import { BotaoEnviar } from "@/ui/botao-enviar";
+import { SeletorTema } from "@/ui/seletor-tema";
+import { sair } from "./acoes";
+import { BarraLateral, Icone, type ItemMenu } from "./barra-lateral";
+import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
-import type { Secretaria, Usuario } from "./dal";
 
-const menu = [
-  { href: "/inicio", rotulo: "Início", admin: false },
-  { href: "/estrutura", rotulo: "Estrutura física", admin: false },
-  { href: "/usuarios", rotulo: "Usuários e perfis", admin: true },
-  { href: "/secretarias", rotulo: "Secretarias", admin: true },
-] as const;
+// Menu do canvas. Sem "href": tela de fase futura, aparece apagada.
+const PRINCIPAIS: ItemMenu[] = [
+  { href: "/inicio", rotulo: "Início", icone: "inicio" },
+  { rotulo: "Pesquisa", icone: "pesquisa" },
+  { href: "/estrutura", rotulo: "Estrutura física", icone: "estrutura" },
+  { rotulo: "Mapa 3D", icone: "mapa" },
+  { rotulo: "Cadastro", icone: "cadastro" },
+  { rotulo: "Empréstimos", icone: "emprestimos" },
+  { rotulo: "Temporalidade", icone: "temporalidade" },
+  { rotulo: "Auditoria", icone: "auditoria" },
+];
+const ADMIN: ItemMenu[] = [
+  { href: "/usuarios", rotulo: "Usuários e perfis", icone: "usuarios" },
+  { href: "/secretarias", rotulo: "Secretarias", icone: "secretarias" },
+];
 
-// Moldura das telas do sistema: cabeçalho, menu e conteúdo.
-// "trilha" é a linha pequena acima do título (como no canvas: "Acervo · Galpão").
-export function PaginaSistema({
+function iniciais(nome: string) {
+  return nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("");
+}
+
+// Moldura das telas do sistema, como no canvas: barra lateral de ícones,
+// linha de título (trilha + h1) com secretaria, prefeitura e iniciais, e o conteúdo.
+export async function PaginaSistema({
   usuario,
   secretaria,
   titulo,
   trilha,
   acoes,
-  larga = false,
   children,
 }: {
   usuario: Usuario;
   secretaria: Secretaria;
   titulo: string;
-  trilha?: string;
+  trilha?: ReactNode;
   acoes?: ReactNode;
+  /** Mantido por compatibilidade: todas as telas usam a largura inteira do canvas. */
   larga?: boolean;
   children: ReactNode;
 }) {
+  const prefeitura = await nomePrefeitura(usuario);
+  const principais = PRINCIPAIS;
+  const admin = usuario.administrador ? ADMIN : [];
   return (
-    <>
-      <CabecalhoSistema>
-        <SeletorSecretaria usuario={usuario} atual={secretaria} />
-      </CabecalhoSistema>
-      <nav aria-label="Menu do sistema" className="border-b border-linha px-4 sm:px-6">
-        <ul className="flex flex-wrap gap-4 py-2 text-sm">
-          {menu
-            .filter((item) => !item.admin || usuario.administrador)
-            .map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="text-destaque underline-offset-2 hover:underline">
-                  {item.rotulo}
-                </Link>
-              </li>
-            ))}
-        </ul>
-      </nav>
-      <main
-        className={`mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-8 sm:px-6 ${larga ? "max-w-7xl gap-4" : "max-w-5xl"}`}
-      >
-        <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">
+      <BarraLateral
+        principais={principais}
+        admin={admin}
+        sair={
+          <form action={sair}>
+            <BotaoEnviar
+              aria-label="Sair"
+              title="Sair"
+              className="flex size-11 items-center justify-center rounded-full text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua"
+            >
+              <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" />
+              </svg>
+            </BotaoEnviar>
+          </form>
+        }
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
           <div>
-            {trilha && <p className="text-xs text-texto-suave">{trilha}</p>}
-            <h1 className={larga ? "text-[21px] font-bold" : "text-2xl"}>{titulo}</h1>
+            {trilha && <div className="text-xs text-texto-suave">{trilha}</div>}
+            <h1 className="font-titulo text-[21px] font-bold">{titulo}</h1>
           </div>
-          {acoes}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {acoes}
+            <SeletorSecretaria usuario={usuario} atual={secretaria} />
+            <span className="hidden text-[13px] text-texto-suave sm:inline">{prefeitura}</span>
+            <span
+              aria-hidden
+              title={usuario.nome}
+              className="flex size-9 items-center justify-center rounded-full bg-[#285a66] text-[13px] font-bold text-white"
+            >
+              {iniciais(usuario.nome)}
+            </span>
+            <SeletorTema />
+          </div>
         </div>
-        {children}
-      </main>
-    </>
+        <main className="flex min-w-0 flex-1 flex-col gap-4 pr-2">{children}</main>
+      </div>
+    </div>
   );
 }
+
+export { Icone };
