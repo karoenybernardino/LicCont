@@ -68,6 +68,7 @@ test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({
 test("a pesquisa filtra por abas e filtros, e o filtro fica na URL", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
   await page.getByRole("link", { name: "Pesquisa", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Pesquisa" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await expect(page.getByRole("status").filter({ hasText: "documentos encontrados" })).toBeVisible();
   const todos = await page.getByRole("link", { name: /^Todos/ }).innerText();
