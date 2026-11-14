@@ -49,7 +49,7 @@ export function ListaCaixas({ arvore, selecionada, onSelecionar }: { arvore: NoR
                                     key={c.id}
                                     type="button"
                                     aria-pressed={c.id === selecionada}
-                                    aria-label={`Caixa ${c.codigo}`}
+                                    aria-label={`${String(c.numero).padStart(2, "0")}, caixa ${c.codigo}`}
                                     onClick={() => onSelecionar(c.id)}
                                     className={`min-h-8 min-w-9 rounded-md border px-1.5 font-mono text-xs max-md:min-h-11 max-md:min-w-11 ${estilos.foco} ${
                                       c.id === selecionada ? "border-[#d97706] bg-[#ff9f1c] font-semibold text-[#0b2e3a]" : "border-linha bg-superficie-2 hover:border-destaque"
