@@ -162,7 +162,7 @@ select throws_ok($$update public.documentos set ativo = false where id = 'd0a200
   '42501', null, 'operador A não desativa');
 select throws_ok($$update public.documentos set secretaria_id = 'a1000000-0000-0000-0000-000000000000' where id = 'd0a20000-0000-0000-0000-000000000000'$$,
   '42501', null, 'operador A não troca a secretaria do documento');
-select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
+select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
   values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'obras.pdf', 5000)$$,
   'operador A anexa PDF em Obras');
 select results_eq($$select situacao, ativo, caminho like '11111111-1111-1111-1111-111111111111/a2000000-0000-0000-0000-000000000000/%.pdf' from public.arquivos$$,
