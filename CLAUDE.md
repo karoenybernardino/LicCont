@@ -69,3 +69,18 @@ perguntar antes.
 
 Nunca pedir chave ou senha no chat. Listar no PR o que falta e onde colar
 (variáveis da Vercel ou segredos do GitHub Actions).
+
+## Fidelidade ao canvas
+
+- Fonte do visual: `docs/telas/` (ler `docs/telas/README.md`). O link do canvas é
+  privado e não deve ser usado.
+- Antes de mexer numa tela, abrir o HTML do quadro correspondente (`telas.json`
+  diz qual) e copiar medidas, cores, fontes, textos e ordem dos elementos. Não
+  arredondar para a escala do Tailwind; usar valores arbitrários ou tokens com o
+  valor exato. Não inventar elemento que não está no quadro; se faltar um estado
+  (vazio, carregando, erro), perguntar antes.
+- Claro e escuro têm o mesmo layout; o que muda num muda no outro.
+- Laranja/amarelo (#ff9f1c / #ffd27a) só na caixa selecionada.
+- Antes do PR de qualquer tela: `npm run telas:comparar -- <QuadroEscuro> <QuadroClaro>`
+  e anexar ao PR as imagens de `test-results/comparacao/`. Diferença visível que
+  não seja dado bloqueia o PR.
