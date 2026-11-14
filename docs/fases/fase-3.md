@@ -587,8 +587,22 @@ responsável preferir, as 6 tarefas viram 3 PRs (pergunta 9).
 
 ## Decisões do responsável
 
-(a preencher após a aprovação)
+Em 2026-11-14 o responsável aprovou as 12 recomendações acima, com estas mudanças:
+
+- **Um PR só** (PR 31) em vez de três, junto com a moldura e as telas refeitas pelo canvas.
+- **Ícones de fases futuras aparecem desabilitados** ("em breve") na barra lateral.
+- As telas sem quadro antes (rua, visualizador de PDF, erros) seguem o canvas atual.
 
 ## Resultado
 
-(a preencher no fechamento da fase)
+Entregue no PR 31: tabelas `documentos` e `arquivos` com RLS e auditoria, pesquisa
+(`pesquisar_documentos`), ocupação e "próxima caixa livre", buckets `acervo` e
+`miniaturas`, cadastro, edição, conferência, desativação e visualizador (pdf.js, decisão 0007).
+
+Desvios do plano:
+
+- Conferência: funções `public.marcar_conferindo` e `public.concluir_conferencia` (não `app.*`).
+- Caminho no bucket sem o prefixo `acervo/`.
+- Envio **sem retomada (TUS)**: se a internet cair, recomeça do zero. Fica para uma tarefa própria.
+- Pendentes: tela 403 ligada às rotas, busca na lista de ruas, "Salvar e imprimir etiqueta".
+- Desempenho: `supabase/tests/documentos_desempenho.test.sql` (100 mil documentos, < 1 s) roda no CI.
