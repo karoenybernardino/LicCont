@@ -28,7 +28,7 @@ export default async function EditarPlanta({ searchParams }: { searchParams: Pro
       trilha="Mapa do galpão › Editar planta"
       acoes={<Link href={`/mapa?galpao=${estrutura.galpao.id}`} className={estilos.botaoBorda}>Voltar ao mapa</Link>}
     >
-      <EditorPlanta estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} />
+      <EditorPlanta key={JSON.stringify(planta)} estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} />
     </PaginaSistema>
   );
 }

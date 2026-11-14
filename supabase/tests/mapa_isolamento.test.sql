@@ -202,6 +202,17 @@ select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000
   'coordenador A salva a planta inteira');
 select results_eq($$select planta_x::int, planta_y::int, planta_giro::int from public.ruas where id = 'c1a00000-0000-0000-0000-000000000000'$$,
   $$values (4, 2, 180)$$, 'a rua foi posicionada pela função');
+select results_eq($$select count(*)::int from public.planta_elementos where galpao_id = 'c0a00000-0000-0000-0000-000000000000' and ativo$$,
+  array[1], 'a porta nova entrou ativa');
+-- Elemento que sumiu da lista é desativado; elemento novo já removido não entra.
+select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb,
+  '[{"id":null,"tipo":"pilar","x":1,"y":1,"largura":1,"profundidade":1,"giro":0,"ativo":false}]'::jsonb)$$,
+  'salvar sem elementos desativa os que sumiram');
+select results_eq($$select count(*)::int from public.planta_elementos where galpao_id = 'c0a00000-0000-0000-0000-000000000000' and ativo$$,
+  array[0], 'nenhum elemento ficou ativo e o novo removido não entrou');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb,
+  '[{"id":"e0b00000-0000-0000-0000-000000000001","tipo":"pilar","x":1,"y":1,"largura":1,"profundidade":1,"giro":0}]'::jsonb)$$,
+  '42501', null, 'elemento de outra prefeitura na lista é recusado');
 select throws_ok($$select public.salvar_planta('c0b00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,
   '42501', null, 'galpão de outra prefeitura é recusado');
 select throws_ok($$select public.salvar_planta('c0f00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,

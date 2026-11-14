@@ -72,6 +72,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   const [listaAberta, setListaAberta] = useState(false);
   const [ocupacao, setOcupacao] = useState<Map<string, { documentos: number; capacidade: number }> | null>(null);
   const [ocupacaoLigada, setOcupacaoLigada] = useState(false);
+  const buscandoOcupacao = useRef(false);
   const [busca, setBusca] = useState("");
   const [mensagem, setMensagem] = useState<string | null>(destaqueIds.length ? `Mostrando as caixas dos ${destaqueIds.length} primeiros resultados` : null);
   const [anuncio, setAnuncio] = useState("");
@@ -114,12 +115,18 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   useEffect(() => {
     if (!selecionada) return;
     let vivo = true;
-    lerCaixa({ id: selecionada }).then((d) => {
-      if (!vivo) return;
-      setDetalhe(d);
-      if (d) setAnuncio(`Rua ${d.rua}, módulo ${d.modulo}, nível ${d.nivel}, caixa ${d.caixa}. ${d.total === 1 ? "1 documento" : `${d.total} documentos`}.`);
-      else setAnuncio("Caixa não encontrada.");
-    });
+    lerCaixa({ id: selecionada })
+      .then((d) => {
+        if (!vivo) return;
+        setDetalhe(d);
+        if (d) setAnuncio(`Rua ${d.rua}, módulo ${d.modulo}, nível ${d.nivel}, caixa ${d.caixa}. ${d.total === 1 ? "1 documento" : `${d.total} documentos`}.`);
+        else setAnuncio("Caixa não encontrada.");
+      })
+      .catch(() => {
+        if (!vivo) return;
+        setDetalhe(null);
+        setAnuncio("Não foi possível abrir a caixa. Tente de novo.");
+      });
     return () => {
       vivo = false;
     };
@@ -128,7 +135,9 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   useEffect(() => {
     if (!destinoId) return;
     let vivo = true;
-    lerCaixa({ id: destinoId }).then((d) => vivo && setDestino(d));
+    lerCaixa({ id: destinoId })
+      .then((d) => vivo && setDestino(d))
+      .catch(() => vivo && setDestino(null));
     return () => {
       vivo = false;
     };
@@ -164,9 +173,17 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   async function ligarOcupacao() {
     if (ocupacaoLigada) return setOcupacaoLigada(false);
     setOcupacaoLigada(true);
-    if (!ocupacao) {
-      const linhas = await lerOcupacao({ galpao: galpaoId, grande });
-      setOcupacao(new Map(linhas.map((l) => [l.caixaId, { documentos: l.documentos, capacidade: l.capacidade }])));
+    if (!ocupacao && !buscandoOcupacao.current) {
+      buscandoOcupacao.current = true;
+      try {
+        const linhas = await lerOcupacao({ galpao: galpaoId, grande });
+        setOcupacao(new Map(linhas.map((l) => [l.caixaId, { documentos: l.documentos, capacidade: l.capacidade }])));
+      } catch {
+        setOcupacaoLigada(false);
+        setMensagem("Não foi possível carregar a ocupação. Tente de novo.");
+      } finally {
+        buscandoOcupacao.current = false;
+      }
     }
   }
 
@@ -193,7 +210,12 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
       }
       return setMensagem("Caixa não encontrada.");
     }
-    const r = await buscarNoMapa({ q: texto });
+    let r: Awaited<ReturnType<typeof buscarNoMapa>>;
+    try {
+      r = await buscarNoMapa({ q: texto });
+    } catch {
+      return setMensagem("Não foi possível buscar agora. Tente de novo.");
+    }
     const achada = r.map((x) => porCodigo.get(x.codigo)).find((x): x is string => !!x);
     if (achada) {
       setMensagem(null);
@@ -237,7 +259,13 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
       setDestinoId(null);
       setMensagem(r.aviso ?? null);
       setAnuncio(r.aviso ?? "");
-      lerCaixa({ id: detalhe.id }).then(setDetalhe);
+      // A ocupação em cache ficou velha: some e volta a ser buscada se estiver ligada.
+      setOcupacao(null);
+      if (ocupacaoLigada) {
+        setOcupacaoLigada(false);
+        setMensagem((m) => m ?? "Ocupação atualizada. Ligue de novo para ver as cores novas.");
+      }
+      lerCaixa({ id: detalhe.id }).then(setDetalhe).catch(() => setDetalhe(null));
     });
   }
 

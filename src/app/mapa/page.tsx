@@ -44,6 +44,7 @@ export default async function Mapa({ searchParams }: { searchParams: Promise<Rec
         </Painel>
       ) : (
         <MapaCliente
+          key={`${galpao.id}:${p.caixa ?? ""}:${p.codigos.join(",")}`}
           estrutura={estrutura}
           caixas={caixas}
           planta={planta}

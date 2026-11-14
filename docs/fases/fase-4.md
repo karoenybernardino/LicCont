@@ -104,7 +104,7 @@ abre a caixa, e o documento emprestado aparece como tal no mapa.
    da Fase 3).
 7. **pgTAP — isolamento e regras do banco** (tudo o que esta fase cria, ver
    "Modelo de dados"):
-   - `planta_elementos` (`supabase/tests/planta_isolamento.test.sql`):
+   - `planta_elementos` (`supabase/tests/mapa_isolamento.test.sql`):
      outra prefeitura não lê, não insere e não altera; Operador e Consulta
      leem e não escrevem; administrador e coordenador escrevem; `anon` sem
      privilégio; DELETE sem GRANT para ninguém; elemento não aponta para
@@ -677,4 +677,16 @@ Em 2026-11-14 o responsável respondeu:
 
 ## Resultado
 
-(Preencher no fechamento.)
+Implementado em um PR só (decisão 1). Teste de isolamento: `supabase/tests/mapa_isolamento.test.sql`.
+
+Diferenças em relação ao plano:
+
+- **Conferido:** quando quem move não é coordenador, o gatilho que já existia (`app.documento_conferir`) zera a conferência do documento movido, porque a troca de caixa conta como mudança. Comportamento mantido e registrado aqui; a Consulta não move.
+- **Caixa destino:** caixa desativada dá LC004; caixa de outra prefeitura ou inexistente dá o mesmo 42501.
+- **Salvar a planta:** vira a função `salvar_planta` (uma transação só). Elemento que sai da lista é desativado, nunca apagado.
+- **Rótulos do 3D:** camada de HTML própria, projetada a cada quadro (o `Html` do drei quebrava o laço de desenho).
+- **Demonstração:** ruas sem posição na planta ficam em leiaute automático; pesquisa abre o mapa com `?codigos=`.
+- **Celular (resposta 9):** 3D e planta no mesmo seletor, abre no 3D e lembra a última escolha.
+- **Ocupação do galpão:** lida em páginas, para passar do limite de linhas do PostgREST.
+
+Não verificado localmente: pgTAP e Playwright (só rodam no CI); arrastar e salvar no editor; fps no galpão grande.

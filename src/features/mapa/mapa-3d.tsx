@@ -78,7 +78,9 @@ function Malha({ inst, trio, cor, onClique }: { inst: Instancias; trio: Trio; co
     m.instanceMatrix.needsUpdate = true;
     m.computeBoundingSphere();
     invalidate();
-  }, [inst, invalidate]);
+  }, [inst, geometria, invalidate]);
+  // A geometria antiga some da GPU quando o tema troca.
+  useEffect(() => () => geometria.dispose(), [geometria]);
   useLayoutEffect(() => {
     const m = ref.current;
     if (!m) return;
@@ -159,7 +161,7 @@ function Camera({
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [leiaute, reduzir, limites],
+    [leiaute, reduzir, limites, tamanho],
   );
 
   // O CameraControls só existe depois da montagem: o primeiro enquadramento
@@ -175,18 +177,25 @@ function Camera({
 
   // Ao abrir já com uma caixa selecionada, a câmera vai até ela.
   const aberta = useRef(false);
+  const selecionadaInicial = useRef(selecionada);
   useEffect(() => {
-    if (aberta.current || selecionada === null) return;
-    aberta.current = true;
+    if (aberta.current) return;
+    // Só a seleção que veio com a página enquadra sem animar; cliques depois usam irAte.
+    if (selecionadaInicial.current === null) {
+      aberta.current = true;
+      return;
+    }
+    const alvo = selecionadaInicial.current;
     const t = window.setTimeout(() => {
+      aberta.current = true;
       const c = controles.current;
       if (!c) return;
-      const [x, y, z] = centroDaCaixa(leiaute, selecionada);
+      const [x, y, z] = centroDaCaixa(leiaute, alvo);
       void c.moveTo(x - limites.largura / 2, y, z - limites.fundo / 2, false);
       void c.zoomTo(Math.min(c.maxZoom, zoomGeral.current * 3), false);
     }, 60);
     return () => window.clearTimeout(t);
-  }, [selecionada, leiaute, limites]);
+  }, [leiaute, limites]);
 
   return (
     <CameraControls

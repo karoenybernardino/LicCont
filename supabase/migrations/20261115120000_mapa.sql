@@ -219,8 +219,19 @@ begin
     end if;
   end loop;
 
+  -- Elemento que o editor não mandou mais foi removido: desativa (nunca apaga).
+  update public.planta_elementos
+     set ativo = false
+   where galpao_id = p_galpao and ativo
+     and id not in (
+       select (e ->> 'id')::uuid from jsonb_array_elements(coalesce(p_elementos, '[]'::jsonb)) e
+        where e ->> 'id' is not null
+     );
+
   for v_item in select * from jsonb_array_elements(coalesce(p_elementos, '[]'::jsonb)) loop
-    if v_item ->> 'id' is null then
+    if v_item ->> 'id' is null and coalesce((v_item ->> 'ativo')::boolean, true) = false then
+      continue;
+    elsif v_item ->> 'id' is null then
       insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, rotulo, x, y, largura, profundidade, giro)
       values (app.prefeitura_atual(), p_galpao, v_item ->> 'tipo', nullif(trim(v_item ->> 'rotulo'), ''),
               (v_item ->> 'x')::smallint, (v_item ->> 'y')::smallint, (v_item ->> 'largura')::smallint,

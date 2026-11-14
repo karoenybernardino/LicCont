@@ -4,6 +4,7 @@
 // entrada, ruas arrastáveis, portas, pilares, paredes e áreas. Tudo em células
 // de módulo. Desfazer e refazer guardam fotografias do estado.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent } from "react";
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { resumir } from "@/features/estrutura/ocupacao";
@@ -28,8 +29,32 @@ const padrao: Record<TipoElemento, Pick<ElementoPlanta, "largura" | "profundidad
   area: { largura: 3, profundidade: 2, rotulo: "Área" },
 };
 
+// Campo numérico: guarda o texto enquanto a pessoa digita e só confirma ao sair ou no Enter.
+function Num({ valor, min, max, onValor }: { valor: number; min: number; max: number; onValor(v: number): void }) {
+  const [texto, setTexto] = useState<string | null>(null);
+  const fechar = () => {
+    if (texto === null) return;
+    const v = Math.max(min, Math.min(max, Math.round(Number(texto) || min)));
+    setTexto(null);
+    if (v !== valor) onValor(v);
+  };
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      className={campo}
+      value={texto ?? valor}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={fechar}
+      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), fechar())}
+    />
+  );
+}
+
 export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estrutura: Estrutura; planta: Planta; galpaoId: string; nomeGalpao: string }) {
   const tema = useTema();
+  const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
   const inicial = useMemo<Estado>(() => {
     const base = calcularLeiaute(estrutura, [], planta);
@@ -90,11 +115,13 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
     const soltar = () => {
       window.removeEventListener("pointermove", mover);
       window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", soltar);
       setRascunho(null);
       if (ultimo && JSON.stringify(ultimo) !== JSON.stringify(estados[indice])) confirmar(ultimo);
     };
     window.addEventListener("pointermove", mover);
     window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", soltar);
   }
   const limitar = (v: number) => Math.max(0, Math.min(199, v));
 
@@ -170,8 +197,8 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
       });
       setMensagem({ erro: !!r.erro, texto: r.erro ?? r.aviso ?? "Planta salva." });
       if (!r.erro) {
-        setEstados([atual]);
-        setIndice(0);
+        // Recarrega do servidor: o editor remonta com os ids reais dos elementos novos.
+        router.refresh();
       }
     });
   }
@@ -180,7 +207,6 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
   const selEl = atual.elementos.find((x) => x.id === elSel);
   const fora = problemas[0];
   const mudou = indice;
-  const num = (v: string, min: number, max: number) => Math.max(min, Math.min(max, Math.round(Number(v) || 0)));
 
   return (
     <>
@@ -219,11 +245,11 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             <div className="grid grid-cols-2 gap-2">
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Largura
-                <input type="number" min={4} max={200} className={campo} value={atual.largura} onChange={(e) => confirmar({ ...atual, largura: num(e.target.value, 4, 200) })} />
+                <Num valor={atual.largura} min={4} max={200} onValor={(v) => confirmar({ ...atual, largura: v })} />
               </label>
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Profundidade
-                <input type="number" min={4} max={200} className={campo} value={atual.profundidade} onChange={(e) => confirmar({ ...atual, profundidade: num(e.target.value, 4, 200) })} />
+                <Num valor={atual.profundidade} min={4} max={200} onValor={(v) => confirmar({ ...atual, profundidade: v })} />
               </label>
             </div>
             <p className="text-xs text-texto-suave">Medidas em células. 1 célula = largura de um módulo de estante.</p>
@@ -237,7 +263,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
               </label>
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Posição
-                <input type="number" min={0} max={199} className={campo} value={atual.posicao} onChange={(e) => confirmar({ ...atual, posicao: num(e.target.value, 0, 199) })} />
+                <Num valor={atual.posicao} min={0} max={199} onValor={(v) => confirmar({ ...atual, posicao: v })} />
               </label>
             </div>
             <h2 className={rotulo}>Ferramentas</h2>
@@ -273,11 +299,11 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
                     Coluna x
-                    <input type="number" min={0} max={199} className={campo} value={selRua.x} onChange={(e) => confirmar(moverRua(selRua.id, { x: num(e.target.value, 0, 199) }))} />
+                    <Num key={selRua.id + "x" + selRua.x} valor={selRua.x} min={0} max={199} onValor={(v) => confirmar(moverRua(selRua.id, { x: v }))} />
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
                     Linha y
-                    <input type="number" min={0} max={199} className={campo} value={selRua.y} onChange={(e) => confirmar(moverRua(selRua.id, { y: num(e.target.value, 0, 199) }))} />
+                    <Num key={selRua.id + "y" + selRua.y} valor={selRua.y} min={0} max={199} onValor={(v) => confirmar(moverRua(selRua.id, { y: v }))} />
                   </label>
                 </div>
                 <div role="group" aria-label="Giro" className="flex gap-1">
@@ -307,7 +333,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                   {(["x", "y", "largura", "profundidade"] as const).map((k) => (
                     <label key={k} className="flex flex-col gap-1 text-xs text-texto-suave">
                       {k === "x" ? "Coluna x" : k === "y" ? "Linha y" : k === "largura" ? "Largura" : "Profundidade"}
-                      <input type="number" min={k === "x" || k === "y" ? 0 : 1} max={k === "x" || k === "y" ? 199 : 200} className={campo} value={selEl[k]} onChange={(e) => confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === selEl.id ? { ...x, [k]: num(e.target.value, k === "x" || k === "y" ? 0 : 1, 200) } : x)) })} />
+                      <Num key={selEl.id + k + selEl[k]} valor={selEl[k]} min={k === "x" || k === "y" ? 0 : 1} max={k === "x" || k === "y" ? 199 : 200} onValor={(v) => confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === selEl.id ? { ...x, [k]: v } : x)) })} />
                     </label>
                   ))}
                 </div>
