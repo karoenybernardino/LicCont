@@ -88,6 +88,7 @@ test("a pesquisa filtra por abas e filtros, e o filtro fica na URL", async ({ pa
 
 test("Consulta pesquisa e abre o documento, mas não cadastra", async ({ page }) => {
   await entrar(page, { email: USUARIOS.consultaDocs.email, secretaria: "Saúde" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await expect(page.getByRole("link", { name: "Cadastrar documento" })).toHaveCount(0);
   await page.goto("/documentos/novo");
   await expect(page).toHaveURL(/\/pesquisa$/);
@@ -98,6 +99,7 @@ test("Consulta pesquisa e abre o documento, mas não cadastra", async ({ page })
 
 test("o operador de Obras não acha documento da Saúde", async ({ page }) => {
   await entrar(page, { email: USUARIOS.operadorObras.email, secretaria: "Obras" });
+  await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/pesquisa?q=901/2024");
   await expect(page.getByText("Nenhum documento encontrado")).toBeVisible();
 });
