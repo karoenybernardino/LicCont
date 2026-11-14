@@ -25,7 +25,8 @@ export type RuaLeiaute = Retangulo & {
   sobrepoeCom: string | null;
 };
 
-export type ModuloLeiaute = Retangulo & { id: string; ruaId: string; numero: number; niveis: number };
+// "primeira" é a instância da primeira caixa do módulo (-1 se não houver caixa).
+export type ModuloLeiaute = Retangulo & { id: string; ruaId: string; numero: number; niveis: number; caixas: number; primeira: number };
 
 // Matrizes planas (uma entrada por instância) para as malhas instanciadas.
 export type Instancias = { n: number; centro: Float32Array; tamanho: Float32Array };
@@ -36,6 +37,8 @@ export type Leiaute = {
   entrada: { lado: LadoEntrada; posicao: number; largura: number };
   ruas: RuaLeiaute[];
   modulos: ModuloLeiaute[];
+  /** Módulo pela chave "idDaRua:número". */
+  porModulo: Map<string, ModuloLeiaute>;
   caixas: Instancias & {
     ids: string[];
     // por instância: índice da rua, número do módulo, do nível e da caixa
@@ -182,6 +185,7 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   const mont = vazias(nMont);
   const faixas = vazias(bases.length);
   const modulosLeiaute: ModuloLeiaute[] = [];
+  const porModulo = new Map<string, ModuloLeiaute>();
 
   const colocar = (inst: Instancias, i: number, ret: Retangulo, y: number, altura: number) => {
     inst.centro[i * 3] = (ret.x + ret.w / 2) * CELULA;
@@ -203,11 +207,12 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   let im = 0;
   bases.forEach((b, ri) => {
     const nMods = b.mods.length;
-    let altura = 0;
     b.mods.forEach((m, mi) => {
       const ns = (niveisPorModulo.get(m.id) ?? []).sort((a, c) => a.numero - c.numero);
-      altura = Math.max(altura, ns.length * ALTURA_NIVEL);
-      modulosLeiaute.push({ id: m.id, ruaId: b.id, numero: m.numero, niveis: ns.length, ...retLocal(b, mi, 0, mi + 1, 2) });
+      const modulo: ModuloLeiaute = { id: m.id, ruaId: b.id, numero: m.numero, niveis: ns.length, caixas: 0, primeira: -1, ...retLocal(b, mi, 0, mi + 1, 2) };
+      modulosLeiaute.push(modulo);
+      porModulo.set(`${b.id}:${m.numero}`, modulo);
+      const inicio = ic;
       // Prateleiras (uma tábua por nível).
       for (const n of ns) {
         colocar(prat, ip++, retLocal(b, mi, 0, mi + 1, 2), (n.numero - 1) * ALTURA_NIVEL, 0.06);
@@ -242,10 +247,11 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
           ic++;
         }
       }
+      modulo.caixas = ic - inicio;
+      modulo.primeira = ic > inicio ? inicio : -1;
     });
     // Faixa de segurança no chão, ao longo da frente da rua.
     colocar(faixas, ri, retLocal(b, 0, 2.02, nMods, 2.14), 0, 0.02);
-    void altura;
   });
 
   return {
@@ -254,11 +260,17 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
     entrada: { lado: planta.entradaLado ?? "frente", posicao: planta.entradaPosicao ?? 2, largura: LARGURA_ENTRADA },
     ruas,
     modulos: modulosLeiaute,
+    porModulo,
     caixas: cx,
     prateleiras: prat,
     montantes: mont,
     faixas,
   };
+}
+
+// Módulo a que a instância pertence.
+export function moduloDaInstancia(l: Leiaute, i: number) {
+  return l.porModulo.get(`${l.ruas[l.caixas.meta[i * 4]].id}:${l.caixas.meta[i * 4 + 1]}`) ?? null;
 }
 
 // Endereço de uma instância de caixa (para o rótulo e o anúncio).

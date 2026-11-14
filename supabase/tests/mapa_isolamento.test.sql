@@ -94,6 +94,7 @@ select ok(not has_column_privilege('authenticated', 'public.planta_elementos', '
 select ok(not has_column_privilege('authenticated', 'public.planta_elementos', 'galpao_id', 'update'), 'elemento não muda de galpão');
 select ok(not has_function_privilege('anon', 'public.ocupacao_galpao(uuid)', 'execute'), 'anon não executa ocupacao_galpao');
 select ok(not has_function_privilege('anon', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'anon não executa mover_documentos');
+select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb)', 'execute'), 'anon não executa salvar_planta');
 select ok(has_function_privilege('authenticated', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'authenticated executa mover_documentos');
 select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y)
   values ('11111111-1111-1111-1111-111111111111', 'c0b00000-0000-0000-0000-000000000000', 'pilar', 1, 1)$$,
@@ -193,6 +194,27 @@ select throws_ok($$delete from public.planta_elementos$$, '42501', null, 'coorde
 select throws_ok($$update public.ruas set planta_x = null$$, '23514', null, 'posição da rua precisa de coluna e linha juntas');
 select throws_ok($$update public.galpoes set planta_largura = 3$$, '23514', null, 'galpão menor que 4 células é recusado');
 select throws_ok($$update public.ruas set planta_giro = 45$$, '23514', null, 'giro só em 0, 90, 180 ou 270');
+
+-- salvar_planta: tudo numa transação; galpão ou rua de fora dá o mesmo erro.
+select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,
+  '[{"id":"c1a00000-0000-0000-0000-000000000000","x":4,"y":2,"giro":180}]'::jsonb,
+  '[{"tipo":"porta","rotulo":"Entrada de serviço","x":0,"y":3,"largura":1,"profundidade":2,"giro":0}]'::jsonb)$$,
+  'coordenador A salva a planta inteira');
+select results_eq($$select planta_x::int, planta_y::int, planta_giro::int from public.ruas where id = 'c1a00000-0000-0000-0000-000000000000'$$,
+  $$values (4, 2, 180)$$, 'a rua foi posicionada pela função');
+select throws_ok($$select public.salvar_planta('c0b00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,
+  '42501', null, 'galpão de outra prefeitura é recusado');
+select throws_ok($$select public.salvar_planta('c0f00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,
+  '42501', null, 'galpão que não existe dá o mesmo erro');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,
+  '[{"id":"c1b00000-0000-0000-0000-000000000000","x":1,"y":1,"giro":0}]'::jsonb, '[]'::jsonb)$$,
+  '42501', null, 'rua de outro galpão desfaz a planta inteira');
+select results_eq($$select planta_largura::int from public.galpoes where id = 'c0a00000-0000-0000-0000-000000000000'$$,
+  array[16], 'a planta recusada não alterou o galpão');
+select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal1');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 20, 10, 'frente', 2, '[]'::jsonb, '[]'::jsonb)$$,
+  '42501', null, 'operador A não salva a planta');
+select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
 
 -- ---------------------------------------------------------------------------
 -- Administrador A (segundo fator ok) e administrador B

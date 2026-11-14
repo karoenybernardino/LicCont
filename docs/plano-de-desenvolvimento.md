@@ -62,7 +62,7 @@ Uma aplicação única atende todas as prefeituras, e o isolamento entre elas fi
 | Regras | Ações no servidor + Zod | Toda entrada validada no servidor antes do banco |
 | Banco | Postgres (Supabase) com RLS | Isolamento por prefeitura e secretaria |
 | Arquivos | Supabase Storage privado | PDFs e imagens de etiqueta |
-| Mapa 3D | SVG gerado dos dados (como no protótipo) | Leve, funciona em computador fraco e no celular |
+| Mapa 3D | three.js + react-three-fiber (planta baixa e reserva sem WebGL em SVG) | 3D de verdade com giro; decisão 0008 |
 | QR code | Biblioteca `qrcode` no servidor | QR leva a um link interno que exige login |
 | Documentos | PDF e Word com timbrado | Etiquetas, termo de empréstimo, termo de eliminação |
 | Testes | Vitest, Playwright, pgTAP | Unidade, ponta a ponta e regras do banco |

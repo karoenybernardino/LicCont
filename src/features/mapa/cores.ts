@@ -40,12 +40,3 @@ export const CORES: Record<Tema, PaletaMapa> = {
     planta: { fundo: ["#0e1d22", "#0a171c"], rua: "#13272e", livreBorda: "#2f6b73", livre: "#0f2127", modulo: ["#2dd4bf", "#0e7490"], rotulo: "#8cc5cf", rotuloTexto: "#0b2e3a" },
   },
 };
-
-const canais = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-
-// Tom da face em relação ao topo, canal a canal: o 3D usa uma só cor por
-// instância (a do topo) e esta razão devolve o tom da frente e do lado.
-export function razaoFace(topo: string, face: string): [number, number, number] {
-  const [a, b] = [canais(topo), canais(face)];
-  return [b[0] / a[0], b[1] / a[1], b[2] / a[2]];
-}

@@ -172,3 +172,73 @@ end
 $$;
 revoke execute on function public.mover_documentos(uuid[], uuid) from public, anon;
 grant execute on function public.mover_documentos(uuid[], uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Salvar a planta inteira numa transação: tamanho, entrada, posição das ruas e
+-- elementos. security invoker: as políticas e o gatilho app.planta_confere
+-- valem para quem chama. Rua ou elemento fora do galpão dá o mesmo erro de
+-- permissão (sem oráculo). A conferência de paredes e sobreposição é da
+-- Server Action (a mesma função do leiaute), porque depende do número de
+-- módulos, que muda depois.
+-- ---------------------------------------------------------------------------
+create or replace function public.salvar_planta(
+  p_galpao uuid, p_largura int, p_profundidade int, p_lado text, p_posicao int,
+  p_ruas jsonb, p_elementos jsonb)
+returns void
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_item jsonb;
+  v_linhas int;
+begin
+  if jsonb_typeof(coalesce(p_ruas, '[]'::jsonb)) <> 'array'
+     or jsonb_typeof(coalesce(p_elementos, '[]'::jsonb)) <> 'array'
+     or jsonb_array_length(coalesce(p_ruas, '[]'::jsonb)) > 500
+     or jsonb_array_length(coalesce(p_elementos, '[]'::jsonb)) > 200 then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
+
+  update public.galpoes
+     set planta_largura = p_largura, planta_profundidade = p_profundidade,
+         entrada_lado = p_lado, entrada_posicao = p_posicao
+   where id = p_galpao;
+  get diagnostics v_linhas = row_count;
+  if v_linhas = 0 then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
+
+  for v_item in select * from jsonb_array_elements(coalesce(p_ruas, '[]'::jsonb)) loop
+    update public.ruas
+       set planta_x = (v_item ->> 'x')::smallint, planta_y = (v_item ->> 'y')::smallint,
+           planta_giro = coalesce((v_item ->> 'giro')::smallint, 0)
+     where id = (v_item ->> 'id')::uuid and galpao_id = p_galpao;
+    get diagnostics v_linhas = row_count;
+    if v_linhas = 0 then
+      raise exception 'sem permissão' using errcode = '42501';
+    end if;
+  end loop;
+
+  for v_item in select * from jsonb_array_elements(coalesce(p_elementos, '[]'::jsonb)) loop
+    if v_item ->> 'id' is null then
+      insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, rotulo, x, y, largura, profundidade, giro)
+      values (app.prefeitura_atual(), p_galpao, v_item ->> 'tipo', nullif(trim(v_item ->> 'rotulo'), ''),
+              (v_item ->> 'x')::smallint, (v_item ->> 'y')::smallint, (v_item ->> 'largura')::smallint,
+              (v_item ->> 'profundidade')::smallint, coalesce((v_item ->> 'giro')::smallint, 0));
+    else
+      update public.planta_elementos
+         set rotulo = nullif(trim(v_item ->> 'rotulo'), ''), x = (v_item ->> 'x')::smallint,
+             y = (v_item ->> 'y')::smallint, largura = (v_item ->> 'largura')::smallint,
+             profundidade = (v_item ->> 'profundidade')::smallint, giro = coalesce((v_item ->> 'giro')::smallint, 0),
+             ativo = coalesce((v_item ->> 'ativo')::boolean, true)
+       where id = (v_item ->> 'id')::uuid and galpao_id = p_galpao;
+      get diagnostics v_linhas = row_count;
+      if v_linhas = 0 then
+        raise exception 'sem permissão' using errcode = '42501';
+      end if;
+    end if;
+  end loop;
+end
+$$;
+revoke execute on function public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb) from public, anon;
+grant execute on function public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb) to authenticated;

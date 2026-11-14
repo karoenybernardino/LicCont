@@ -4,7 +4,7 @@ import { clienteSessao } from "@/lib/supabase/servidor";
 import { secretariasPermitidas, type Usuario } from "@/features/sessao/dal";
 import { SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
-import { DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
+import { CAPACIDADE_CAIXA_DEMO, DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
 import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { carregarEstrutura } from "@/features/estrutura/dados";
 import { resumir } from "@/features/estrutura/ocupacao";
@@ -178,7 +178,7 @@ export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]
     if (!nivel) return [];
     return Array.from({ length: nivel.caixas }, (_, i) => {
       const id = idCaixaDemo(nivel.id, i + 1);
-      return { id, numero: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: 50 };
+      return { id, numero: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: CAPACIDADE_CAIXA_DEMO };
     });
   }
   const sb = await clienteSessao();
@@ -211,7 +211,7 @@ export async function proximaCaixaLivre(escopo: { nivel?: string; modulo?: strin
     for (const n of niveis) {
       for (let i = 1; i <= n.caixas; i++) {
         const id = idCaixaDemo(n.id, i);
-        if (DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length < 50) return id;
+        if (DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length < CAPACIDADE_CAIXA_DEMO) return id;
       }
     }
     return null;

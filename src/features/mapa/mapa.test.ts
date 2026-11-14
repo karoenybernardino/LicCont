@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { DOCUMENTOS_DEMO, idCaixaDemo } from "@/features/demo/documentos";
 import { lerCodigo, formatarCodigo } from "./codigo";
-import { CORES, razaoFace } from "./cores";
+import { CORES } from "./cores";
 import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, tamanhoRua, validarPlanta, vizinha } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
@@ -45,12 +45,6 @@ describe("cores do canvas", () => {
   it("claro e escuro têm as mesmas chaves e quatro faixas", () => {
     expect(Object.keys(CORES.claro)).toEqual(Object.keys(CORES.escuro));
     expect(CORES.claro.ocupacao).toHaveLength(4);
-  });
-  it("a razão da face devolve o tom desenhado", () => {
-    const [r, g, b] = razaoFace("#9be9d6", "#3cbfa6");
-    expect(Math.round(0x9b * r)).toBe(0x3c);
-    expect(Math.round(0xe9 * g)).toBe(0xbf);
-    expect(Math.round(0xd6 * b)).toBe(0xa6);
   });
 });
 

@@ -63,9 +63,17 @@ export default async function RuaDoGalpao({
       trilha={`Estrutura física · ${e.galpao?.nome ?? "Galpão"}`}
       larga
       acoes={
-        <Link href={`/estrutura?galpao=${galpaoId}&rua=${rua.id}`} className={botaoPequeno}>
-          Voltar para a estrutura
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/mapa?galpao=${galpaoId}`} className={botaoPequeno}>
+            Voltar ao mapa
+          </Link>
+          <Link href={`/mapa?galpao=${galpaoId}&codigos=${Array.from(caixasPorNivel.entries()).flatMap(([nid, ns]) => { const n = niveisDaRua.find((x) => x.id === nid); const m = modulos.find((x) => x.id === n?.moduloId); return m && n ? ns.slice(0, 1).map((c) => codigoPosicao(rua.codigo, m.numero, n.numero, c)) : []; }).slice(0, 50).join(",")}&vista=corredor`} className={botaoPequeno}>
+            Ver no mapa 3D
+          </Link>
+          <Link href={`/estrutura?galpao=${galpaoId}&rua=${rua.id}`} className={botaoPequeno}>
+            Voltar para a estrutura
+          </Link>
+        </div>
       }
     >
       <Painel>

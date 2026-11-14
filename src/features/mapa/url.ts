@@ -42,9 +42,10 @@ export function lerParametros(p: Record<string, string | string[] | undefined>):
   };
 }
 
-export function urlMapa(o: { galpao?: string | null; caixa?: string | null; doc?: string | null; vista?: Vista | null; codigos?: string[] }) {
+export function urlMapa(o: { galpao?: string | null; grande?: boolean; caixa?: string | null; doc?: string | null; vista?: Vista | null; codigos?: string[] }) {
   const q = new URLSearchParams();
-  if (o.galpao) q.set("galpao", o.galpao);
+  if (o.grande) q.set("galpao", "grande");
+  else if (o.galpao) q.set("galpao", o.galpao);
   if (o.caixa) q.set("caixa", o.caixa);
   if (o.doc) q.set("doc", o.doc);
   if (o.vista && o.vista !== "3d") q.set("vista", o.vista);

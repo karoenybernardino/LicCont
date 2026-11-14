@@ -288,7 +288,7 @@ export default async function EstruturaFisica({
                     acao={adicionarModulos}
                     botao="Adicionar ao galpão"
                     enviando="Adicionando…"
-                    nota="O mapa 3D e as etiquetas são gerados a partir desta estrutura."
+                    nota="O mapa 3D (menu Mapa 3D) e as etiquetas são gerados a partir desta estrutura."
                   >
                     <div className="grid grid-cols-2 gap-3">
                       <Selecao rotulo="Rua" name="rua" defaultValue={rua?.ativo ? rua.id : ruasAtivas[0].id}>
