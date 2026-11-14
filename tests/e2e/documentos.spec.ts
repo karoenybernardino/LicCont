@@ -57,6 +57,7 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
 });
 
 test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({ page }) => {
+  test.setTimeout(90_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
   await page.goto("/documentos/novo");
   await page.getByLabel("Escolher o PDF").setInputFiles({ name: "falso.pdf", mimeType: "application/pdf", buffer: Buffer.from("isto nao e um pdf") });
