@@ -50,11 +50,11 @@ export function CaixaSelecionada({ d, carregando, acessorios }: { d: DetalheCaix
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled title="Em breve (Fase 6)" className={`${botaoBorda} cursor-not-allowed opacity-50`}>
-              Registrar empréstimo <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
+            <button type="button" disabled className={`${botaoBorda} cursor-not-allowed`}>
+              <span className="opacity-60">Registrar empréstimo</span> <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
             </button>
-            <button type="button" disabled title="Em breve (Fase 5)" className={`${botaoBorda} cursor-not-allowed opacity-50`}>
-              Imprimir etiqueta <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
+            <button type="button" disabled className={`${botaoBorda} cursor-not-allowed`}>
+              <span className="opacity-60">Imprimir etiqueta</span> <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
             </button>
           </div>
           {acessorios}

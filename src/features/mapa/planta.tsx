@@ -39,6 +39,7 @@ const x = (c: number) => MARGEM + c * PX;
 
 export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado, codigoCaixa, modulosDestacados, faixaDoModulo, onModulo, editor }: Props) {
   const c = CORES[tema];
+  const grade = tema === "escuro" ? "rgba(207,233,238,.16)" : "rgba(11,46,58,.10)";
   const largura = leiaute.largura * PX + MARGEM * 2;
   const altura = leiaute.profundidade * PX + MARGEM * 2 + 30;
   const e = leiaute.entrada;
@@ -55,7 +56,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
       width="100%"
       role="img"
       aria-label={resumo}
-      className="block touch-none select-none"
+      className={editor ? "block touch-none select-none" : "block select-none"}
       onPointerDown={editor?.onFundo}
     >
       <defs>
@@ -72,11 +73,11 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
       <rect x={MARGEM} y={MARGEM} width={leiaute.largura * PX} height={leiaute.profundidade * PX} rx="12" fill="none" stroke={c.planta.livreBorda} strokeWidth="2" />
       {editor &&
         Array.from({ length: leiaute.largura + 1 }, (_, i) => (
-          <line key={i} x1={x(i)} y1={MARGEM} x2={x(i)} y2={MARGEM + leiaute.profundidade * PX} stroke="rgba(11,46,58,.10)" strokeDasharray="4 4" />
+          <line key={i} x1={x(i)} y1={MARGEM} x2={x(i)} y2={MARGEM + leiaute.profundidade * PX} stroke={grade} strokeDasharray="4 4" />
         ))}
       {editor &&
         Array.from({ length: leiaute.profundidade + 1 }, (_, i) => (
-          <line key={i} x1={MARGEM} y1={x(i)} x2={MARGEM + leiaute.largura * PX} y2={x(i)} stroke="rgba(11,46,58,.10)" strokeDasharray="4 4" />
+          <line key={i} x1={MARGEM} y1={x(i)} x2={MARGEM + leiaute.largura * PX} y2={x(i)} stroke={grade} strokeDasharray="4 4" />
         ))}
 
       {elementos.map((el) => {
@@ -151,7 +152,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
                     onClick={interativo ? () => onModulo?.(m) : undefined}
                     onKeyDown={interativo ? (ev) => (ev.key === "Enter" || ev.key === " ") && (ev.preventDefault(), onModulo?.(m)) : undefined}
                     style={interativo ? { cursor: "pointer" } : undefined}
-                    className="outline-none focus-visible:[&>rect]:stroke-[#0e7490] focus-visible:[&>rect]:stroke-[3]"
+                    className="outline-none focus-visible:[&>rect]:stroke-foco focus-visible:[&>rect]:stroke-[3]"
                     pointerEvents={editor ? "none" : undefined}
                   >
                     <rect
@@ -172,7 +173,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
                       </text>
                     )}
                     {!sel && !editor && (
-                      <text x={cx} y={cy + 20} textAnchor="middle" fontFamily="var(--font-mono), monospace" fontSize="9" fill="#fff" opacity={vazio ? 0 : 0.9}>
+                      <text x={cx} y={cy + 20} textAnchor="middle" fontFamily="var(--font-mono), monospace" fontSize="11" fontWeight="600" fill="#0b2e3a" opacity={vazio ? 0 : 1}>
                         M{m.numero}
                       </text>
                     )}

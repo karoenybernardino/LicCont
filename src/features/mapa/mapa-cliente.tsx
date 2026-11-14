@@ -277,7 +277,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   const modulosDestacados = useMemo(() => new Set(destaquesIdx.map((i) => moduloDaInstancia(leiaute, i)?.id).filter((x): x is string => !!x)), [destaquesIdx, leiaute]);
   const resumo = `${galpoes.find((g) => g.id === galpaoId)?.nome ?? "Galpão"}: ${leiaute.ruas.length} ruas, ${leiaute.modulos.length} módulos, ${leiaute.caixas.n.toLocaleString("pt-BR")} caixas`;
 
-  const botao = `${estilos.botaoBorda} !min-h-9 !px-3`;
+  const botao = `${estilos.botaoBorda} !min-h-9 !px-3 max-md:!min-h-11`;
   const fundo = { background: `linear-gradient(180deg, ${paleta.fundo[0]}, ${paleta.fundo[1]})` };
 
   return (
@@ -325,7 +325,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
           )}
         </div>
         {mensagem && (
-          <p role="status" className="text-[13px] text-texto-suave">
+          <p role={mensagem.startsWith("Não foi possível") ? "alert" : "status"} className={mensagem.startsWith("Não foi possível") ? "text-[13px] text-erro" : "text-[13px] text-texto-suave"}>
             {mensagem}
           </p>
         )}
@@ -356,7 +356,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
 
         {webgl !== "ok" && (
           <p role="status" className="rounded-lg border border-linha bg-superficie-2 px-3 py-2 text-[13px]">
-            O 3D não está disponível neste computador. Use a planta ou a lista de caixas.
+            O 3D não está disponível neste aparelho. Use a planta ou a lista de caixas.
             {webgl === "erro" && (
               <button type="button" className="ml-2 underline" onClick={() => (setWebgl("ok"), setPronto(false))}>
                 Tentar de novo
@@ -368,8 +368,8 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         {vista === "3d" && webgl === "ok" && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" aria-label="Aproximar" onClick={() => comandos.current?.aproximar(1.25)} className={`${botao} !w-[38px] !px-0`}>+</button>
-              <button type="button" aria-label="Afastar" onClick={() => comandos.current?.aproximar(0.8)} className={`${botao} !w-[38px] !px-0`}>−</button>
+              <button type="button" aria-label="Aproximar" onClick={() => comandos.current?.aproximar(1.25)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>+</button>
+              <button type="button" aria-label="Afastar" onClick={() => comandos.current?.aproximar(0.8)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>−</button>
               <button type="button" onClick={() => comandos.current?.centralizar()} className={botao}>Centralizar</button>
               <button type="button" aria-label="Girar 90° para a esquerda" onClick={() => comandos.current?.girar(-1)} className={botao}>↺</button>
               <button type="button" aria-label="Girar 90° para a direita" onClick={() => comandos.current?.girar(1)} className={botao}>↻</button>

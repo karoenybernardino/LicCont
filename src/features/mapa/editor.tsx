@@ -218,7 +218,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={indice === 0} onClick={() => setIndice((i) => i - 1)} className={estilos.botaoBorda}>Desfazer</button>
             <button type="button" disabled={indice >= estados.length - 1} onClick={() => setIndice((i) => i + 1)} className={estilos.botaoBorda}>Refazer</button>
-            <button type="button" disabled={mudou === 0} onClick={() => (setEstados([estados[0]]), setIndice(0), setMensagem(null))} className={estilos.botaoBorda}>Descartar</button>
+            <button type="button" disabled={mudou === 0} onClick={() => window.confirm("Descartar todas as alterações não salvas?") && (setEstados([estados[0]]), setIndice(0), setMensagem(null))} className={estilos.botaoBorda}>Descartar</button>
             <button type="button" disabled={salvando || mudou === 0 || problemas.length > 0 || foraElemento} onClick={aoSalvar} className={estilos.botaoCheio}>
               {salvando ? "Salvando…" : "Salvar planta"}
             </button>
