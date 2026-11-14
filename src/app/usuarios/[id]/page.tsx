@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Cartao } from "@/ui/cartao";
+import { Painel, TituloPainel } from "@/features/estrutura/componentes";
 import { Formulario } from "@/ui/formulario";
 import { idSchema } from "@/features/login/esquemas";
 import { exigirAdmin } from "@/features/sessao/dal";
@@ -23,23 +23,28 @@ export default async function EditarUsuario({ params }: PageProps<"/usuarios/[id
   const opcoes = secretarias.filter((s) => s.ativa || alvo.secretarias.includes(s.id));
 
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo={alvo.nome}>
-      <p className="-mt-4 text-sm text-texto-suave">
-        {alvo.email} · <Link href="/usuarios" className="text-destaque underline-offset-2 hover:underline">Voltar para usuários</Link>
-      </p>
-
-      <Cartao>
-        <h2 className="mb-4 text-lg">Dados e perfil</h2>
+    <PaginaSistema
+      usuario={usuario}
+      secretaria={secretaria}
+      titulo={alvo.nome}
+      trilha={
+        <>
+          {alvo.email} · <Link href="/usuarios" className="text-destaque underline-offset-2 hover:underline">Voltar para usuários</Link>
+        </>
+      }
+    >
+      <Painel>
+        <TituloPainel>Dados e perfil</TituloPainel>
         <Formulario acao={salvarUsuario} botao="Salvar" enviando="Salvando…" className="max-w-md">
           <input type="hidden" name="id" value={alvo.id} />
           <CamposUsuario secretarias={opcoes} inicial={alvo} perfilTravado={proprio} />
         </Formulario>
-      </Cartao>
+      </Painel>
 
       {!proprio && (
-        <div className="grid gap-6 sm:grid-cols-3">
-          <Cartao className="flex flex-col gap-3">
-            <h2 className="text-lg">{alvo.ativo ? "Bloquear" : "Desbloquear"}</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Painel>
+            <TituloPainel>{alvo.ativo ? "Bloquear" : "Desbloquear"}</TituloPainel>
             <p className="text-sm text-texto-suave">
               {alvo.ativo ? "A pessoa perde o acesso na hora." : "A pessoa volta a entrar com a senha dela."}
             </p>
@@ -52,21 +57,21 @@ export default async function EditarUsuario({ params }: PageProps<"/usuarios/[id
               <input type="hidden" name="id" value={alvo.id} />
               <input type="hidden" name="bloquear" value={alvo.ativo ? "sim" : "nao"} />
             </Formulario>
-          </Cartao>
-          <Cartao className="flex flex-col gap-3">
-            <h2 className="text-lg">Redefinir senha</h2>
-            <p className="text-sm text-texto-suave">Gera uma senha provisória nova e encerra as sessões.</p>
+          </Painel>
+          <Painel>
+            <TituloPainel>Redefinir senha</TituloPainel>
+            <p className="text-[13px] text-texto-suave">Gera uma senha provisória nova e encerra as sessões.</p>
             <Formulario acao={redefinirSenha} botao="Redefinir senha" enviando="Gerando…" variante="secundario">
               <input type="hidden" name="id" value={alvo.id} />
             </Formulario>
-          </Cartao>
-          <Cartao className="flex flex-col gap-3">
-            <h2 className="text-lg">Encerrar sessões</h2>
-            <p className="text-sm text-texto-suave">Desconecta a pessoa de todos os aparelhos.</p>
+          </Painel>
+          <Painel>
+            <TituloPainel>Encerrar sessões</TituloPainel>
+            <p className="text-[13px] text-texto-suave">Desconecta a pessoa de todos os aparelhos.</p>
             <Formulario acao={encerrarSessoes} botao="Encerrar sessões" enviando="Encerrando…" variante="secundario">
               <input type="hidden" name="id" value={alvo.id} />
             </Formulario>
-          </Cartao>
+          </Painel>
         </div>
       )}
     </PaginaSistema>

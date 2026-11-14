@@ -11,7 +11,7 @@ test.describe.configure({ mode: "serial", retries: 0 });
 const linhaDaRua = (page: Page, codigo: string) => page.getByRole("row", { name: new RegExp(`^Rua ${codigo}\\b`) });
 
 async function abrirEstrutura(page: Page) {
-  await page.getByRole("link", { name: "Estrutura física" }).click();
+  await page.getByRole("link", { name: "Estrutura física", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Estrutura física" })).toBeVisible();
 }
 

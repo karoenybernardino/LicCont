@@ -11,15 +11,26 @@ import { ipDaRequisicao } from "@/features/login/seguranca";
 
 // CSP com nonce por requisição. Só o hash do script de tema não basta: o Next
 // injeta scripts inline próprios, que o navegador bloquearia.
+function storage() {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? ` ${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin}` : "";
+  } catch {
+    return "";
+  }
+}
+
 function politica(nonce: string) {
   const dev = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${storage()}`,
     "font-src 'self'",
-    "connect-src 'self'",
+    // Envio e leitura do PDF vão direto ao Storage (links assinados); o pdf.js
+    // roda num worker do próprio site.
+    `connect-src 'self'${storage()}`,
+    "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

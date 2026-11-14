@@ -6,7 +6,7 @@ import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { idSchema } from "@/features/login/esquemas";
 import { ipDaRequisicao } from "@/features/login/seguranca";
 import { COOKIE_SECRETARIA } from "./cookies";
-import { PREFEITURA_DEMO, SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
+import { PREFEITURA_DEMO, PREFEITURAS_DEMO, SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 
 // Camada de acesso: toda tela e ação confere a sessão aqui, no servidor.
@@ -163,3 +163,12 @@ export async function exigirAdmin() {
   if (!sessao.usuario.administrador) redirect("/inicio");
   return sessao;
 }
+
+// Nome da prefeitura, mostrado no cabeçalho (como no canvas).
+export const nomePrefeitura = cache(async (u: Usuario): Promise<string> => {
+  if (emDemo()) return PREFEITURAS_DEMO.find((p) => p.id === u.prefeituraId)?.nome ?? "Prefeitura";
+  const supabase = await clienteSessao();
+  if (!supabase) return "Prefeitura";
+  const { data } = await supabase.from("prefeituras").select("nome").eq("id", u.prefeituraId).maybeSingle();
+  return data?.nome ?? "Prefeitura";
+});

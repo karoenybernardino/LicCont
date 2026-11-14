@@ -9,6 +9,8 @@ import { codigoTotp } from "./totp";
 export async function esperarCarregar(page: Page) {
   await expect(page.locator("main[aria-busy=true]")).toHaveCount(0);
   await expect(page.locator("h1")).toBeVisible();
+  // O título chega em streaming, depois do corpo.
+  await expect(page).toHaveTitle(/.+/);
 }
 export const ERRO = "Não foi possível entrar. Confira os dados ou fale com o administrador da sua prefeitura.";
 

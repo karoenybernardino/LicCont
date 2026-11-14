@@ -17,6 +17,7 @@ export function Formulario({
   className = "",
   variante,
   nota,
+  classeBotao = "",
 }: {
   acao: (estado: EstadoAcao, dados: FormData) => Promise<EstadoAcao>;
   botao: string;
@@ -26,10 +27,11 @@ export function Formulario({
   variante?: "principal" | "secundario";
   // Texto ao lado do botão (o botão deixa de ocupar a largura toda).
   nota?: ReactNode;
+  classeBotao?: string;
 }) {
   const [estado, enviar, pendente] = useActionState(acao, undefined);
   const botaoEnviar = (
-    <Botao type="submit" variante={variante} disabled={pendente} className={nota ? "shrink-0" : "w-full"}>
+    <Botao type="submit" variante={variante} disabled={pendente} className={`${nota ? "shrink-0" : "w-full"} ${classeBotao}`}>
       {pendente ? (
         <span className="inline-flex items-center justify-center gap-2">
           <Girando />

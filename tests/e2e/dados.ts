@@ -32,6 +32,10 @@ export const USUARIOS = {
   adminEstrutura: { email: "admin.estrutura@exemplo.test", prefeitura: PREFEITURA, administrador: true },
   coordEstrutura: { email: "coord.estrutura@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Obras"], papel: "coordenador" },
   consultaEstrutura: { email: "consulta.estrutura@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"], papel: "consulta" },
+  // Documentos (documentos.spec.ts).
+  operadorDocs: { email: "operador.docs@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"], papel: "operador" },
+  operadorObras: { email: "operador.obras@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Obras"], papel: "operador" },
+  consultaDocs: { email: "consulta.docs@exemplo.test", prefeitura: PREFEITURA, secretarias: ["Saúde"], papel: "consulta" },
 } satisfies Record<string, UsuarioTeste>;
 
 export const temSupabase = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
