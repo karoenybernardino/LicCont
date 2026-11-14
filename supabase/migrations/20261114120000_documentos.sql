@@ -404,17 +404,9 @@ begin
   end if;
   -- Trava o documento: dois envios ao mesmo tempo não disputam o "ativo".
   perform 1 from public.documentos d where d.id = a.documento_id for update;
-  -- O objeto precisa existir no Storage; o tamanho vale o que o Storage registrou.
-  -- shortcut: o SHA-256 e o formato vêm do servidor da aplicação (não dá para
-  -- conferir em SQL); fechar a chamada direta com papel próprio quando houver 2º serviço.
-  if p_pronto then
-    select coalesce((o.metadata ->> 'size')::bigint, p_tamanho) into p_tamanho
-    from storage.objects o where o.bucket_id = 'acervo' and o.name = a.caminho;
-    if not found then
-      p_pronto := false;
-      p_motivo := 'corrompido';
-    end if;
-  end if;
+  -- shortcut: o SHA-256, o tamanho e o formato vêm do servidor da aplicação (SQL não lê
+  -- o objeto; o dono desta função não enxerga storage.objects por RLS). Fechar a chamada
+  -- direta com um papel só do servidor antes de guardar PDF real.
   select p.limite_pdf_mb into v_limite_mb from public.prefeituras p where p.id = a.prefeitura_id;
   if p_pronto and p_tamanho > v_limite_mb::bigint * 1024 * 1024 then
     p_pronto := false;

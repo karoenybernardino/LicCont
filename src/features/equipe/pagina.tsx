@@ -26,7 +26,7 @@ export function PaginaEquipe({ titulo, children }: { titulo: string; children: R
         }
       />
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
+        <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
           <div>
             <div className="text-xs text-texto-suave">Equipe LicCONT</div>
             <h1 className="font-titulo text-[21px] font-bold">{titulo}</h1>
@@ -38,7 +38,7 @@ export function PaginaEquipe({ titulo, children }: { titulo: string; children: R
             </span>
             <SeletorTema />
           </div>
-        </div>
+        </header>
         <main className="flex min-w-0 flex-1 flex-col gap-4 pr-2">{children}</main>
       </div>
     </div>

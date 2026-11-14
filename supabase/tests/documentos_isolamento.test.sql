@@ -72,8 +72,6 @@ insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nom
   ('f0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'a.pdf', 1000, '0a000000-0000-0000-0000-000000000001'),
   ('f0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000', 'b.pdf', 1000, '0b000000-0000-0000-0000-000000000001');
 
-insert into storage.objects (bucket_id, name) select 'acervo', caminho from public.arquivos;
-
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object(
@@ -101,11 +99,11 @@ select ok(not has_function_privilege('anon', 'public.proxima_caixa_livre(uuid, u
 select ok(not has_function_privilege('anon', 'public.concluir_conferencia(uuid, boolean, text, bigint, int, text, text[], boolean)', 'execute'), 'anon não conclui conferência');
 
 -- A chave composta amarra o arquivo ao documento, prefeitura e secretaria (mesmo como dono).
-select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
-  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10)$$,
+select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
+  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10, '0a000000-0000-0000-0000-000000000001')$$,
   '23503', null, 'arquivo não aponta para documento de outra secretaria');
-select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
-  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10)$$,
+select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
+  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10, '0a000000-0000-0000-0000-000000000001')$$,
   '23503', null, 'arquivo não aponta para documento de outra prefeitura');
 select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
   values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '9/2024', 2024, 'Objeto qualquer', 'concluida')$$,
@@ -164,7 +162,7 @@ select throws_ok($$update public.documentos set ativo = false where id = 'd0a200
   '42501', null, 'operador A não desativa');
 select throws_ok($$update public.documentos set secretaria_id = 'a1000000-0000-0000-0000-000000000000' where id = 'd0a20000-0000-0000-0000-000000000000'$$,
   '42501', null, 'operador A não troca a secretaria do documento');
-select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
+select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
   values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'obras.pdf', 5000)$$,
   'operador A anexa PDF em Obras');
 select results_eq($$select situacao, ativo, caminho like '11111111-1111-1111-1111-111111111111/a2000000-0000-0000-0000-000000000000/%.pdf' from public.arquivos$$,
