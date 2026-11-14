@@ -167,7 +167,9 @@ select throws_ok($$insert into public.galpoes (prefeitura_id, nome) values ('111
   '42501', null, 'coordenador A não cria galpão');
 select throws_ok($$insert into public.niveis (prefeitura_id, modulo_id, numero, capacidade) values ('11111111-1111-1111-1111-111111111111', 'c2a00000-0000-0000-0000-000000000000', 5, 2)$$,
   '42501', null, 'coordenador A não cria nível');
-select is_empty($$update public.ruas set ativo = false returning id$$, 'coordenador A não desativa rua');
+-- Desde a Fase 4 a política deixa o coordenador chegar à linha (para a planta);
+-- o gatilho app.planta_confere recusa tudo que não é planta.
+select throws_ok($$update public.ruas set ativo = false$$, '42501', null, 'coordenador A não desativa rua');
 select throws_ok($$update public.caixas set numero = 2$$, '42501', null, 'número da caixa não muda pela API');
 
 -- ---------------------------------------------------------------------------

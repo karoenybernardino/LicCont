@@ -41,6 +41,10 @@ export function mensagemErro(codigo: string | undefined) {
       return "Ainda há caixas ativas aqui. Desative as caixas antes.";
     case "LC004":
       return "Esta parte da estrutura está desativada.";
+    case "LC006":
+      return "Não foi possível mover. Nenhum documento foi movido.";
+    case "42501":
+      return "Você não tem permissão para isto.";
     case "23505":
       return "Já existe com este nome ou código. Atualize a página e tente de novo.";
     default:
