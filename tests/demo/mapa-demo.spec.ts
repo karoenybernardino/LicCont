@@ -10,7 +10,7 @@ test.beforeEach(async ({ context }) => {
 test("editor: arrastar uma rua muda a planta e salvar avisa que é demonstração", async ({ page }) => {
   await page.goto("/mapa/editar");
   await expect(page.getByRole("heading", { level: 1, name: "Editar planta" })).toBeVisible();
-  const rua = page.locator('g[data-rua="A"] > rect').first();
+  const rua = page.locator('g[data-rua="A"] g rect').first();
   const caixa = (await rua.boundingBox())!;
   await page.mouse.move(caixa.x + 6, caixa.y + 6);
   await page.mouse.down();
@@ -22,6 +22,19 @@ test("editor: arrastar uma rua muda a planta e salvar avisa que é demonstraçã
   await page.getByRole("button", { name: "Refazer" }).click();
   await page.getByRole("button", { name: "Salvar planta" }).click();
   await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+});
+
+test("editor: as medidas saem em metros e acompanham os metros por célula", async ({ page }) => {
+  await page.goto("/mapa/editar");
+  await expect(page.getByLabel("Largura (m)")).toHaveValue("16.8");
+  await expect(page.locator("svg text", { hasText: "16,8 m" })).toBeVisible();
+  await page.getByLabel("Metros por célula").fill("2");
+  await page.getByLabel("Metros por célula").press("Enter");
+  await expect(page.getByLabel("Largura (m)")).toHaveValue("28");
+  await expect(page.locator("svg text", { hasText: "28 m" })).toBeVisible();
+  await page.getByLabel("Largura (m)").fill("20");
+  await page.getByLabel("Largura (m)").press("Enter");
+  await expect(page.locator("svg text", { hasText: "20 m" })).toBeVisible();
 });
 
 test("editor: acrescentar e remover um pilar", async ({ page }) => {

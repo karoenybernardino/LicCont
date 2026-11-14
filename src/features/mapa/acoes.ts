@@ -104,6 +104,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
     p_profundidade: p.profundidade,
     p_lado: p.entradaLado,
     p_posicao: p.entradaPosicao,
+    p_metros: Math.round(p.metrosCelula * 100) / 100,
     p_ruas: p.ruas.map((r) => ({ id: r.id, x: r.x, y: r.y, giro: (GIROS as readonly number[]).includes(r.giro) ? r.giro : 0 })),
     p_elementos: p.elementos.map((x) => ({ ...x, rotulo: x.rotulo || null })),
   });

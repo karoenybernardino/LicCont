@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { idSchema } from "@/features/login/esquemas";
-import { GIROS, LIMITES_PLANTA } from "./tipos";
+import { GIROS, LIMITES_METROS_CELULA, LIMITES_PLANTA } from "./tipos";
 
 // Entrada validada no servidor antes de qualquer gravação (limites iguais aos
 // do banco, supabase/migrations/20261115120000_mapa.sql).
@@ -30,6 +30,7 @@ export const esquemaPlantaEntrada = z.object({
   profundidade: z.number().int().min(LIMITES_PLANTA.minGalpao).max(LIMITES_PLANTA.maxGalpao),
   entradaLado: z.enum(["frente", "fundo", "esquerda", "direita"]),
   entradaPosicao: celula,
+  metrosCelula: z.number().min(LIMITES_METROS_CELULA.min).max(LIMITES_METROS_CELULA.max),
   ruas: z.array(rua).max(500),
   elementos: z.array(elemento).max(LIMITES_PLANTA.maxElementos),
 });

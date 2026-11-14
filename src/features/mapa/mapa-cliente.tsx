@@ -22,7 +22,7 @@ import { MoverDocumentos } from "./mover";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { CaixaSelecionada, DentroDaCaixa, estilos } from "./painel-caixa";
 import { PlantaSvg } from "./planta";
-import { FAIXAS, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
+import { FAIXAS, PADRAO_METROS_CELULA, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
 import { caminhoDeVolta, urlMapa } from "./url";
 import { useMovimentoReduzido, useTema } from "./usar-tema";
 
@@ -408,6 +408,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         {vista === "planta" && (
           <div className="rounded-[14px] border border-linha p-3.5" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
             <PlantaSvg
+              metrosCelula={planta.metrosCelula ?? PADRAO_METROS_CELULA}
               leiaute={leiaute}
               elementos={planta.elementos}
               tema={tema}
