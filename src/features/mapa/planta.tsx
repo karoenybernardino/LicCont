@@ -109,7 +109,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
       width="100%"
       role={onModulo || editor ? "group" : "img"}
       aria-label={resumo}
-      className={editor ? "block touch-none select-none" : "block select-none"}
+      className={editor ? "block touch-none select-none" : "block select-none lg:h-full lg:w-full"}
       onPointerDown={editor?.onFundo}
     >
       <defs>

@@ -20,7 +20,7 @@ export function Corredor({ rua, tema, selecionada, onSelecionar }: { rua: NoRua 
   const largura = 40 + rua.modulos.length * (larguraModulo + 8);
   const altura = 50 + niveis * PASSO_NIVEL;
   return (
-    <svg viewBox={`0 0 ${largura} ${altura}`} width="100%" role="group" aria-label={`Corredor da Rua ${rua.codigo}`} className="block">
+    <svg viewBox={`0 0 ${largura} ${altura}`} width="100%" role="group" aria-label={`Corredor da Rua ${rua.codigo}`} className="block lg:h-full lg:w-full">
       <text x="8" y="24" fontFamily="var(--font-mono), monospace" fontWeight="600" fontSize="14" fill="currentColor">
         Rua {rua.codigo}
       </text>

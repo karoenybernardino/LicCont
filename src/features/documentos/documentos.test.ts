@@ -104,3 +104,16 @@ describe("CPF em texto livre", () => {
     expect(esquemaDocumento.safeParse({ ...base, objeto: "Contrato com 12.345.678/0001-95 e 5.000 itens" }).success).toBe(true);
   });
 });
+
+describe("faixa de valor da pesquisa", () => {
+  it("a faixa vira vmin e vmax, e vmin e vmax valem sozinhos", async () => {
+    const { lerFiltros, faixaDeValor } = await import("./filtros");
+    expect(lerFiltros({ valor: "50000-200000" })).toMatchObject({ vmin: 50000, vmax: 200000, aba: "contrato" });
+    expect(lerFiltros({ valor: "1000000-" })).toMatchObject({ vmin: 1000000, vmax: null });
+    expect(lerFiltros({ valor: "-50000" })).toMatchObject({ vmin: null, vmax: 50000 });
+    expect(lerFiltros({ vmin: "10", vmax: "20", valor: "50000-200000" })).toMatchObject({ vmin: 10, vmax: 20 });
+    expect(lerFiltros({ valor: "lixo; drop" })).toMatchObject({ vmin: null, vmax: null, aba: "todos" });
+    expect(faixaDeValor(0, 50000)).toBe("0-50000");
+    expect(faixaDeValor(null, null)).toBe("");
+  });
+});
