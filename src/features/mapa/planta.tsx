@@ -147,7 +147,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, moduloSelecionado,
                     data-modulo={`${r.codigo}-M${m.numero}`}
                     role={interativo ? "button" : undefined}
                     tabIndex={interativo ? 0 : undefined}
-                    aria-label={interativo ? `Rua ${r.codigo}, módulo ${m.numero}, ${m.caixas} caixas` : undefined}
+                    aria-label={interativo ? `${sel && codigoCaixa ? codigoCaixa : `M${m.numero}`}, Rua ${r.codigo}, módulo ${m.numero}, ${m.caixas} caixas` : undefined}
                     onClick={interativo ? () => onModulo?.(m) : undefined}
                     onKeyDown={interativo ? (ev) => (ev.key === "Enter" || ev.key === " ") && (ev.preventDefault(), onModulo?.(m)) : undefined}
                     style={interativo ? { cursor: "pointer" } : undefined}
