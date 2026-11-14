@@ -44,7 +44,8 @@ export default async function Mapa({ searchParams }: { searchParams: Promise<Rec
         </Painel>
       ) : (
         <MapaCliente
-          key={`${galpao.id}:${p.caixa ?? ""}:${p.codigos.join(",")}`}
+          // Sem a caixa na chave: a própria tela grava ?caixa= na URL e não pode se remontar por isso.
+          key={`${galpao.id}:${p.codigos.join(",")}`}
           estrutura={estrutura}
           caixas={caixas}
           planta={planta}
