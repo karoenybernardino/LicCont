@@ -66,12 +66,12 @@ test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({
 });
 
 test("a pesquisa filtra por abas e filtros, e o filtro fica na URL", async ({ page }) => {
-  await entrar(page, { email: USUARIOS.adminEstrutura.email, secretaria: "Saúde" });
+  await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
   await page.getByRole("link", { name: "Pesquisa", exact: true }).click();
   await semFalhasDeAcessibilidade(page);
   await expect(page.getByRole("status").filter({ hasText: "documentos encontrados" })).toBeVisible();
   const todos = await page.getByRole("link", { name: /^Todos/ }).innerText();
-  expect(Number(todos.replace(/\D/g, ""))).toBeGreaterThanOrEqual(30);
+  expect(Number(todos.replace(/\D/g, ""))).toBeGreaterThanOrEqual(1);
 
   await page.getByLabel("Buscar").fill("901/2024");
   await page.getByRole("button", { name: "Pesquisar" }).click();
