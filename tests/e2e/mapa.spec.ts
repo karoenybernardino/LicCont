@@ -50,7 +50,7 @@ test("a busca do mapa aceita o código da caixa e mostra erro para código que n
 });
 
 test("isolamento: caixa de outra prefeitura e caixa que não existe dão a mesma resposta", async ({ page }) => {
-  await entrar(page, { email: USUARIOS.outra.email, secretaria: "Saúde" });
+  await entrar(page, { email: USUARIOS.outra.email, secretaria: "Saúde", prefeitura: USUARIOS.outra.prefeitura });
   await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa?caixa=5eed4000-0000-0000-0000-000000000001");
   await expect(page.getByText("Caixa não encontrada.").first()).toBeVisible();
