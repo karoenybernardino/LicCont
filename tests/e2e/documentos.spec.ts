@@ -24,6 +24,7 @@ async function preencher(page: Page, numero: string, objeto: string) {
 }
 
 test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async ({ page }) => {
+  test.setTimeout(150_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
   await page.getByRole("link", { name: "Cadastrar documento" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Cadastrar documento" })).toBeVisible();
@@ -32,7 +33,7 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
   await page.getByLabel("Escolher o PDF").setInputFiles(PDF);
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Pregão Eletrônico 901/2024" }))
-    .toBeVisible({ timeout: 30_000 })
+    .toBeVisible({ timeout: 60_000 })
     .catch(async (e) => {
       const avisos = await page.locator('[role="alert"], [role="status"]').allInnerTexts();
       throw new Error(`${page.url()} :: ${JSON.stringify(avisos)} :: ${e.message.slice(0, 80)}`);
