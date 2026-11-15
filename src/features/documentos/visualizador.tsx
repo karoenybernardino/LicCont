@@ -227,12 +227,12 @@ export function VisualizadorPdf({ documentoId, voltar, info }: { documentoId: st
       </div>
 
       <div className="flex items-stretch gap-3 lg:h-[calc(100vh-190px)] lg:min-h-[420px]">
-        <div className="sc hidden w-32 shrink-0 flex-col items-center gap-3.5 overflow-auto rounded-[14px] border border-linha bg-white/[.78] py-3.5 md:flex dark:bg-superficie" aria-label="Páginas">
+        <div tabIndex={-1} className="sc hidden w-32 shrink-0 flex-col items-center gap-3.5 overflow-auto rounded-[14px] border border-linha bg-white/[.78] py-3.5 md:flex dark:bg-superficie" aria-label="Páginas">
           {pdf && Array.from({ length: total }, (_, i) => <Miniatura key={i} pdf={pdf} n={i + 1} ativa={pagina === i + 1} aoEscolher={ir} />)}
         </div>
 
         <div className="relative min-w-0 flex-1">
-          <div ref={area} className="sc flex h-full min-h-[60vh] justify-center overflow-auto rounded-[14px] border border-linha bg-[#dfe8ea] p-6 dark:bg-[#0a181c]">
+          <div ref={area} tabIndex={0} role="region" aria-label="Página do documento" className="sc flex h-full min-h-[60vh] justify-center overflow-auto rounded-[14px] border border-linha bg-[#dfe8ea] p-6 dark:bg-[#0a181c]">
             {falha ? (
               <div role="alert" className="flex flex-col items-center gap-3 self-center text-center">
                 <p className="text-sm">Não foi possível mostrar o PDF aqui.</p>
