@@ -275,6 +275,8 @@ describe("editor ao estilo Revit (edicao.ts)", () => {
     expect(modulosDoArrasto(-99, m, 5)).toBe(-4);
     expect(modulosDoArrasto(0.3, m, 5)).toBe(0);
 
+  });
+});
 describe("zoom do mapa 3D", () => {
   it("multiplica o zoom atual pelo fator", () => {
     expect(zoomAlvo(20, 1.25, 4, 160)).toBe(25);

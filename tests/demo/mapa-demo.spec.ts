@@ -140,6 +140,7 @@ test("editor: administrador arrasta a ponta da rua e a demonstração avisa que 
   await page.mouse.move(p.x + p.width / 2 + 130, p.y + p.height / 2, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+});
 
 test("3D: botões e teclas + e − mudam o zoom", async ({ page }) => {
   await page.goto("/mapa");
