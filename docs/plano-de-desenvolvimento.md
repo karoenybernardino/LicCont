@@ -233,7 +233,7 @@ liccont/
 
 ## Fases de construção
 
-São nove fases em sequência; cada uma só começa depois que a anterior passa nos critérios de pronto e você aprova.
+São onze etapas; cada uma só começa depois que a anterior passa nos critérios de pronto e você aprova. Ordem a partir da Fase 7: Fase 9 (antes do piloto), Site inicial e, por último, a Fase 8 (conferência geral).
 
 | Fase | Entrega | Pronta quando |
 | --- | --- | --- |
@@ -245,7 +245,9 @@ São nove fases em sequência; cada uma só começa depois que a anterior passa 
 | 5 · Etiquetas e QR | Geração e impressão em lote, leitura pelo celular | QR lido no celular abre a caixa só depois do login |
 | 6 · Empréstimos | Retirada, devolução, prazo, alerta de atraso, termo em PDF e Word | Documento emprestado aparece como tal no mapa e na pesquisa |
 | 7 · Temporalidade | Tabela de prazos, fila de descarte, termo de eliminação com aprovação | Nenhum documento é apagado sem termo aprovado e registrado |
-| 8 · Prontidão | Painel da equipe LicCONT, relatórios, documentação de LGPD, revisão de segurança, pentest se aprovado | Checklist de segurança completo e piloto rodando com dados reais |
+| 8 · Prontidão (por último) | Painel da equipe LicCONT, relatórios, documentação de LGPD, revisão de segurança, pentest se aprovado | Checklist de segurança completo e piloto rodando com dados reais |
+| 9 · Importação, TCE-CE, painel e relatórios | Importação do acervo (planilha e PDFs em zip), importação do TCE-CE com fila de conferência, PDFs do PNCP, painel `/painel` e cinco relatórios em PDF e planilha. Plano: `docs/fases/fase-9.md` | Antes do piloto. Painel abre em menos de 2 s com 100 mil documentos de teste; nada importado sobrescreve documento existente |
+| Site inicial | Página pública em `/` para visitante, com "Pedir demonstração". Plano: `docs/fases/site-inicial.md` | Visitante vê o site; quem está logado vai ao sistema; formulário validado no servidor |
 
 A Fase 1 já nasce com a auditoria, para que toda ação das fases seguintes seja registrada desde o primeiro dia.
 
