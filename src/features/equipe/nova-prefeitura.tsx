@@ -127,6 +127,7 @@ export function NovaPrefeitura() {
             <Link href="/equipe/prefeituras" className={botaoContornoGrande}>Cancelar</Link>
             {passo > 1 && <button type="button" onClick={() => ir(passo - 1)} className={botaoContornoGrande}>Voltar</button>}
             {/* key: sem ela o React reaproveita o botão e o clique de Continuar vira envio do formulário. */}
+            {/* key: sem ela o React reaproveita o botão e o clique de Continuar vira envio do formulário. */}
             {passo < 4 ? (
               <button key="continuar" type="button" onClick={() => ir(passo + 1)} className={botaoPrimario}>Continuar</button>
             ) : (
