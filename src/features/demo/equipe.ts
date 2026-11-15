@@ -23,3 +23,9 @@ export const ACOES_DEMO = [
   { id: 2, criadoEm: h(7), quem: "Equipe LicCONT", acao: "prefeituras.insert", statusNovo: null, prefeitura: PREFEITURAS_DEMO[2].nome, ip: "203.0.113.5" },
   { id: 1, criadoEm: h(14), quem: "Equipe LicCONT", acao: "prefeituras.insert", statusNovo: null, prefeitura: PREFEITURAS_DEMO[0].nome, ip: "203.0.113.5" },
 ];
+
+export const LOTES_DEMO = [
+  { id: "de910000-0000-0000-0000-000000000007", prefeituraId: PREFEITURAS_DEMO[0].id, prefeitura: PREFEITURAS_DEMO[0].nome, linhas: 1240, gravados: 1240, pulados: 0, situacao: "gravado", criadoEm: h(0, 8) },
+  { id: "de910000-0000-0000-0000-000000000004", prefeituraId: PREFEITURAS_DEMO[0].id, prefeitura: PREFEITURAS_DEMO[0].nome, linhas: 860, gravados: 860, pulados: 0, situacao: "desfeito", criadoEm: h(3, 14) },
+  { id: "de910000-0000-0000-0000-000000000002", prefeituraId: PREFEITURAS_DEMO[1].id, prefeitura: PREFEITURAS_DEMO[1].nome, linhas: 212, gravados: 200, pulados: 12, situacao: "gravado", criadoEm: h(5, 10) },
+];
