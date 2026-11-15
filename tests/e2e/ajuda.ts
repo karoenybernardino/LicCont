@@ -20,7 +20,7 @@ export async function semFalhasDeAcessibilidade(page: Page) {
   expect(violations).toEqual([]);
 }
 
-export const secretariaEmUso = (page: Page) => page.getByLabel("Secretaria", { exact: true }).locator("option:checked");
+export const secretariaEmUso = (page: Page) => page.getByTestId("secretaria-em-uso");
 
 // Cadastra o autenticador na primeira vez e devolve o segredo TOTP.
 export async function cadastrarAutenticador(page: Page) {

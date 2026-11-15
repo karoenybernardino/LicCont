@@ -78,10 +78,10 @@ test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ 
   await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
   await expect(secretariaEmUso(page)).toHaveText("Saúde");
-  const opcoes = await page.getByLabel("Secretaria", { exact: true }).locator("option").allTextContents();
+  await page.locator("#secretaria-em-uso").click();
+  const opcoes = await page.getByRole("option").allTextContents();
   expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
-  await page.getByLabel("Secretaria", { exact: true }).selectOption({ label: "Educação" });
-  await page.getByRole("button", { name: "Trocar", exact: true }).click();
+  await page.getByRole("option", { name: "Educação" }).click();
   await expect(secretariaEmUso(page)).toHaveText("Educação");
 });
 
