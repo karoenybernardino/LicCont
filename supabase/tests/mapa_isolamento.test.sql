@@ -291,7 +291,7 @@ select results_eq($$select count(*)::int from public.auditoria
     and depois ->> 'caixa_id' = 'c4a00000-0000-0000-0000-000000000002'$$,
   array[2], 'cada documento movido gera uma linha com a caixa de antes e a de depois');
 select isnt_empty($$select 1 from public.auditoria where acao = 'planta_elementos.insert'$$, 'elemento da planta entra na auditoria');
-select isnt_empty($$select 1 from public.auditoria where acao = 'ruas.update' and depois ->> 'planta_x' = '3'$$, 'posição da rua entra na auditoria');
+select isnt_empty($$select 1 from public.auditoria where acao = 'ruas.update' and (depois ->> 'planta_x')::numeric = 3$$, 'posição da rua entra na auditoria');
 
 select * from finish();
 rollback;
