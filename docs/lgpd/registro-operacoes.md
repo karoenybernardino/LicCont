@@ -21,3 +21,9 @@ Regras do sistema que protegem o titular:
 Para validar com o advogado: base legal para guardar PDFs com dados de terceiros; prazo de
 guarda contra o direito de eliminação (art. 16, I); valor legal da digitalização
 (Decreto 10.278/2020); transferência internacional pela borda da Vercel.
+
+## Pedido de demonstração (site público)
+
+| Operação | Finalidade | Dados | Base legal (a validar) | Quem acessa | Guarda |
+| --- | --- | --- | --- | --- | --- |
+| Formulário "Pedir demonstração" | Responder ao interessado | Nome, cargo, órgão, e-mail, telefone, mensagem | Procedimentos preliminares a contrato, a pedido do titular (art. 7º, V) | Só a equipe LicCONT | A definir (proposta: 90 dias após a resposta), a validar com o advogado. Decisão 0013 |
