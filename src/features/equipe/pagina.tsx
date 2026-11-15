@@ -7,7 +7,7 @@ import { BarraLateral } from "@/features/sessao/barra-lateral";
 // Moldura do painel da equipe LicCONT: a mesma do sistema, sem secretaria.
 export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; trilha?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">
+    <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral
         grupos={[
           [
@@ -29,7 +29,7 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
           </form>
         }
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0">
         <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
           <div>
             <div className="text-xs text-texto-suave">{trilha ?? "Equipe LicCONT"}</div>
@@ -43,7 +43,7 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
             <SeletorTema />
           </div>
         </header>
-        <main className="flex min-w-0 flex-1 flex-col gap-4 pr-2">{children}</main>
+        <main className="sc flex min-w-0 flex-1 flex-col gap-4 pr-2 md:min-h-0 md:overflow-y-auto">{children}</main>
       </div>
     </div>
   );

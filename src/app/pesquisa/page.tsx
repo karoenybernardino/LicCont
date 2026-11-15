@@ -106,7 +106,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número do processo, objeto, credor ou CNPJ" className="min-w-0 flex-1 bg-transparent text-sm outline-0" />
             <kbd className="rounded-[5px] border border-borda-campo px-1.5 py-px font-mono text-[10.5px] text-texto-suave max-md:hidden">Enter</kbd>
           </label>
-          <nav aria-label="Tipo de documento" className="flex gap-0.5 rounded-[11px] border border-linha bg-superficie-2 p-[3px]">
+          <nav aria-label="Tipo de documento" className="flex max-w-full gap-0.5 overflow-x-auto rounded-[11px] border border-linha bg-superficie-2 p-[3px]">
             {abas.map(([k, nome, n]) => {
               const ativa = f.aba === k;
               const cor = ativa ? "#ffffff" : "#3f5e66";
