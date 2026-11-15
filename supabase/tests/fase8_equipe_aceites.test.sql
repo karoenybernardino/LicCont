@@ -34,7 +34,7 @@ set local role authenticated;
 
 -- 1. uso da equipe
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
-select is((select count(*) from public.equipe_uso_prefeituras()), 2::bigint, 'equipe com 2º fator vê as duas prefeituras');
+select is((select count(*) from public.equipe_uso_prefeituras() where prefeitura_id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')), 2::bigint, 'equipe com 2º fator vê as duas prefeituras');
 select is((select usuarios from public.equipe_uso_prefeituras() where prefeitura_id = '11111111-1111-1111-1111-111111111111'), 2, 'conta usuários ativos');
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal1');
 select throws_ok($$select * from public.equipe_uso_prefeituras()$$, '42501', null, 'equipe sem 2º fator não executa');

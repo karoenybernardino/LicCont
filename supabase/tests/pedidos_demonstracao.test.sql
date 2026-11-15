@@ -11,10 +11,10 @@ insert into public.usuarios (id, prefeitura_id, nome, administrador, troca_senha
   ('0a000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Admin A', true, false);
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
-returns void language sql as $
+returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object(
     'sub', p_uid, 'role', 'authenticated', 'session_id', p_sessao, 'aal', p_aal)::text, true);
-$;
+$$;
 grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 
 set local role service_role;
