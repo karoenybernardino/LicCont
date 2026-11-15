@@ -46,7 +46,9 @@ export type ItemPesquisa = {
   secretaria_id: string;
   criado_em: string;
   conferido: boolean;
-  codigo: string;
+  origem?: "manual" | "planilha" | "tce";
+  sem_endereco?: boolean;
+  codigo: string | null;
   tem_pdf: boolean;
 };
 

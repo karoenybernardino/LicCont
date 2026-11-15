@@ -29,6 +29,7 @@ export function aplicarFiltros(
     if (f.de !== null && d.ano < f.de) return false;
     if (f.ate !== null && d.ano > f.ate) return false;
     if (f.secretaria && d.secretaria_id !== f.secretaria) return false;
+    if (f.origem && (d.origem ?? "manual") !== f.origem) return false;
     if (f.modalidade && d.tipo === "licitacao" && d.modalidade !== f.modalidade) return false;
     if (d.tipo === "contrato") {
       if (f.situacao && d.situacao !== f.situacao) return false;

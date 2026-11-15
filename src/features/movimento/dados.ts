@@ -163,7 +163,7 @@ export function ultimasMovimentacoes(itens: ItemPesquisa[]): Movimentacao[] {
     .slice(0, 4)
     .map((i) => ({
       titulo: `Cadastro · ${tituloDocumento(i)}`,
-      detalhe: `${posicaoLegivel(i.codigo)} · ${quando(new Date(i.criado_em))}`,
+      detalhe: `${i.codigo ? posicaoLegivel(i.codigo) : "Sem endereço"} · ${quando(new Date(i.criado_em))}`,
       tag: "Cadastro",
     }));
 }

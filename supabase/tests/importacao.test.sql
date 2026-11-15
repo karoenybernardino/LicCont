@@ -75,6 +75,13 @@ select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, 
 select throws_ok($$update public.documentos set caixa_id = null where id = 'd0a10000-0000-0000-0000-000000000000'$$,
   '23514', null, 'documento com caixa não volta a ficar sem');
 
+-- Pesquisa: filtro Origem e documentos sem endereço aparecem na lista.
+select results_eq($$select (public.pesquisar_documentos(p_origem => 'planilha') ->> 'total')::int$$, array[2], 'pesquisa filtra por origem planilha');
+select results_eq($$select (public.pesquisar_documentos(p_origem => 'manual') ->> 'total')::int$$, array[1], 'pesquisa filtra por origem manual');
+select results_eq($$select (public.pesquisar_documentos() ->> 'total')::int$$, array[3], 'sem filtro traz todas as origens');
+select results_eq($$select count(*)::int from jsonb_array_elements(public.pesquisar_documentos(p_origem => 'planilha') -> 'itens') i
+  where i ->> 'codigo' is null and (i ->> 'sem_endereco')::boolean$$, array[2], 'sem endereço sai com código nulo');
+
 -- Localizar um importado (update de caixa) continua valendo.
 select lives_ok($$update public.documentos set caixa_id = 'c4a00000-0000-0000-0000-000000000001'
   where lote_id = (select id from lote_a) and numero = '001/2024'$$, 'localiza documento importado');

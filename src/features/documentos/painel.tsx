@@ -258,6 +258,8 @@ export async function PainelDocumento({
           <div className="flex flex-col items-end gap-1.5">
             {emprestado && <Pilula tom="aviso">Emprestado</Pilula>}
             {doc.conferido && <Pilula tom="ok">Conferido</Pilula>}
+            {doc.origem === "tce" && <Pilula tom="aviso">Importado do TCE</Pilula>}
+            {doc.origem === "planilha" && <Pilula tom="aviso">Importado de planilha</Pilula>}
             {!doc.ativo && <Pilula tom="erro">Desativado</Pilula>}
           </div>
         </div>
