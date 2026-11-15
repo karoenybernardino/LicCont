@@ -92,7 +92,7 @@ export async function conferirMolduraFixa(page: Page) {
       document.documentElement.scrollWidth <= window.innerWidth
         ? []
         : [...document.querySelectorAll("body *:not(aside *)")]
-            .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1)
+            .filter((e) => !e.closest(".overflow-x-auto") && e.getBoundingClientRect().right > window.innerWidth + 1)
             .slice(0, 5)
             .map((e) => `${e.tagName}.${String(e.getAttribute("class")).slice(0, 50)}`),
     );

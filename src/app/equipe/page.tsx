@@ -47,7 +47,7 @@ export default async function PainelEquipe({ searchParams }: { searchParams: Pro
       <Painel className="pb-1.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Busca acao="/equipe" valor={q} rotulo="Buscar por nome ou CNPJ" marcador="Buscar por nome ou CNPJ" extra={situacao === "todas" ? undefined : { situacao }} />
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex max-w-full flex-wrap items-center gap-2.5">
             <Filtros
               itens={FILTROS.map(([v, r]) => ({
                 href: href(v),
