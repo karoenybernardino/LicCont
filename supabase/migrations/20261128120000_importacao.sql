@@ -177,11 +177,11 @@ begin
       raise exception 'secretaria inválida' using errcode = '42501';
     end if;
     insert into public.documentos (prefeitura_id, secretaria_id, tipo, modalidade, numero, ano, objeto,
-                                   empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim,
+                                   empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim,
                                    origem, lote_id, importado_em)
     values (l.prefeitura_id, (v_linha ->> 'secretaria_id')::uuid, v_linha ->> 'tipo', v_linha ->> 'modalidade',
             v_linha ->> 'numero', (v_linha ->> 'ano')::smallint, v_linha ->> 'objeto',
-            v_linha ->> 'empresa', v_linha ->> 'cnpj', (v_linha ->> 'valor')::numeric,
+            v_linha ->> 'empresa', v_linha ->> 'cnpj', v_linha ->> 'cpf_credor', (v_linha ->> 'valor')::numeric,
             v_linha ->> 'situacao', (v_linha ->> 'vigencia_inicio')::date, (v_linha ->> 'vigencia_fim')::date,
             'planilha', l.id, now())
     on conflict (prefeitura_id, tipo, coalesce(modalidade, ''), numero, ano) where ativo do nothing
