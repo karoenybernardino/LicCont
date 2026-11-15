@@ -63,7 +63,7 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
               <Busca acao="/emprestimos" valor={q} rotulo="Buscar empréstimo" marcador="Documento ou pessoa" extra={aba !== "abertos" ? { situacao: aba } : undefined} />
             </div>
           </div>
-          <div className="sc -mx-5 max-h-[420px] overflow-auto">
+          <div className="sc -mx-5 overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className={linhaCabecalho}>

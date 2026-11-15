@@ -311,7 +311,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
           </div>
         </section>
         {doc ? (
-          <div tabIndex={0} className="sc min-h-0 min-w-0 overflow-y-auto focus-visible:outline-2 focus-visible:outline-foco lg:pr-1">
+          <div className="min-w-0">
             <PainelDocumento doc={doc} usuario={usuario} />
           </div>
         ) : (

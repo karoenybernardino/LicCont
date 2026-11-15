@@ -76,7 +76,7 @@ export function PainelFila({
               </button>
             ))}
           </div>
-          <ul className="sc max-h-[460px] overflow-auto">
+          <ul className="sc overflow-x-auto">
             {lista.map((i) => (
               <li key={i.id}>
                 <button
