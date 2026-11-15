@@ -17,6 +17,7 @@ abre a caixa só depois do login). Fidelidade ao canvas: `docs/telas/`.
 | 5 | **Telas sem rota**: Empréstimos, Temporalidade, Auditoria (leitura da auditoria que já existe); botões "em breve" de empréstimo ficam desabilitados até a Fase 6 | comparação | pendente |
 | 6 | **Visualizador de PDF**: resolução, cópia de leitura, SHA-256 se o dado existir; "Imprimir" | Vitest | pendente |
 | 7 | **Equipe** (`/equipe`, Nova prefeitura, Detalhe) e telas de **Erro** (sessão expirada, 404, 403, 500) | comparação | pendente |
+| 8 | **Mapa, decisões do responsável (2026-11-14)**: (a) na vista Planta do Mapa, paredes e metros aparecem só no Editor da planta; a Planta do Mapa fica sem eles; (b) o Editor da planta passa a trabalhar em metros (tamanho de rua, posições e comprimento), conforme `metrosCelula` em `src/features/mapa/` | Vitest da conversão, Playwright do editor, comparação | pendente |
 
 ## Tarefa 1 — decisões
 
