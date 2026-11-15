@@ -1,6 +1,6 @@
 # Fase 7 — Temporalidade e descarte
 
-Status: **implementada, telas pelos quadros do canvas** (2026-11-15). O PR #51 (Fase 5) já
+Status: **implementada e mesclada (PR #53); modelo do termo editável em seguida** (2026-11-15). O PR #51 (Fase 5) já
 está na `main`. As decisões do responsável estão em "Decisões do responsável"
 e o que foi feito em "Entregue neste PR". Plano geral: `docs/plano-de-desenvolvimento.md`, linha "7 ·
 Temporalidade": tabela de prazos, fila de descarte, termo de eliminação com

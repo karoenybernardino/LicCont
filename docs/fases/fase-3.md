@@ -611,3 +611,14 @@ Desvios do plano:
 - Envio **sem retomada (TUS)**: se a internet cair, recomeça do zero. Fica para uma tarefa própria.
 - Pendentes: tela 403 ligada às rotas, busca na lista de ruas, "Salvar e imprimir etiqueta".
 - Desempenho: `supabase/tests/documentos_desempenho.test.sql` (100 mil documentos, < 1 s) roda no CI.
+
+## Pendências fechadas em 2026-11-15
+
+O responsável autorizou o que ficou de fora de propósito:
+
+| Item | Estado |
+| --- | --- |
+| Credor pessoa física (CPF) | **Feito.** Campo "CNPJ ou CPF do credor" com dígito verificador; o CPF vai para a coluna `cpf_credor` (migração `20261124120000_credor_cpf.sql`), sai da auditoria e não entra na busca. Teste pgTAP em `temporalidade.test.sql` e Vitest |
+| Limpeza automática de PDF abandonado | **Feito.** Rotina diária `/api/limpeza/envios` (Vercel Cron, `vercel.json`) que chama `public.limpar_envios_todos()`. **Falta:** criar `CRON_SECRET` nas variáveis da Vercel (Production); sem ele a rotina fica desligada |
+| Digitalização em lote (vários PDFs de uma vez) | **Não feito.** Não há quadro no canvas e a regra de casamento PDF ↔ documento (pelo nome do arquivo? por planilha?) é decisão de produto. Precisa de quadro e de resposta antes do código |
+| OCR em fila e aviso de página ruim | **Não feito.** O plano gratuito não cobre um serviço de OCR. A opção sem serviço externo é rodar `tesseract.js` no navegador, mas isso muda a tela de envio e a busca (coluna de texto e índice) e precisa de quadro. Se o responsável preferir um serviço pago, fica pronto para a chave, como o e-mail (decisão 0010) |

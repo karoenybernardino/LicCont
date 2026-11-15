@@ -191,3 +191,34 @@ SMS e WhatsApp (seriam outro serviço externo).
 5. Comparação com o canvas anexada ao PR, claro e escuro, sem diferença que
    não seja dado.
 6. Nenhum dado pessoal em log; nenhum serviço externo sem registro.
+
+## Decisões do responsável (2026-11-15)
+
+- **Aviso de atraso: só na tela.** O e-mail de atraso fica fora (a infraestrutura de e-mail existe, desligada: decisão 0010).
+- Aprovação do empréstimo e termo de empréstimo: o responsável pediu **recomendação** (abaixo). Nada disso foi implementado.
+
+## Recomendações (aguardam o "sim" do responsável)
+
+**1. Aprovação do empréstimo (quem aprova).** Recomendo: quando a secretaria
+marca "exige aprovação" (campo da Fase 5), o pedido fica **pendente** e quem
+aprova é o **coordenador da secretaria dona do documento**; o **administrador**
+pode aprovar no lugar do coordenador (férias, ausência). **Nunca quem pediu**
+(mesma regra do termo de eliminação: pedido e aprovação por pessoas
+diferentes). O pedido pendente **vence em 3 dias** (a pessoa pode pedir de
+novo) e o prazo do empréstimo só começa a contar na aprovação. Aprovação e
+recusa vão para a auditoria. Sem a marca "exige aprovação", nada muda: a
+retirada continua direta. Custo: uma situação nova no empréstimo
+(`pendente`), uma função `public.emprestimo_aprovar` no padrão de
+`public.descarte_aprovar`, pgTAP de isolamento e a aba "Pendentes" na tela.
+Precisa de quadro novo no canvas para a aba e os botões.
+
+**2. Termo de empréstimo em PDF e Word.** Recomendo reaproveitar o que a Fase 7
+entregou: o mesmo gerador (`pdf-lib` + `docx`) e a **mesma tela de modelo
+editável** (`/temporalidade/modelo`), que já aceita `tipo = emprestimo` na
+tabela `modelos_termo`. O termo traz: prefeitura e secretaria, documento (tipo,
+número, objeto, caixa), retirado por (nome e setor, texto livre como hoje),
+data da retirada, prazo e devolução prevista, e linhas de assinatura em branco
+(retirante e responsável pelo arquivo). **Sem CPF.** Botões "Baixar PDF" e
+"Baixar Word" na linha do empréstimo, na tela `/emprestimos`. Custo: um módulo
+`termo-emprestimo.ts`, uma rota de arquivo e o ajuste da tela de modelo para
+escolher o tipo. Sem serviço externo.
