@@ -97,13 +97,15 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Situação atualizada.");
 
+  const posts: string[] = [];
+  page.on("response", (r) => r.request().method() === "POST" && posts.push(`${r.status()} ${new URL(r.url()).pathname}`));
   await page.getByLabel("Nome", { exact: true }).fill("Admin Fictício Novo");
   await page.getByLabel("E-mail institucional").fill("admin.novo@exemplo.test");
   await page.getByRole("button", { name: "Cadastrar administrador" }).click();
   await expect(page.getByTestId("senha-provisoria"))
     .toHaveText(/^.{16}$/, { timeout: 20_000 })
     .catch(async (e) => {
-      throw new Error(`${JSON.stringify(await page.locator('[role="alert"], [role="status"]').allInnerTexts())} :: ${e.message.slice(0, 60)}`);
+      throw new Error(`${JSON.stringify(await page.locator('[role="alert"], [role="status"], button[type="submit"]').allInnerTexts())} :: ${posts.join(" | ")} :: ${e.message.slice(0, 40)}`);
     });
 
   // Prefeitura com usuário não aceita outro "primeiro administrador".
