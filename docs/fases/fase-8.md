@@ -261,7 +261,7 @@ provar", "link da prova" e "data". Item sem prova **não conta como feito**.
 | Auditoria | Só inclusão | Fase 1 | pgTAP: UPDATE e DELETE falham até para `postgres` via API; relatório exportado aparece nela |
 | Dependências | Alerta e atualização automáticas | Dependabot semanal | `npm audit --omit=dev` no CI, falhando em severidade alta; revisar à mão as imagens do Semgrep e do Gitleaks (nota no `ci.yml`) |
 | Código | Análise estática | Semgrep no CI | Revisão manual de segurança pelo agente `auditor-seguranca` sobre login, Storage, funções `security definer` |
-| Acessibilidade | Contraste, rótulos, teclado | — | `axe` no Playwright nas telas principais (o plano geral prevê; **hoje não está no CI**: confirmar) |
+| Acessibilidade | Contraste, rótulos, teclado | `@axe-core/playwright` em `tests/e2e/ajuda.ts` | Conferir que as telas novas (aceite, relatórios, painel de uso) passam pelo mesmo teste |
 | Demonstração | Modo demo nunca em Production | trava por `VERCEL_ENV` e ausência de `service_role` | Teste de que, com `SUPABASE_SERVICE_ROLE_KEY` definida, `LICCONT_DEMO=1` não liga |
 | Operação | Backup e restauração | — | Tarefa 9 |
 | Operação | Contato de segurança e plano de incidentes | `SECURITY.md` sem contato | Tarefa 7 |
