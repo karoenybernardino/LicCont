@@ -1,82 +1,95 @@
 import type { Metadata } from "next";
-import { Campo } from "@/ui/campo";
-import { Formulario } from "@/ui/formulario";
-import { Selecao } from "@/ui/selecao";
-import { CartaoResumo, Pilula } from "@/ui/canvas";
+import Link from "next/link";
+import { Busca, CartaoResumo, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { PaginaEquipe } from "@/features/equipe/pagina";
-import { Painel, TituloPainel } from "@/features/estrutura/componentes";
+import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { Icone } from "@/features/sessao/barra-lateral";
 import { listarPrefeituras } from "@/features/prefeituras/dados";
+import { filtrarPrefeituras, formatarCnpj, type StatusPrefeitura } from "@/features/prefeituras/lista";
+import { formatarData } from "@/features/documentos/formato";
 import { exigirEquipe } from "@/features/sessao/dal";
-import { cadastrarPrefeitura, cadastrarPrimeiroAdmin, mudarStatus } from "@/features/prefeituras/acoes";
 
 export const metadata: Metadata = { title: "Prefeituras · LicCONT" };
 
 const SITUACOES = { implantacao: "Em implantação", ativa: "Ativa", suspensa: "Suspensa" } as const;
 const TONS = { implantacao: "aviso", ativa: "ok", suspensa: "erro" } as const;
+const FILTROS = [
+  ["todas", "Todas"],
+  ["ativa", "Ativas"],
+  ["implantacao", "Implantação"],
+  ["suspensa", "Suspensas"],
+] as const;
 
-// Painel da equipe LicCONT: prefeituras e primeiro administrador.
-export default async function PainelEquipe() {
+// Painel da equipe LicCONT (quadro EquipePrefeituras).
+export default async function PainelEquipe({ searchParams }: { searchParams: Promise<{ q?: string; situacao?: string }> }) {
   await exigirEquipe();
-  const prefeituras = await listarPrefeituras();
-  const n = (s: keyof typeof SITUACOES) => prefeituras.filter((p) => p.status === s).length;
+  const busca = await searchParams;
+  const q = (busca.q ?? "").trim().slice(0, 120);
+  const situacao = FILTROS.find(([v]) => v === busca.situacao)?.[0] ?? "todas";
+  const todas = await listarPrefeituras();
+  const n = (s: StatusPrefeitura) => todas.filter((p) => p.status === s).length;
+  const lista = filtrarPrefeituras(todas, q, situacao);
+  const admins = todas.reduce((t, p) => t + p.administradores, 0);
+  const semAdmin = todas.filter((p) => p.administradores === 0).length;
+  const href = (s: string) => `/equipe?${new URLSearchParams({ ...(q && { q }), ...(s !== "todas" && { situacao: s }) })}`;
 
   return (
     <PaginaEquipe titulo="Prefeituras">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <CartaoResumo rotulo="Prefeituras" valor={String(prefeituras.length)} legenda={`${n("ativa")} ativas · ${n("implantacao")} em implantação`} cor="teal" icone={<Icone nome="secretarias" />} />
-        <CartaoResumo rotulo="Ativas" valor={String(n("ativa"))} legenda="em uso pelos órgãos" cor="aco" icone={<Icone nome="inicio" />} />
+        <CartaoResumo rotulo="Prefeituras" valor={String(todas.length)} legenda={`${n("ativa")} ${n("ativa") === 1 ? "ativa" : "ativas"} · ${n("implantacao")} em implantação`} cor="teal" icone={<Icone nome="secretarias" />} />
+        <CartaoResumo rotulo="Administradores" valor={String(admins)} legenda="em todas as prefeituras" cor="aco" icone={<Icone nome="usuarios" />} />
         <CartaoResumo rotulo="Documentos no ar" valor="0" legenda="o cadastro chega na Fase 3" cor="ambar" icone={<Icone nome="cadastro" />} />
-        <CartaoResumo rotulo="Suspensas" valor={String(n("suspensa"))} legenda="sem acesso ao sistema" cor="vermelho" icone={<Icone nome="auditoria" />} />
+        <CartaoResumo rotulo="Pendências" valor={String(semAdmin)} legenda="prefeituras sem administrador ativo" cor="vermelho" icone={<Icone nome="auditoria" />} />
       </div>
 
-      <Painel>
-        <TituloPainel>Prefeituras cadastradas</TituloPainel>
-        <ul className="-mx-5 flex flex-col">
-          {prefeituras.map((p) => (
-            <li key={p.id} className="flex flex-col gap-4 border-t border-linha px-5 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-sm font-semibold">{p.nome}</h2>
-                  <p className="font-mono text-[12.5px] font-medium text-texto-suave">
-                    CNPJ {p.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
-                  </p>
-                </div>
-                <Pilula tom={TONS[p.status]}>{SITUACOES[p.status]}</Pilula>
-              </div>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <Formulario acao={mudarStatus} botao="Salvar situação" enviando="Salvando…" variante="secundario">
-                  <input type="hidden" name="id" value={p.id} />
-                  <Selecao rotulo={`Situação de ${p.nome}`} name="status" defaultValue={p.status}>
-                    {Object.entries(SITUACOES).map(([valor, rotulo]) => (
-                      <option key={valor} value={valor}>
-                        {rotulo}
-                      </option>
-                    ))}
-                  </Selecao>
-                </Formulario>
-                <details>
-                  <summary className="cursor-pointer text-[13px] text-destaque">
-                    Primeiro administrador<span className="sr-only"> de {p.nome}</span>
-                  </summary>
-                  <Formulario acao={cadastrarPrimeiroAdmin} botao="Cadastrar administrador" enviando="Cadastrando…" className="mt-3">
-                    <input type="hidden" name="id" value={p.id} />
-                    <Campo rotulo="Nome do administrador" name="nome" required maxLength={200} />
-                    <Campo rotulo="E-mail do administrador" name="email" type="email" autoComplete="off" required />
-                  </Formulario>
-                </details>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Painel>
-
-      <Painel>
-        <TituloPainel>Cadastrar prefeitura</TituloPainel>
-        <Formulario acao={cadastrarPrefeitura} botao="Cadastrar" enviando="Cadastrando…" className="max-w-md">
-          <Campo rotulo="Nome do órgão" name="nome" required maxLength={200} />
-          <Campo rotulo="CNPJ" name="cnpj" inputMode="numeric" required placeholder="00.000.000/0000-00" />
-        </Formulario>
+      <Painel className="pb-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Busca acao="/equipe" valor={q} rotulo="Buscar por nome ou CNPJ" marcador="Buscar por nome ou CNPJ" extra={situacao === "todas" ? undefined : { situacao }} />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Filtros
+              itens={FILTROS.map(([v, r]) => ({
+                href: href(v),
+                rotulo: `${r} · ${v === "todas" ? todas.length : n(v)}`,
+                ativo: situacao === v,
+              }))}
+            />
+            <Link href="/equipe/nova" className={botaoPrimario}>+ Nova prefeitura</Link>
+          </div>
+        </div>
+        <div className="-mx-5 -mb-1.5 overflow-x-auto">
+          <table className="w-full text-left">
+            <caption className="sr-only">Prefeituras cadastradas</caption>
+            <thead>
+              <tr className={linhaCabecalho}>
+                <th scope="col" className={th}>Prefeitura</th>
+                <th scope="col" className={th}>CNPJ</th>
+                <th scope="col" className={th}>Situação</th>
+                <th scope="col" className={th}>Administradores</th>
+                <th scope="col" className={th}>Cadastrada em</th>
+                <th scope="col" className={th}><span className="sr-only">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((p, i) => (
+                <tr key={p.id} className={classeLinha(false, i % 2 === 1)}>
+                  <td className={`${td} w-full font-semibold`}>{p.nome}</td>
+                  <td className={`${td} font-mono text-[13px] font-medium`}>{formatarCnpj(p.cnpj)}</td>
+                  <td className={td}><Pilula tom={TONS[p.status]}>{SITUACOES[p.status]}</Pilula></td>
+                  <td className={`${td} font-mono text-[13px] font-medium`}>{p.administradores}</td>
+                  <td className={`${td} font-mono text-[13px] font-medium`}>{formatarData(p.criadoEm)}</td>
+                  <td className={`${td} text-right`}>
+                    <Link href={`/equipe/${p.id}`} aria-label={`Abrir ${p.nome}`} className={botaoContorno}>Abrir</Link>
+                  </td>
+                </tr>
+              ))}
+              {lista.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-texto-suave">Nenhuma prefeitura encontrada.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Painel>
     </PaginaEquipe>
   );

@@ -15,10 +15,11 @@ const PDF = path.join(process.cwd(), "public", "demo", "documento-de-demonstraca
 
 async function preencher(page: Page, numero: string, objeto: string) {
   await page.getByLabel("Modalidade").selectOption("pregao_eletronico");
-  await page.getByLabel("Número do processo").fill(numero);
+  await page.getByLabel("Título do processo").fill(numero);
   await page.getByLabel("Objeto").fill(objeto);
   await page.getByLabel("Ano", { exact: true }).fill("2024");
-  await page.getByLabel("Rua", { exact: true }).selectOption({ index: 1 });
+  await page.getByLabel("Rua", { exact: true }).click();
+  await page.getByRole("listbox", { name: "Ruas" }).getByRole("option").first().click();
   await page.getByRole("button", { name: "Próxima livre" }).click();
   await expect(page.getByText("cabem cerca de")).toBeVisible();
 }
@@ -26,7 +27,7 @@ async function preencher(page: Page, numero: string, objeto: string) {
 test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async ({ page }) => {
   test.setTimeout(150_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
-  await page.getByRole("link", { name: "Cadastrar documento" }).click();
+  await page.getByRole("link", { name: "Cadastrar documento" }).first().click();
   await expect(page.getByRole("heading", { level: 1, name: "Cadastrar documento" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
   await preencher(page, "901/2024", "Aquisição fictícia de teste do PDF");
@@ -59,7 +60,7 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
 test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({ page }) => {
   test.setTimeout(90_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
-  await page.getByRole("link", { name: "Cadastrar documento" }).click();
+  await page.getByRole("link", { name: "Cadastrar documento" }).first().click();
   await expect(page.getByRole("heading", { level: 1, name: "Cadastrar documento" })).toBeVisible();
   await page.getByLabel("Escolher o PDF").setInputFiles({ name: "falso.pdf", mimeType: "application/pdf", buffer: Buffer.from("isto nao e um pdf") });
   await expect(page.getByRole("alert").filter({ hasText: "O arquivo não é um PDF." })).toBeVisible();

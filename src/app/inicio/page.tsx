@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { CartaoResumo, Pilula } from "@/ui/canvas";
-import { pesquisar } from "@/features/documentos/dados";
+import { pesquisar, podeCadastrar } from "@/features/documentos/dados";
 import { lerFiltros } from "@/features/documentos/filtros";
 import { carregarEstrutura } from "@/features/estrutura/dados";
+import { resumir } from "@/features/estrutura/ocupacao";
+import { InicioCompleto } from "@/features/inicio/painel";
+import { ocupacaoPorRua } from "@/features/inicio/resumo";
+import { contarEmprestimos, lerTemporalidade, listarEmprestimos, ultimasMovimentacoes } from "@/features/movimento/dados";
 import { Painel, Rotulo } from "@/features/estrutura/componentes";
 import { exigirSessao, nomePrefeitura, secretariasPermitidas } from "@/features/sessao/dal";
 import { Icone, PaginaSistema } from "@/features/sessao/pagina";
@@ -26,6 +30,8 @@ export default async function Inicio() {
     carregarEstrutura(),
     pesquisar(usuario, lerFiltros({})),
   ]);
+  // Acervo já em uso: mostra o Início completo; antes disso, o da implantação.
+  const emUso = estrutura.niveis.some((n) => n.caixas > 0) && acervo.contagens.todos > 0;
   const caixas = estrutura.niveis.reduce((soma, n) => soma + n.caixas, 0);
   const ativas = secretarias.filter((s) => s.ativa).length;
   const bloqueados = usuarios?.filter((u) => !u.ativo).length ?? 0;
@@ -48,6 +54,33 @@ export default async function Inicio() {
     { titulo: "Estrutura física", texto: "Ruas, módulos, níveis e caixas", feito: caixas > 0 },
     { titulo: "Documentos", texto: "Cadastro e pesquisa do acervo", feito: acervo.contagens.todos > 0 },
   ];
+
+  if (emUso) {
+    const [emprestimos, temporalidade, cadastra] = await Promise.all([listarEmprestimos(), lerTemporalidade(), podeCadastrar(usuario)]);
+    const total = resumir(estrutura);
+    const hora = Number(new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }));
+    const { abertos, atrasados } = contarEmprestimos(emprestimos);
+    return (
+      <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Início" trilha={prefeitura}>
+        <InicioCompleto
+          prefeitura={prefeitura}
+          saudacao={hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"}
+          podeCadastrar={cadastra}
+          documentos={acervo.contagens.todos}
+          caixas={total.caixas}
+          percentual={total.percentual}
+          livres={Math.max(total.capacidade - total.caixas, 0)}
+          ruas={ocupacaoPorRua(estrutura)}
+          emprestimos={emprestimos}
+          abertos={abertos}
+          atrasados={atrasados}
+          resumo={temporalidade.resumo}
+          movimentacoes={ultimasMovimentacoes(acervo.itens)}
+          aVencer={temporalidade.aVencer}
+        />
+      </PaginaSistema>
+    );
+  }
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Início" trilha={prefeitura}>

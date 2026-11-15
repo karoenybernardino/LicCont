@@ -300,14 +300,15 @@ export async function PainelDocumento({
                     ? `QR da caixa ${String(pos.caixa).padStart(2, "0")}. Abre este documento no celular.`
                     : "Sem caixa definida."}
                 </p>
-                <button
-                  type="button"
-                  disabled
-                  title="Imprimir etiqueta · em breve"
-                  className={`${botaoCanvas} w-full cursor-not-allowed opacity-50`}
-                >
-                  Imprimir etiqueta
-                </button>
+                {doc.caixaId ? (
+                  <Link href={`/etiquetas?caixas=${doc.caixaId}`} className={`${botaoCanvas} w-full`}>
+                    Imprimir etiqueta
+                  </Link>
+                ) : (
+                  <button type="button" disabled title="Sem caixa definida" className={`${botaoCanvas} w-full cursor-not-allowed opacity-50`}>
+                    Imprimir etiqueta
+                  </button>
+                )}
               </div>
             </div>
           </div>

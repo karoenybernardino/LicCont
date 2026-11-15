@@ -12,6 +12,10 @@ import {
 } from "./acoes";
 import type { CaixaOcupada } from "./dados";
 import { MOTIVOS } from "./conferencia";
+import { EscolhaRua } from "./escolha-rua";
+import { useOrigem } from "@/features/etiquetas/origem";
+import { urlDaCaixa } from "@/features/etiquetas/qr";
+import { QrSvg } from "@/features/etiquetas/qr-svg";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
 import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Tipo } from "./tipos";
@@ -77,16 +81,6 @@ function Titulo({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-// Etiqueta de exemplo: o QR é uma imagem fixa (o de verdade chega na Fase 5).
-function QrFixo() {
-  const celulas = Array.from({ length: 49 }, (_, i) => ((i * 7 + (i >> 3) * 3) % 5 < 2 ? 1 : 0));
-  return (
-    <svg role="img" aria-label="QR code de exemplo" width="64" height="64" viewBox="0 0 7 7" className="text-petroleo">
-      {celulas.map((c, i) => c === 1 && <rect key={i} x={i % 7} y={Math.floor(i / 7)} width="1" height="1" fill="currentColor" />)}
-    </svg>
-  );
-}
-
 export function FormularioDocumento({
   secretarias,
   secretariaPadrao,
@@ -118,7 +112,8 @@ export function FormularioDocumento({
   const [avisosPdf, setAvisosPdf] = useState<string[]>([]);
   const [arrastando, setArrastando] = useState(false);
   const entrada = useRef<HTMLInputElement>(null);
-  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()) });
+  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()), empresa: inicial?.empresa ?? "" });
+  const origem = useOrigem();
   const [secretaria, setSecretaria] = useState(inicial?.secretariaId ?? secretariaPadrao);
 
   const modulosDaRua = estrutura.modulos.filter((m) => m.ruaId === rua);
@@ -174,7 +169,7 @@ export function FormularioDocumento({
     setAvisosPdf(lista);
   }
 
-  function enviar(depois: "ver" | "novo", dados: FormData) {
+  function enviar(depois: "ver" | "novo" | "etiqueta", dados: FormData) {
     setErro(null);
     setAviso(null);
     dados.set("caixa", caixa);
@@ -225,7 +220,7 @@ export function FormularioDocumento({
           return setErro(`${c.erro} O documento foi salvo sem o PDF.`);
         }
       }
-      router.push(depois === "novo" ? "/documentos/novo?salvo=1" : `/documentos/${r.id}`);
+      router.push(depois === "novo" ? "/documentos/novo?salvo=1" : depois === "etiqueta" ? `/etiquetas?caixas=${caixa}` : `/documentos/${r.id}`);
       router.refresh();
     });
   }
@@ -234,7 +229,7 @@ export function FormularioDocumento({
 
   return (
     <form
-      action={(d) => enviar((d.get("depois") as "ver" | "novo") ?? "ver", d)}
+      action={(d) => enviar((d.get("depois") as "ver" | "novo" | "etiqueta") ?? "ver", d)}
       className="grid items-start gap-4 lg:grid-cols-[1fr_400px]"
       noValidate
     >
@@ -278,7 +273,7 @@ export function FormularioDocumento({
             </Campo>
           </div>
           <div className="grid gap-3.5 sm:grid-cols-[1fr_1.4fr]">
-            <Campo rotulo="Número do processo">
+            <Campo rotulo="Título do processo">
               {(id) => (
                 <input id={id} name="numero" required maxLength={30} defaultValue={inicial?.numero} onChange={(e) => setResumo((s) => ({ ...s, numero: e.target.value }))} placeholder="015/2023" className={caixaCampo} />
               )}
@@ -291,7 +286,7 @@ export function FormularioDocumento({
           </div>
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_.6fr_.9fr_1fr]">
             <Campo rotulo={tipo === "licitacao" ? "Empresa vencedora" : "Empresa contratada"}>
-              {(id) => <input id={id} name="empresa" maxLength={200} defaultValue={inicial?.empresa ?? ""} className={caixaCampo} />}
+              {(id) => <input id={id} name="empresa" maxLength={200} defaultValue={inicial?.empresa ?? ""} onChange={(e) => setResumo((s) => ({ ...s, empresa: e.target.value }))} className={caixaCampo} />}
             </Campo>
             <Campo rotulo="Secretaria">
               {(id) => (
@@ -347,12 +342,7 @@ export function FormularioDocumento({
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             <Campo rotulo="Rua">
               {(id) => (
-                <select id={id} value={rua} onChange={(e) => { setRua(e.target.value); setModulo(""); setNivel(""); setCaixa(""); }} className={`${caixaCampo} font-mono`}>
-                  <option value="">Escolha…</option>
-                  {estrutura.ruas.map((r) => (
-                    <option key={r.id} value={r.id}>{`Rua ${r.codigo} · ${r.modulos} módulos · ${r.percentual}% ocupada`}</option>
-                  ))}
-                </select>
+                <EscolhaRua id={id} ruas={estrutura.ruas} valor={rua} aoEscolher={(v) => { setRua(v); setModulo(""); setNivel(""); setCaixa(""); }} />
               )}
             </Campo>
             <Campo rotulo="Módulo">
@@ -425,14 +415,28 @@ export function FormularioDocumento({
                 </div>
               ))}
             </div>
-            <div className="flex items-end gap-3.5 px-4 pt-3.5 pb-4">
-              <div className="min-w-0 flex-1">
-                <div className="font-titulo text-[15px] leading-5 font-bold">{resumo.numero ? `${tipo === "contrato" ? "Contrato" : "Licitação"} ${resumo.numero}` : "Título do documento"}</div>
-                <div className="mt-0.5 line-clamp-2 text-xs text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
+            <div className="flex items-stretch gap-3.5 px-4 pt-3.5 pb-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+                <div>
+                  <div className="font-titulo text-[15px] leading-5 font-bold">{resumo.numero ? `${tipo === "contrato" ? "Contrato" : "Licitação"} ${resumo.numero}` : "Título do processo"}</div>
+                  <div className="mt-0.5 line-clamp-2 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
+                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Empresa", resumo.empresa || "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
+                    <div key={r} className="min-w-0">
+                      <dt className="text-[9px] font-semibold tracking-[.1em] text-[#3f5e66] uppercase">{r}</dt>
+                      <dd className="mt-px truncate text-[13px] leading-[18px] font-medium text-petroleo">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <QrFixo />
-                <span className="text-[9px] text-[#3f5e66]">QR na Fase 5</span>
+              <div className="flex flex-col items-center justify-end gap-1">
+                {caixaEscolhida && origem ? (
+                  <QrSvg texto={urlDaCaixa(origem, caixaEscolhida.id)} tamanho={92} rotulo="QR code da caixa" />
+                ) : (
+                  <div aria-hidden className="size-[92px] rounded border border-dashed border-[#3f5e66]/40" />
+                )}
+                <span className="text-[9px] text-[#3f5e66]">Ler para abrir</span>
               </div>
             </div>
           </div>
@@ -477,14 +481,19 @@ export function FormularioDocumento({
         {etapa && <p role="status" className="text-sm text-texto-suave">{etapa}</p>}
 
         <div className="flex gap-2.5">
-          <button type="submit" name="depois" value="ver" disabled={pendente} className={`${botaoBase} flex-1 bg-[linear-gradient(135deg,#0e7490,#0f766e)] text-white hover:opacity-90 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]`}>
+          {!inicial && (
+            <>
+              <button type="submit" name="depois" value="etiqueta" disabled={pendente || !caixa} title={caixa ? undefined : "Escolha a caixa para imprimir a etiqueta"} className={`${botaoBase} flex-1 bg-[linear-gradient(135deg,#0e7490,#0f766e)] text-white hover:opacity-90 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]`}>
+                Salvar e imprimir etiqueta
+              </button>
+              <button type="submit" name="depois" value="novo" disabled={pendente} className={`${botaoBase} border border-linha hover:border-destaque`}>
+                Salvar e novo
+              </button>
+            </>
+          )}
+          <button type="submit" name="depois" value="ver" disabled={pendente} className={inicial ? `${botaoBase} flex-1 bg-[linear-gradient(135deg,#0e7490,#0f766e)] text-white hover:opacity-90 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]` : `${botaoBase} border border-linha hover:border-destaque`}>
             Salvar
           </button>
-          {!inicial && (
-            <button type="submit" name="depois" value="novo" disabled={pendente} className={`${botaoBase} border border-linha hover:border-destaque`}>
-              Salvar e novo
-            </button>
-          )}
         </div>
       </div>
     </form>

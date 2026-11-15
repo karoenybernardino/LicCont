@@ -558,9 +558,15 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
             <button type="button" disabled title="Registrar empréstimo · em breve" className="min-h-11 cursor-not-allowed rounded-lg bg-[linear-gradient(135deg,#0e7490,#0f766e)] px-5 text-sm font-semibold text-white opacity-50 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]">
               Registrar empréstimo
             </button>
-            <button type="button" disabled title="Imprimir etiqueta · em breve" className="min-h-11 cursor-not-allowed rounded-lg border border-linha bg-white/40 px-5 text-sm font-medium opacity-50 dark:border-[#1b3a44] dark:bg-transparent">
-              Imprimir etiqueta
-            </button>
+            {selecionada ? (
+              <Link href={`/etiquetas?caixas=${selecionada}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-linha bg-white/40 px-5 text-sm font-medium hover:border-destaque dark:border-[#1b3a44] dark:bg-transparent">
+                Imprimir etiqueta
+              </Link>
+            ) : (
+              <button type="button" disabled title="Escolha uma caixa" className="min-h-11 cursor-not-allowed rounded-lg border border-linha bg-white/40 px-5 text-sm font-medium opacity-50 dark:border-[#1b3a44] dark:bg-transparent">
+                Imprimir etiqueta
+              </button>
+            )}
           </div>
         </aside>
       </div>

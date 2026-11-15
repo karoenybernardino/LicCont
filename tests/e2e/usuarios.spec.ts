@@ -19,14 +19,18 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await page.getByRole("link", { name: "Secretarias", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
+  await page.getByRole("link", { name: "+ Nova secretaria" }).click();
+  await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome da secretaria").fill("Obras");
-  await page.getByRole("button", { name: "Cadastrar" }).click();
-  await expect(page.getByRole("status")).toHaveText("Secretaria cadastrada.");
+  await page.getByRole("button", { name: "Salvar e cadastrar outra" }).click();
+  await expect(page.getByRole("status")).toContainText("Secretaria cadastrada");
   await page.getByLabel("Nome da secretaria").fill("Cultura");
-  await page.getByRole("button", { name: "Cadastrar" }).click();
-  await expect(page.getByRole("button", { name: "Desativar Cultura" })).toBeVisible();
-  await page.getByRole("button", { name: "Desativar Cultura" }).click();
-  await expect(page.getByRole("button", { name: "Reativar Cultura" })).toBeVisible();
+  await page.getByRole("button", { name: "Salvar secretaria", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
+  await page.getByRole("link", { name: "Editar Cultura" }).click();
+  await page.getByLabel("Situação").selectOption({ label: "Desativada" });
+  await page.getByRole("button", { name: "Salvar secretaria", exact: true }).click();
+  await expect(page.getByRole("row", { name: /Cultura/ })).toContainText("Desativada");
 
   // Usuários: cadastrar operador só em Obras.
   await page.getByRole("link", { name: "Usuários e perfis", exact: true }).click();
@@ -82,25 +86,30 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await expect(page).toHaveURL(/\/equipe$/);
   await semFalhasDeAcessibilidade(page);
 
+  await page.getByRole("link", { name: "+ Nova prefeitura" }).click();
+  await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
   await page.getByLabel("CNPJ").fill("00.000.000/0005-55");
-  await page.getByRole("button", { name: "Cadastrar", exact: true }).click();
+  await page.getByRole("button", { name: "Salvar e criar base" }).click();
   await expect(page.getByRole("heading", { name: "Prefeitura Fictícia Nova" })).toBeVisible();
 
-  await page.getByLabel("Situação de Prefeitura Fictícia Nova").selectOption({ label: "Ativa" });
-  const cartao = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: "Prefeitura Fictícia Nova" }) });
-  await cartao.getByRole("button", { name: "Salvar situação" }).click();
-  await expect(cartao.getByRole("status")).toHaveText("Situação atualizada.");
+  await page.getByLabel("Situação", { exact: true }).selectOption({ label: "Ativa" });
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Situação atualizada.");
 
-  await cartao.getByText("Primeiro administrador").click();
-  await cartao.getByLabel("Nome do administrador").fill("Admin Fictício Novo");
-  await cartao.getByLabel("E-mail do administrador").fill("admin.novo@exemplo.test");
-  await cartao.getByRole("button", { name: "Cadastrar administrador" }).click();
-  await expect(cartao.getByTestId("senha-provisoria")).toHaveText(/^.{16}$/);
+  const posts: string[] = [];
+  page.on("response", (r) => r.request().method() === "POST" && posts.push(`${r.status()} ${new URL(r.url()).pathname}`));
+  await page.getByLabel("Nome", { exact: true }).fill("Admin Fictício Novo");
+  await page.getByLabel("E-mail institucional").fill("admin.novo@exemplo.test");
+  await page.getByRole("button", { name: "Cadastrar administrador" }).click();
+  await expect(page.getByTestId("senha-provisoria"))
+    .toHaveText(/^.{16}$/, { timeout: 20_000 })
+    .catch(async (e) => {
+      throw new Error(`${JSON.stringify(await page.locator('[role="alert"], [role="status"], button[type="submit"]').allInnerTexts())} :: ${posts.join(" | ")} :: ${e.message.slice(0, 40)}`);
+    });
 
   // Prefeitura com usuário não aceita outro "primeiro administrador".
-  await cartao.getByLabel("Nome do administrador").fill("Outro Admin Fictício");
-  await cartao.getByLabel("E-mail do administrador").fill("admin.outro@exemplo.test");
-  await cartao.getByRole("button", { name: "Cadastrar administrador" }).click();
-  await expect(cartao.getByTestId("erro-formulario")).toContainText("já tem usuários");
+  await page.reload();
+  await expect(page.getByRole("cell", { name: "admin.novo@exemplo.test" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cadastrar administrador" })).toHaveCount(0);
 });
