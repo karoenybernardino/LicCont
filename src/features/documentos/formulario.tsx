@@ -328,8 +328,8 @@ export function FormularioDocumento({
             </Campo>
           </div>
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            <Campo rotulo="CNPJ (opcional)">
-              {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="00.000.000/0000-00" className={caixaCampo} />}
+            <Campo rotulo="CNPJ ou CPF do credor (opcional)">
+              {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="CNPJ ou CPF" className={caixaCampo} />}
             </Campo>
             {tipo === "contrato" && (
               <>

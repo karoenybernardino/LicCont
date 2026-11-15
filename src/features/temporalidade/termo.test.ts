@@ -25,6 +25,12 @@ describe("conteudoTermo", () => {
     expect(c.rodape).toBe("Total: 80 documentos.");
     expect(c.arquivo).toBe("termo-eliminacao-003-2026");
   });
+  it("usa o modelo editado: texto-base e assinaturas da prefeitura", () => {
+    const c = conteudoTermo({ ...base, situacao: "rascunho", editalEm: null, aprovadoEm: null }, { baseLegal: "Texto da prefeitura.", assinaturas: "Chefe do arquivo\n\n  Secretário  " });
+    expect(c.paragrafos[0]).toBe("Texto da prefeitura.");
+    expect(c.assinaturas).toEqual(["Chefe do arquivo", "Secretário"]);
+    expect(c.paragrafos.join(" ")).toMatch(/não autoriza/);
+  });
   it("não leva CPF nem nome de pessoa (só linhas de assinatura em branco)", () => {
     const c = conteudoTermo({ ...base, situacao: "aprovado" });
     expect(JSON.stringify(c)).not.toMatch(/\d{3}\.\d{3}\.\d{3}-\d{2}/);

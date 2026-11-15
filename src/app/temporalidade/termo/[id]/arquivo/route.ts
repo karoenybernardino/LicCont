@@ -1,6 +1,6 @@
 import { exigirSessao } from "@/features/sessao/dal";
 import { esquemaId } from "@/features/documentos/esquemas";
-import { obterTermo } from "@/features/temporalidade/dados";
+import { lerModelo, obterTermo } from "@/features/temporalidade/dados";
 import { conteudoTermo } from "@/features/temporalidade/termo";
 import { gerarPdf } from "@/features/temporalidade/pdf";
 import { gerarWord } from "@/features/temporalidade/word";
@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   await exigirSessao();
   const termo = await obterTermo(id);
   if (!termo) return new Response("Não encontrado", { status: 404 });
-  const c = conteudoTermo(termo);
+  const c = conteudoTermo(termo, await lerModelo());
   const cabecalhos = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
   if (formato === "pdf") {
     return new Response(Buffer.from(await gerarPdf(c)), {

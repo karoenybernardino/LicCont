@@ -37,10 +37,10 @@ export function FormularioEmprestimo({ documentos, hoje, setores }: { documentos
     iniciar(async () => {
       const r = await registrarEmprestimo(f);
       if (r.erro) setMsg({ texto: r.erro, tom: "erro" });
-      else if (r.aviso) setMsg({ texto: r.aviso, tom: "ok" });
+      else if (r.aviso && !r.ok) setMsg({ texto: r.aviso, tom: "ok" });
       else {
         limpar();
-        setMsg({ texto: "Empréstimo registrado.", tom: "ok" });
+        setMsg({ texto: r.aviso ?? "Empréstimo registrado.", tom: "ok" });
         router.refresh();
       }
     });

@@ -30,3 +30,6 @@ Thumbs.db
 
 # graphify
 graphify-out/
+
+# Motor de OCR copiado no postinstall (scripts/copiar-ocr.mjs)
+public/ocr/

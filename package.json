@@ -10,13 +10,15 @@
     "tipos": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "telas:comparar": "node scripts/comparar-telas.mjs"
+    "telas:comparar": "node scripts/comparar-telas.mjs",
+    "postinstall": "node scripts/copiar-ocr.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.2",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
+    "@tesseract.js-data/por": "1.0.0",
     "camera-controls": "3.1.2",
     "docx": "9.15.4",
     "next": "16.4.5",
@@ -25,6 +27,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
+    "tesseract.js": "7.0.0",
     "three": "0.187.0",
     "zod": "4.6.7"
   },

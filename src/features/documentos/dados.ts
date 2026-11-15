@@ -10,6 +10,8 @@ import { carregarEstrutura } from "@/features/estrutura/dados";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { aplicarFiltros } from "./aplicar";
 import type { Filtros } from "./filtros";
+import type { DocumentoSemPdf } from "./lote";
+import { tituloDocumento } from "./titulo";
 import type { Modalidade, ResultadoPesquisa, Tipo } from "./tipos";
 
 // Leitura pela sessão do usuário: o RLS devolve só a prefeitura e as
@@ -36,6 +38,8 @@ export type DocumentoDetalhe = {
   objeto: string;
   empresa: string | null;
   cnpj: string | null;
+  // CPF do credor pessoa física (só para o formulário de edição; nunca em lista, busca ou log).
+  cpf_credor: string | null;
   valor: number | null;
   situacao: string;
   vigencia_inicio: string | null;
@@ -104,7 +108,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
     const cx = caixaDemo(d.caixa_id);
     const sec = SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "";
     return {
-      ...d, encerrado_em: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
+      ...d, encerrado_em: null, cpf_credor: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
       posicao: cx ? posicaoDe(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero) : null,
       arquivo: d.arquivo
         ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null }
@@ -116,7 +120,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
+      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -131,7 +135,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const a = (arqs.find((x) => x.ativo) ?? arqs[0]) as any;
   return {
     id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto,
-    empresa: d.empresa, cnpj: d.cnpj, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
+    empresa: d.empresa, cnpj: d.cnpj, cpf_credor: d.cpf_credor ?? null, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
     vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em, conferido: !!d.conferido_em, ativo: d.ativo,
     secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "", caixaId: d.caixa_id,
     posicao: cx ? posicaoDe(cx.niveis.modulos.ruas.codigo, cx.niveis.modulos.numero, cx.niveis.numero, cx.numero) : null,
@@ -156,6 +160,29 @@ export const secretariasParaCadastro = cache(async (u: Usuario) => {
   const ids = new Set((data ?? []).map((v) => v.secretaria_id as string));
   return lista.filter((s) => ids.has(s.id));
 });
+
+// Documentos ativos das secretarias em que a pessoa cadastra e que ainda não têm PDF pronto
+// (para o envio de vários PDFs de uma vez).
+export async function documentosSemPdf(secretarias: string[]): Promise<DocumentoSemPdf[]> {
+  if (secretarias.length === 0) return [];
+  if (emDemo()) {
+    return DOCUMENTOS_DEMO.filter((d) => secretarias.includes(d.secretaria_id) && !d.tem_pdf).map((d) => ({
+      id: d.id, titulo: tituloDocumento({ tipo: d.tipo as Tipo, modalidade: d.modalidade as Modalidade | null, numero: d.numero, ano: d.ano }), numero: d.numero, ano: d.ano,
+    }));
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("documentos")
+    .select("id, tipo, modalidade, numero, ano, arquivos(ativo)")
+    .eq("ativo", true)
+    .in("secretaria_id", secretarias)
+    .order("criado_em", { ascending: false })
+    .limit(1000);
+  if (error) throw new Error(FALHA);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).filter((d) => !(d.arquivos ?? []).some((a: { ativo: boolean }) => a.ativo)).map((d) => ({ id: d.id, titulo: tituloDocumento(d), numero: d.numero, ano: d.ano }));
+}
 
 export async function podeCadastrar(u: Usuario) {
   return (await secretariasParaCadastro(u)).length > 0;

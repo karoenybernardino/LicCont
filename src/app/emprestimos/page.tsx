@@ -3,17 +3,19 @@ import { Busca, CabecalhoPainel, Filtros, Pilula } from "@/ui/canvas";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { exigirSessao } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
-import { contarEmprestimos, documentosEmprestaveis, listarEmprestimos } from "@/features/movimento/dados";
+import { contarEmprestimos, documentosEmprestaveis, listarEmprestimos, listarPedidos } from "@/features/movimento/dados";
 import { dataBR, situacaoEmprestimo } from "@/features/movimento/situacao";
 import { BotaoBreve, LinhaVazia } from "@/features/movimento/ui";
+import { BotoesPedido } from "@/features/movimento/botoes-pedido";
 import { BotaoDevolver } from "@/features/movimento/botao-devolver";
 import { FormularioEmprestimo } from "@/features/movimento/formulario-emprestimo";
 import { hojeBrasilia } from "@/features/movimento/esquemas";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
+import { ehCoordenador } from "@/features/estrutura/dados";
 
 export const metadata: Metadata = { title: "Empréstimos · LicCONT" };
 
-const ABAS = ["abertos", "atrasados", "devolvidos"] as const;
+const ABAS = ["abertos", "atrasados", "devolvidos", "pendentes"] as const;
 type Aba = (typeof ABAS)[number];
 
 export default async function Emprestimos({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -27,7 +29,9 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
   const paraCadastro = listaCadastro.map((x) => x.id);
   const setores = listaCadastro.map((x) => x.nome);
   const cadastra = paraCadastro.length > 0;
-  const [todos, emprestaveis] = await Promise.all([listarEmprestimos(), documentosEmprestaveis(paraCadastro)]);
+  const [todos, emprestaveis, pedidos] = await Promise.all([listarEmprestimos(), documentosEmprestaveis(paraCadastro), listarPedidos(usuario.id)]);
+  // Quem pode decidir: administrador ou coordenador (o banco confere a secretaria do pedido).
+  const podeAprovar = usuario.administrador || (await ehCoordenador(usuario));
   const { abertos, atrasados } = contarEmprestimos(todos);
   const busca = q.toLowerCase();
   const linhas = todos
@@ -52,6 +56,7 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
                 { href: href("abertos"), rotulo: `Em aberto · ${abertos}`, ativo: aba === "abertos" },
                 { href: href("atrasados"), rotulo: `Atrasados · ${atrasados}`, ativo: aba === "atrasados" },
                 { href: href("devolvidos"), rotulo: "Devolvidos", ativo: aba === "devolvidos" },
+                ...(pedidos.length > 0 ? [{ href: href("pendentes"), rotulo: `Pendentes · ${pedidos.length}`, ativo: aba === "pendentes" }] : []),
               ]}
             />
             <div className="flex w-[240px]">
@@ -70,8 +75,26 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
                 </tr>
               </thead>
               <tbody>
-                {linhas.length === 0 && <LinhaVazia colunas={colunas.length}>Nenhum empréstimo registrado.</LinhaVazia>}
-                {linhas.map((e, i) => {
+                {aba === "pendentes" &&
+                  pedidos.map((e, i) => (
+                    <tr key={e.id} className={classeLinha(false, i % 2 === 1)}>
+                      <td className={`${td} h-auto py-3`}>
+                        <span className="block font-semibold">{e.titulo}</span>
+                        <span className="block text-xs text-texto-suave">{e.objeto}</span>
+                      </td>
+                      <td className={td}>—</td>
+                      <td className={td}>
+                        <span className="block">{e.quem}</span>
+                        <span className="block text-xs text-texto-suave">{e.setor}</span>
+                      </td>
+                      <td className={`${td} text-[13px]`}>{e.prazoDias} dias após aprovar</td>
+                      <td className={td}><Pilula tom="aviso">{e.vencido ? "Vencido" : "Aguardando aprovação"}</Pilula></td>
+                      <td className={td}><BotoesPedido id={e.id} podeAprovar={podeAprovar} meu={e.meu} vencido={e.vencido} /></td>
+                    </tr>
+                  ))}
+                {aba === "pendentes" && pedidos.length === 0 && <LinhaVazia colunas={colunas.length}>Nenhum pedido aguardando aprovação.</LinhaVazia>}
+                {aba !== "pendentes" && linhas.length === 0 && <LinhaVazia colunas={colunas.length}>Nenhum empréstimo registrado.</LinhaVazia>}
+                {aba !== "pendentes" && linhas.map((e, i) => {
                   const s = e.devolvido ? null : situacaoEmprestimo(e.prazo);
                   return (
                     <tr key={e.id} className={classeLinha(false, i % 2 === 1)}>
@@ -86,7 +109,13 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
                       </td>
                       <td className={`${td} text-[13px]`}>{dataBR(e.prazo)}</td>
                       <td className={td}>{s ? <Pilula tom={s.tom}>{s.texto}</Pilula> : <Pilula tom="ok">Devolvido</Pilula>}</td>
-                      <td className={td}>{!e.devolvido && cadastra && <BotaoDevolver id={e.id} />}</td>
+                      <td className={td}>
+                        <span className="flex flex-wrap items-center gap-2">
+                          {!e.devolvido && cadastra && <BotaoDevolver id={e.id} />}
+                          <a href={`/emprestimos/${e.id}/termo?formato=pdf`} className="text-[13px] text-texto underline underline-offset-4" aria-label={`Termo de ${e.titulo} em PDF`}>PDF</a>
+                          <a href={`/emprestimos/${e.id}/termo?formato=docx`} className="text-[13px] text-texto underline underline-offset-4" aria-label={`Termo de ${e.titulo} em Word`}>Word</a>
+                        </span>
+                      </td>
                     </tr>
                   );
                 })}

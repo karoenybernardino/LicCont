@@ -42,18 +42,18 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Empréstimos — claro](png/EmprestimosClaro.png) | claro | 1280×720 | /emprestimos |
 | [Temporalidade e descarte — escuro](png/TemporalidadeEscuro.png) | escuro | 1280×740 | /temporalidade |
 | [Temporalidade e descarte — claro](png/TemporalidadeClaro.png) | claro | 1280×740 | /temporalidade |
-| [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | (ainda sem rota) |
-| [Auditoria — claro](png/AuditoriaClaro.png) | claro | 1280×800 | (ainda sem rota) |
+| [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | /auditoria |
+| [Auditoria — claro](png/AuditoriaClaro.png) | claro | 1280×800 | /auditoria |
 | [Usuários e perfis — escuro](png/UsuariosEscuro.png) | escuro | 1280×1000 | /usuarios |
 | [Usuários e perfis — claro](png/UsuariosClaro.png) | claro | 1280×1000 | /usuarios |
-| [Etiquetas — escuro](png/EtiquetasEscuro.png) | escuro | 1280×900 | (ainda sem rota) |
-| [Etiquetas — claro](png/EtiquetasClaro.png) | claro | 1280×900 | (ainda sem rota) |
+| [Etiquetas — escuro](png/EtiquetasEscuro.png) | escuro | 1280×900 | /etiquetas |
+| [Etiquetas — claro](png/EtiquetasClaro.png) | claro | 1280×900 | /etiquetas |
 | [Estrutura física — escuro](png/EstruturaEscuro.png) | escuro | 1280×880 | /estrutura |
 | [Estrutura física — claro](png/EstruturaClaro.png) | claro | 1280×880 | /estrutura |
 | [Prefeituras (visão NOVVA) — escuro](png/PrefeiturasEscuro.png) | escuro | 1280×880 | /equipe (antiga, ver Equipe*) |
 | [Prefeituras (visão NOVVA) — claro](png/PrefeiturasClaro.png) | claro | 1280×880 | /equipe (antiga, ver Equipe*) |
-| [Caixa lida pelo celular — escuro](png/CelularEscuro.png) | escuro | 1280×880 | (ainda sem rota) |
-| [Caixa lida pelo celular — claro](png/CelularClaro.png) | claro | 1280×880 | (ainda sem rota) |
+| [Caixa lida pelo celular — escuro](png/CelularEscuro.png) | escuro | 1280×880 | /etiquetas/celular |
+| [Caixa lida pelo celular — claro](png/CelularClaro.png) | claro | 1280×880 | /etiquetas/celular |
 | [Mapa — planta baixa — escuro](png/PlantaEscuro.png) | escuro | 1280×880 | /mapa (modo planta) |
 | [Mapa — planta baixa — claro](png/PlantaClaro.png) | claro | 1280×880 | /mapa (modo planta) |
 | [Login 1 — escolher prefeitura (escuro)](png/LoginPrefeitura.png) | escuro | 1280×820 | /entrar |
@@ -108,3 +108,37 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Fase 7 · Termo de eliminação (cancelado) — claro](png/TermoCanceladoClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (cancelado) |
 | [Fase 7 · Janela da regra: guarda permanente — escuro](png/TemporalidadeRegraPermanenteEscuro.png) | escuro | 1280×740 | /temporalidade (janela da regra, guarda permanente) |
 | [Fase 7 · Janela da regra: guarda permanente — claro](png/TemporalidadeRegraPermanenteClaro.png) | claro | 1280×740 | /temporalidade (janela da regra, guarda permanente) |
+| [Fase 8 · Aceite da política e do termo — escuro](png/AceiteEscuro.png) | escuro | 1280×841 | (ainda sem rota) |
+| [Fase 8 · Aceite da política e do termo — claro](png/AceiteClaro.png) | claro | 1280×841 | (ainda sem rota) |
+| [Fase 8 · Página pública /privacidade — escuro](png/PrivacidadeEscuro.png) | escuro | 1280×1000 | /privacidade (pública, sem login) |
+| [Fase 8 · Página pública /privacidade — claro](png/PrivacidadeClaro.png) | claro | 1280×1000 | /privacidade (pública, sem login) |
+| [Fase 8 · Página pública /termos — escuro](png/TermosEscuro.png) | escuro | 1280×1000 | /termos (pública, sem login) |
+| [Fase 8 · Página pública /termos — claro](png/TermosClaro.png) | claro | 1280×1000 | /termos (pública, sem login) |
+| [Fase 8 · Equipe LicCONT · Uso das prefeituras — escuro](png/EquipeUsoEscuro.png) | escuro | 1280×700 | /equipe/uso (painel de uso da equipe) |
+| [Fase 8 · Equipe LicCONT · Uso das prefeituras — claro](png/EquipeUsoClaro.png) | claro | 1280×700 | /equipe/uso (painel de uso da equipe) |
+| [Fase 8 · Exportar relatório (Auditoria) — escuro](png/RelatorioExportarEscuro.png) | escuro | 1280×800 | (ainda sem rota) |
+| [Fase 8 · Exportar relatório (Auditoria) — claro](png/RelatorioExportarClaro.png) | claro | 1280×800 | (ainda sem rota) |
+| [Fase 8 · Relatório em PDF (prévia) — escuro](png/RelatorioPdfEscuro.png) | escuro | 1280×1180 | (ainda sem rota) |
+| [Fase 8 · Relatório em PDF (prévia) — claro](png/RelatorioPdfClaro.png) | claro | 1280×1180 | (ainda sem rota) |
+| [Site inicial — escuro](png/SiteInicialEscuro.png) | escuro | 1280×4717 | / (visitante sem login) |
+| [Site inicial — claro](png/SiteInicialClaro.png) | claro | 1280×4717 | / (visitante sem login) |
+| [Fase 9 · Importação · 1 Enviar arquivos (escuro)](png/ImportarEnviarEscuro.png) | escuro | 1280×760 | /cadastro/importar |
+| [Fase 9 · Importação · 1 Enviar arquivos (claro)](png/ImportarEnviarClaro.png) | claro | 1280×760 | /cadastro/importar |
+| [Fase 9 · Importação · 2 Casar colunas (escuro)](png/ImportarMapearEscuro.png) | escuro | 1280×890 | /cadastro/importar (passo 2) |
+| [Fase 9 · Importação · 2 Casar colunas (claro)](png/ImportarMapearClaro.png) | claro | 1280×890 | /cadastro/importar (passo 2) |
+| [Fase 9 · Importação · 3 Conferir (escuro)](png/ImportarPreviaEscuro.png) | escuro | 1280×900 | /cadastro/importar (passo 3) |
+| [Fase 9 · Importação · 3 Conferir (claro)](png/ImportarPreviaClaro.png) | claro | 1280×900 | /cadastro/importar (passo 3) |
+| [Fase 9 · Importação · 4 Resultado e lotes (escuro)](png/ImportarResultadoEscuro.png) | escuro | 1280×820 | /cadastro/importar (passo 4) |
+| [Fase 9 · Importação · 4 Resultado e lotes (claro)](png/ImportarResultadoClaro.png) | claro | 1280×820 | /cadastro/importar (passo 4) |
+| [Fase 9 · Importação · Localizar sem endereço (escuro)](png/ImportarLocalizarEscuro.png) | escuro | 1280×800 | /cadastro/localizar |
+| [Fase 9 · Importação · Localizar sem endereço (claro)](png/ImportarLocalizarClaro.png) | claro | 1280×800 | /cadastro/localizar |
+| [Fase 9 · Painel e relatórios · Painel inicial (escuro)](png/PainelEscuro.png) | escuro | 1280×830 | /painel |
+| [Fase 9 · Painel e relatórios · Painel inicial (claro)](png/PainelClaro.png) | claro | 1280×830 | /painel |
+| [Fase 9 · Painel e relatórios · Relatórios (escuro)](png/RelatoriosEscuro.png) | escuro | 1280×790 | /relatorios |
+| [Fase 9 · Painel e relatórios · Relatórios (claro)](png/RelatoriosClaro.png) | claro | 1280×790 | /relatorios |
+| [Fase 9 · TCE-CE · Importados do TCE a conferir (escuro)](png/FilaTceEscuro.png) | escuro | 1280×800 | /importados |
+| [Fase 9 · TCE-CE · Importados do TCE a conferir (claro)](png/FilaTceClaro.png) | claro | 1280×800 | /importados |
+| [Fase 9 · TCE-CE · Configuração da integração TCE-CE (escuro)](png/ConfigTceEscuro.png) | escuro | 1280×920 | /configuracoes/tce |
+| [Fase 9 · TCE-CE · Configuração da integração TCE-CE (claro)](png/ConfigTceClaro.png) | claro | 1280×920 | /configuracoes/tce |
+| [Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (escuro)](png/PesquisaOrigemEscuro.png) | escuro | 1280×1064 | /pesquisa |
+| [Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (claro)](png/PesquisaOrigemClaro.png) | claro | 1280×1064 | /pesquisa |

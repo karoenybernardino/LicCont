@@ -611,3 +611,14 @@ Desvios do plano:
 - Envio **sem retomada (TUS)**: se a internet cair, recomeça do zero. Fica para uma tarefa própria.
 - Pendentes: tela 403 ligada às rotas, busca na lista de ruas, "Salvar e imprimir etiqueta".
 - Desempenho: `supabase/tests/documentos_desempenho.test.sql` (100 mil documentos, < 1 s) roda no CI.
+
+## Pendências fechadas em 2026-11-15
+
+O responsável autorizou o que ficou de fora de propósito:
+
+| Item | Estado |
+| --- | --- |
+| Credor pessoa física (CPF) | **Feito.** Campo "CNPJ ou CPF do credor" com dígito verificador; o CPF vai para a coluna `cpf_credor` (migração `20261124120000_credor_cpf.sql`), sai da auditoria e não entra na busca. Teste pgTAP em `temporalidade.test.sql` e Vitest |
+| Limpeza automática de PDF abandonado | **Feito.** Rotina diária `/api/limpeza/envios` (Vercel Cron, `vercel.json`) que chama `public.limpar_envios_todos()`. **Falta:** criar `CRON_SECRET` nas variáveis da Vercel (Production); sem ele a rotina fica desligada |
+| Digitalização em lote (vários PDFs de uma vez) | **Feito.** Tela `/documentos/lote` (botão "Enviar vários PDFs" no cadastro): escolhe até 50 PDFs, o sistema sugere o documento pelo número e ano no nome do arquivo (`src/features/documentos/lote.ts`), a pessoa confere cada linha e envia; cada PDF passa pelo mesmo caminho do cadastro (link assinado e conferência no servidor). Sem quadro no canvas: a tela usa os componentes e tokens existentes, a confirmar com o responsável |
+| OCR e busca dentro do PDF | **Feito, sem serviço externo** (decisão 0011): `tesseract.js` roda no navegador de quem envia (opção "Ler o texto dos PDFs" no envio em lote), até 40 páginas por PDF. O texto vai para `arquivo_textos` (RLS, pgTAP `texto_pdf.test.sql`) e a Pesquisa acha o documento pelo texto (4 letras ou mais). **Não feito:** aviso de página ruim (em branco, escura, torta) e OCR no formulário de um documento só (sem quadro) |

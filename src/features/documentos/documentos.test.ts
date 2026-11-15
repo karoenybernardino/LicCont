@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Conferidor } from "./conferencia";
-import { cnpjValido, esquemaDocumento } from "./esquemas";
+import { cnpjValido, cpfValido, esquemaDocumento } from "./esquemas";
 import { abreviarSha, descreverArquivo, formatarTamanho, lerValor } from "./formato";
 import { lerFiltros, paraQuery } from "./filtros";
 import { tituloDocumento } from "./titulo";
@@ -58,11 +58,17 @@ describe("cadastro", () => {
     expect(esquemaDocumento.safeParse({ ...c, vigencia_inicio: "2023-05-01", vigencia_fim: "2024-04-30" }).success).toBe(true);
     expect(esquemaDocumento.safeParse({ ...base, vigencia_fim: "2024-04-30" }).success).toBe(false);
   });
-  it("CNPJ com dígito verificador; CPF recusado", () => {
+  it("CNPJ e CPF com dígito verificador; CPF vai para coluna própria", () => {
     expect(cnpjValido("11222333000181")).toBe(true);
     expect(cnpjValido("11222333000182")).toBe(false);
     expect(esquemaDocumento.safeParse({ ...base, cnpj: "11.222.333/0001-81" }).success).toBe(true);
-    expect(esquemaDocumento.safeParse({ ...base, cnpj: "123.456.789-09" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, cnpj: "111.111.111-11" }).success).toBe(false);
+    const cpf = esquemaDocumento.safeParse({ ...base, cnpj: "123.456.789-09" });
+    expect(cpf.success && cpf.data).toMatchObject({ cnpj: null, cpf_credor: "12345678909" });
+    const pj = esquemaDocumento.safeParse({ ...base, cnpj: "11.222.333/0001-81" });
+    expect(pj.success && pj.data).toMatchObject({ cnpj: "11222333000181", cpf_credor: null });
+    expect(cpfValido("12345678909")).toBe(true);
+    expect(cpfValido("12345678900")).toBe(false);
   });
   it("valor em reais", () => {
     const r = esquemaDocumento.safeParse({ ...base, valor: "1.250.000,50" });
