@@ -10,6 +10,8 @@ test.describe.configure({ mode: "serial", retries: 0 });
 test("o operador registra um empréstimo, vê Emprestado na pesquisa e devolve", async ({ page }) => {
   test.setTimeout(90_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
+  // entrar() não espera o fim do login: sem isto o goto corre com a sessão.
+  await page.waitForURL((u) => !u.pathname.startsWith("/entrar"), { timeout: 30_000 });
   await page.goto("/emprestimos");
   await expect(page.getByRole("heading", { level: 1, name: "Empréstimos e devoluções" })).toBeVisible();
 
