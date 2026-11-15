@@ -31,8 +31,7 @@ export function CaixaSelecionada({ d, carregando, acessorios }: { d: DetalheCaix
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <span aria-hidden className="flex size-[42px] shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(145deg,#ffd27a,#ff9f1c)] font-mono text-sm font-medium text-[#0b2e3a]">
-              C{String(d.caixa).padStart(2, "0")}
+            <span aria-hidden className="flex size-[42px] shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(145deg,#ffd27a,#ff9f1c)]">
             </span>
             <div className="min-w-0">
               <p className="font-mono text-base leading-5 font-medium">
@@ -44,18 +43,10 @@ export function CaixaSelecionada({ d, carregando, acessorios }: { d: DetalheCaix
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-xl bg-[#ccfbf1] px-2.5 py-1 text-xs font-semibold text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]">Disponível</span>
-            <span className="rounded-xl bg-superficie-2 px-2.5 py-1 text-xs font-semibold">
-              {d.total} de {d.capacidade} documentos
+            <span className="rounded-xl border border-linha bg-white/60 px-2.5 py-1 text-xs font-semibold dark:border-[#1b3a44] dark:bg-transparent">
+              {d.total === 1 ? "1 documento" : `${d.total} documentos`}
             </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled className={`${botaoBorda} cursor-not-allowed`}>
-              <span className="opacity-60">Registrar empréstimo</span> <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
-            </button>
-            <button type="button" disabled className={`${botaoBorda} cursor-not-allowed`}>
-              <span className="opacity-60">Imprimir etiqueta</span> <span className="ml-1.5 text-[11px] text-texto-suave">em breve</span>
-            </button>
+            <span className="rounded-xl bg-[#ccfbf1] px-2.5 py-1 text-xs font-semibold text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]">Disponível</span>
           </div>
           {acessorios}
         </>
@@ -88,8 +79,10 @@ export function DentroDaCaixa({
   return (
     <section aria-label="Dentro da caixa" className={cartao}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-titulo text-[15px] font-bold">Dentro da caixa</h2>
-        <p className="text-xs text-texto-suave">{d.total === 1 ? "1 documento nesta caixa" : `${d.total} documentos nesta caixa`}</p>
+        <h2 className="text-[11px] font-semibold tracking-[.06em] text-texto-suave uppercase">Dentro da caixa</h2>
+        <p className="text-xs">
+          <b className="font-semibold">{d.total}</b> {d.total === 1 ? "documento" : "documentos"}
+        </p>
       </div>
       {marcaveis && podeMarcar.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -141,6 +134,57 @@ export function DentroDaCaixa({
           {visiveis >= 200 ? null : oculto === 1 ? "O outro 1 é de uma secretaria sem acesso." : `Os outros ${oculto} são de secretarias sem acesso.`}
         </p>
       )}
+    </section>
+  );
+}
+
+// "Níveis do módulo N" (quadro "Fase 4 · Mapa 3D com girar e ocupação"): uma linha por
+// nível, uma barra por caixa; a selecionada fica laranja. Com a ocupação ligada, caixa vazia fica só no contorno.
+export function NiveisDoModulo({
+  modulo,
+  nivelSel,
+  caixaSel,
+  vazia,
+  onSelecionar,
+}: {
+  modulo: { numero: number; niveis: { id: string; numero: number; caixas: { id: string; numero: number }[] }[] };
+  nivelSel: number | null;
+  caixaSel: string | null;
+  vazia?(id: string): boolean;
+  onSelecionar(id: string): void;
+}) {
+  const niveis = [...modulo.niveis].sort((a, b) => b.numero - a.numero);
+  return (
+    <section aria-label={`Níveis do módulo ${modulo.numero}`} className={cartao}>
+      <h2 className="text-[11px] font-semibold tracking-[.06em] text-texto-suave uppercase">Níveis do módulo {modulo.numero}</h2>
+      <ul className="flex flex-col gap-2.5">
+        {niveis.map((n) => {
+          const ativo = n.numero === nivelSel;
+          return (
+            <li key={n.id} className={`flex items-center gap-3 rounded-[10px] px-2.5 py-2 ${ativo ? "border-2 border-[#0e7490] bg-[#fff3d1]/60 dark:border-[#2dd4bf] dark:bg-[#3b2f0b]/40" : "border-2 border-transparent"}`}>
+              <span className={`w-6 font-mono text-xs ${ativo ? "font-semibold text-[#ff9f1c]" : "text-texto-suave"}`}>N{n.numero}</span>
+              <span className="grid flex-1 grid-flow-col auto-cols-fr gap-2">
+                {n.caixas.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-label={`Nível ${n.numero}, caixa ${String(c.numero).padStart(2, "0")}`}
+                    aria-pressed={c.id === caixaSel}
+                    onClick={() => onSelecionar(c.id)}
+                    className={`h-[18px] rounded-[5px] border ${foco} ${
+                      c.id === caixaSel
+                        ? "border-[#ff9f1c] bg-[#ff9f1c]"
+                        : vazia?.(c.id)
+                          ? "border-linha bg-white/60 dark:border-[#1b3a44] dark:bg-[#0a1418]"
+                          : "border-[#2fb5a0] bg-[#2fb5a0] dark:border-[#2dd4bf] dark:bg-[#2dd4bf]"
+                    }`}
+                  />
+                ))}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

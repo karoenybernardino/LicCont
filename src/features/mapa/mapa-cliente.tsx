@@ -7,6 +7,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { buscarNoMapa, lerCaixa, lerOcupacao, moverDocumentos } from "./acoes";
@@ -20,7 +21,7 @@ import { Corredor } from "./corredor";
 import type { ComandosCamera } from "./mapa-3d";
 import { MoverDocumentos } from "./mover";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
-import { CaixaSelecionada, DentroDaCaixa, estilos } from "./painel-caixa";
+import { CaixaSelecionada, DentroDaCaixa, NiveisDoModulo, estilos } from "./painel-caixa";
 import { PlantaSvg } from "./planta";
 import { FAIXAS, PADRAO_METROS_CELULA, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
 import { caminhoDeVolta, urlMapa } from "./url";
@@ -84,6 +85,13 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   const [movendo, iniciarMover] = useTransition();
   const comandos = useRef<ComandosCamera>(null);
   const painelRef = useRef<HTMLDivElement>(null);
+  const [alvoAcoes, setAlvoAcoes] = useState<HTMLElement | null>(null);
+
+  // Busca e "Voltar ao documento" ficam no cabeçalho da página, como no quadro.
+  useEffect(() => {
+    const t = window.setTimeout(() => setAlvoAcoes(document.getElementById("acoes-mapa")), 0);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // Vista lembrada e WebGL: só dá para conferir no navegador.
   useEffect(() => {
@@ -279,228 +287,267 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
 
   const botao = `${estilos.botaoBorda} !min-h-9 !px-3 max-md:!min-h-11`;
   const fundo = { background: `linear-gradient(180deg, ${paleta.fundo[0]}, ${paleta.fundo[1]})` };
+  const moduloArvore = endereco ? ruaSel?.modulos.find((m) => m.numero === endereco.modulo) : undefined;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_330px] items-stretch gap-4 max-lg:grid-cols-1 lg:h-full lg:min-h-0">
-      <section aria-label="Mapa do galpão" className={`${estilos.cartao} !p-4 lg:min-h-0`}>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <form onSubmit={irPara} role="search" className="flex min-w-60 flex-1 items-center gap-2">
-            <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-[10px] border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco max-md:h-11">
-              <span className="sr-only">Ir para caixa, rua ou documento</span>
-              <input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                maxLength={60}
-                placeholder="Ir para caixa, rua ou documento"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-0"
-              />
-            </label>
-            <button type="submit" className={estilos.botaoCheio}>
-              Ir
-            </button>
-          </form>
-          {galpoes.length > 1 && (
-            <label className="flex items-center gap-2 text-xs text-texto-suave">
-              Galpão
-              <select
-                value={galpaoId}
-                onChange={(e) => router.push(urlMapa({ galpao: e.target.value }))}
-                className="h-10 rounded-lg border border-borda-campo bg-campo px-2 text-[13px] text-texto max-md:h-11"
-              >
-                {galpoes.map((g) => (
-                  <option key={g.id} value={g.id}>{g.nome}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          {voltar && (
-            <Link href={voltar} className={estilos.botaoBorda}>
-              Voltar ao documento
-            </Link>
-          )}
-          {podeEditar && (
-            <Link href={grande ? "/mapa/editar" : `/mapa/editar?galpao=${galpaoId}`} className={estilos.botaoBorda}>
-              Editar planta
-            </Link>
-          )}
-        </div>
-        {mensagem && (
-          <p role={mensagem.startsWith("Não foi possível") ? "alert" : "status"} className={mensagem.startsWith("Não foi possível") ? "text-[13px] text-erro" : "text-[13px] text-texto-suave"}>
-            {mensagem}
-          </p>
+    <>
+      {alvoAcoes &&
+        createPortal(
+          <>
+            <form onSubmit={irPara} role="search" className="flex items-center">
+              <label className="flex h-10 w-[300px] min-w-0 items-center gap-2 rounded-[10px] border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco max-md:h-11 max-md:w-48">
+                <span className="sr-only">Ir para caixa, rua ou documento</span>
+                <input value={busca} onChange={(e) => setBusca(e.target.value)} maxLength={60} placeholder="Ir para caixa, rua ou documento" className="min-w-0 flex-1 bg-transparent text-[13px] outline-0" />
+                <button type="submit" aria-label="Ir" className="order-first flex shrink-0 items-center text-texto-suave hover:text-texto focus-visible:outline-2 focus-visible:outline-foco">
+                  <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-texto-suave">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-4-4" />
+                  </svg>
+                </button>
+              </label>
+            </form>
+            {voltar && (
+              <Link href={voltar} className={estilos.botaoBorda}>
+                Voltar ao documento
+              </Link>
+            )}
+          </>,
+          alvoAcoes,
         )}
-
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div role="group" aria-label="Vista do mapa" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-superficie p-[3px]">
-            {(Object.keys(VISTAS) as Vista[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                aria-pressed={vista === v}
-                onClick={() => escolherVista(v)}
-                className={`min-h-[34px] rounded-[10px] px-4 text-[13px] max-md:min-h-11 ${estilos.foco} ${vista === v ? "bg-[rgba(45,212,191,.18)] font-semibold" : "hover:bg-superficie-2"}`}
-              >
-                {VISTAS[v]}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" aria-pressed={ocupacaoLigada} onClick={ligarOcupacao} className={`${botao} ${ocupacaoLigada ? "!border-[#ff9f1c] bg-[#fff3d1] text-[#0b2e3a]" : ""}`}>
+      <div className="grid grid-cols-[minmax(0,1fr)_330px] items-stretch gap-4 max-lg:grid-cols-1 lg:h-full lg:min-h-0">
+        <section aria-label="Mapa do galpão" className={`${estilos.cartao} !p-5 lg:min-h-0`}>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div role="group" aria-label="Vista do mapa" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-superficie p-[3px]">
+              {(Object.keys(VISTAS) as Vista[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={vista === v}
+                  onClick={() => escolherVista(v)}
+                  className={`min-h-[34px] rounded-[10px] border-2 px-4 text-[13px] max-md:min-h-11 ${estilos.foco} ${vista === v ? "border-[#0e7490] bg-[rgba(45,212,191,.18)] font-semibold dark:border-[#2dd4bf]" : "border-transparent hover:bg-superficie-2"}`}
+                >
+                  {VISTAS[v]}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              aria-pressed={ocupacaoLigada}
+              onClick={ligarOcupacao}
+              className={`flex min-h-[38px] items-center gap-2.5 rounded-xl border px-3.5 text-[13px] font-medium ${estilos.foco} ${ocupacaoLigada ? "border-2 border-[#0e7490] font-semibold dark:border-[#2dd4bf]" : "border-linha"}`}
+            >
+              <span aria-hidden className={`relative h-[18px] w-[30px] rounded-full transition-colors ${ocupacaoLigada ? "bg-[#0e7490]" : "bg-[#c9d6da] dark:bg-[#2b4650]"}`}>
+                <span className={`absolute top-0.5 size-3.5 rounded-full bg-white transition-all ${ocupacaoLigada ? "left-[14px]" : "left-0.5"}`} />
+              </span>
               Mostrar ocupação
             </button>
             <button type="button" aria-expanded={listaAberta} onClick={() => setListaAberta((a) => !a)} className={botao}>
               Ver em lista
             </button>
-          </div>
-        </div>
-
-        {webgl !== "ok" && (
-          <p role="status" className="rounded-lg border border-linha bg-superficie-2 px-3 py-2 text-[13px]">
-            O 3D não está disponível neste aparelho. Use a planta ou a lista de caixas.
-            {webgl === "erro" && (
-              <button type="button" className="ml-2 underline" onClick={() => (setWebgl("ok"), setPronto(false))}>
-                Tentar de novo
-              </button>
+            {galpoes.length > 1 && (
+              <label className="flex items-center gap-2 text-xs text-texto-suave">
+                Galpão
+                <select value={galpaoId} onChange={(e) => router.push(urlMapa({ galpao: e.target.value }))} className="h-10 rounded-lg border border-borda-campo bg-campo px-2 text-[13px] text-texto max-md:h-11">
+                  {galpoes.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
-          </p>
-        )}
-
-        {vista === "3d" && webgl === "ok" && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" aria-label="Aproximar" onClick={() => comandos.current?.aproximar(1.25)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>+</button>
-              <button type="button" aria-label="Afastar" onClick={() => comandos.current?.aproximar(0.8)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>−</button>
-              <button type="button" onClick={() => comandos.current?.centralizar()} className={botao}>Centralizar</button>
-              <button type="button" aria-label="Girar 90° para a esquerda" onClick={() => comandos.current?.girar(-1)} className={botao}>↺</button>
-              <button type="button" aria-label="Girar 90° para a direita" onClick={() => comandos.current?.girar(1)} className={botao}>↻</button>
-              <span className="ml-1 font-mono text-[13px]">Ângulo {angulo}°</span>
-            </div>
-            <div
-              tabIndex={0}
-              role="group"
-              aria-label="Mapa 3D do galpão"
-              aria-describedby="teclado-3d"
-              onKeyDown={aoTeclar}
-              data-3d-pronto={pronto ? "sim" : "nao"}
-              className={`relative h-[560px] overflow-hidden rounded-[14px] border border-linha max-md:h-[60vh] lg:h-auto lg:min-h-[320px] lg:flex-1 ${estilos.foco}`}
-              style={fundo}
-            >
-              <Mapa3D
-                leiaute={leiaute}
-                tema={tema}
-                selecionada={indice}
-                destaques={destaquesIdx}
-                faixas={faixas}
-                onSelecionar={(i) => escolher(leiaute.caixas.ids[i])}
-                onAngulo={setAngulo}
-                onPronto={() => setPronto(true)}
-                onErro={() => setWebgl("erro")}
-                comandos={comandos}
-                reduzirMovimento={reduzir}
-              />
-            </div>
-            <p id="teclado-3d" className="text-xs text-texto-suave">
-              Teclado: setas mudam de caixa e de nível, Page Up e Page Down mudam de módulo, Enter abre a caixa, + e − aproximam, [ e ] giram 90°, 0 centraliza.
+            {podeEditar && (
+              <Link href={grande ? "/mapa/editar" : `/mapa/editar?galpao=${galpaoId}`} className={`${estilos.botaoBorda} ml-auto`}>
+                Editar planta
+              </Link>
+            )}
+          </div>
+          {mensagem && (
+            <p role={mensagem.startsWith("Não foi possível") ? "alert" : "status"} className={mensagem.startsWith("Não foi possível") ? "text-[13px] text-erro" : "text-[13px] text-texto-suave"}>
+              {mensagem}
             </p>
-          </>
-        )}
+          )}
 
-        {vista === "planta" && (
-          <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
-            <PlantaSvg
-              metrosCelula={planta.metrosCelula ?? PADRAO_METROS_CELULA}
-              leiaute={leiaute}
-              elementos={planta.elementos}
-              tema={tema}
-              resumo={`Planta baixa do galpão: ${leiaute.ruas.map((r) => `Rua ${r.codigo}`).join(", ")}${endereco ? `, caixa ${endereco.caixa} da rua ${endereco.rua} módulo ${endereco.modulo} em laranja` : ""}`}
-              moduloSelecionado={moduloSel?.id ?? null}
-              codigoCaixa={endereco ? `C${String(endereco.caixa).padStart(2, "0")}` : null}
-              modulosDestacados={modulosDestacados}
-              faixaDoModulo={ocupacaoLigada && ocupacao ? (m) => (m.primeira < 0 ? null : faixaMedia(Array.from({ length: m.caixas }, (_, k) => ocupacao.get(leiaute.caixas.ids[m.primeira + k]) ?? { documentos: 0, capacidade: 1 }))) : undefined}
-              onModulo={(m) => m.primeira >= 0 && escolher(leiaute.caixas.ids[m.primeira])}
-            />
-          </div>
-        )}
+          {webgl !== "ok" && (
+            <p role="status" className="rounded-lg border border-linha bg-superficie-2 px-3 py-2 text-[13px]">
+              O 3D não está disponível neste aparelho. Use a planta ou a lista de caixas.
+              {webgl === "erro" && (
+                <button type="button" className="ml-2 underline" onClick={() => (setWebgl("ok"), setPronto(false))}>
+                  Tentar de novo
+                </button>
+              )}
+            </p>
+          )}
 
-        {vista === "corredor" && (
-          <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={fundo}>
-            <Corredor rua={ruaSel} tema={tema} selecionada={selecionada} onSelecionar={(id) => escolher(id)} />
-          </div>
-        )}
-
-        {vista === "3d" && webgl === "ok" && (
-          <p className="text-[13px]">
-            <span className="text-[11px] font-semibold tracking-[.05em] text-texto-suave uppercase">Dica </span>
-            Arraste para andar · botão direito ou dois dedos para girar · roda do mouse para zoom
-          </p>
-        )}
-
-        <ul aria-label="Legenda" className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs">
-          {ocupacaoLigada ? (
+          {vista === "3d" && webgl === "ok" && (
             <>
-              <li className="font-semibold">Ocupação da caixa</li>
-              {FAIXAS.map((f) => (
-                <li key={f.faixa} className="flex items-center gap-1.5">
-                  <span aria-hidden className="size-3.5 rounded" style={{ background: paleta.ocupacao[f.faixa] }} />
-                  {f.rotulo}
-                </li>
-              ))}
-            </>
-          ) : (
-            <>
-              <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.selecionada.frente }} />Caixa selecionada</li>
-              <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.caixa.frente }} />Caixa-arquivo guardada</li>
-              <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.estante.frente }} />Estante de aço</li>
-              <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.faixaSeguranca }} />Faixa de segurança</li>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" aria-label="Girar 90° para a esquerda" onClick={() => comandos.current?.girar(-1)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>↺</button>
+                <button type="button" aria-label="Girar 90° para a direita" onClick={() => comandos.current?.girar(1)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>↻</button>
+                <span aria-hidden className="mx-1 h-6 w-px bg-linha" />
+                <button type="button" aria-label="Aproximar" onClick={() => comandos.current?.aproximar(1.25)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>+</button>
+                <button type="button" aria-label="Afastar" onClick={() => comandos.current?.aproximar(0.8)} className={`${botao} !w-[38px] !px-0 max-md:!w-11`}>−</button>
+                <button type="button" onClick={() => comandos.current?.centralizar()} className={botao}>Centralizar</button>
+              </div>
+              <div
+                tabIndex={0}
+                role="group"
+                aria-label="Mapa 3D do galpão"
+                aria-describedby="teclado-3d"
+                onKeyDown={aoTeclar}
+                data-3d-pronto={pronto ? "sim" : "nao"}
+                className={`relative h-[560px] overflow-hidden rounded-[14px] border border-linha max-md:h-[60vh] lg:h-auto lg:min-h-[320px] lg:flex-1 ${estilos.foco}`}
+                style={fundo}
+              >
+                <Mapa3D
+                  leiaute={leiaute}
+                  tema={tema}
+                  selecionada={indice}
+                  destaques={destaquesIdx}
+                  faixas={faixas}
+                  onSelecionar={(i) => escolher(leiaute.caixas.ids[i])}
+                  onAngulo={setAngulo}
+                  onPronto={() => setPronto(true)}
+                  onErro={() => setWebgl("erro")}
+                  comandos={comandos}
+                  reduzirMovimento={reduzir}
+                />
+                {endereco && (
+                  <div className="pointer-events-none absolute top-[12%] right-4 rounded-xl border-2 border-[#ff9f1c] bg-white/90 px-4 py-2.5 dark:bg-[#0b1418]/90">
+                    <p className="flex items-center gap-2 text-[10px] font-medium tracking-[.06em] text-texto-suave uppercase">
+                      <span aria-hidden className="size-2 rounded-full bg-[#ff9f1c]" />
+                      Caixa selecionada
+                    </p>
+                    <p className="font-mono text-[13px] font-medium">
+                      Rua {endereco.rua} · M{endereco.modulo} · N{endereco.nivel} · C{String(endereco.caixa).padStart(2, "0")}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <p id="teclado-3d" className="sr-only">
+                Teclado: setas mudam de caixa e de nível, Page Up e Page Down mudam de módulo, Enter abre a caixa, + e − aproximam, [ e ] giram 90°, 0 centraliza.
+              </p>
             </>
           )}
-        </ul>
-        <div aria-live="polite" className="sr-only">
-          {anuncio}
-        </div>
-        <p className="sr-only">{resumo}</p>
-      </section>
 
-      <aside ref={painelRef} className="sc flex min-w-0 flex-col gap-4 scroll-mt-4 lg:min-h-0 lg:overflow-y-auto">
-        {selecionada && detalhe === null ? (
-          <section aria-label="Caixa selecionada" className={estilos.cartao}>
-            <p role="status" className="text-sm">Caixa não encontrada.</p>
-          </section>
-        ) : (
-          <>
-            <CaixaSelecionada d={detalhe ?? null} carregando={!!selecionada && detalhe === undefined} />
-            <DentroDaCaixa
-              d={detalhe ?? null}
-              marcaveis={podeMover && marcaveis.length > 0}
-              marcados={marcados}
-              onMarcar={(id) => setMarcados((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set(s).add(id)))}
-              onMarcarTodos={() => setMarcados((s) => (s.size === marcaveis.length ? new Set() : new Set(marcaveis.map((d) => d.id))))}
-              onMover={() => {
-                setMoverAberto(true);
-                setDestinoId(null);
-                setDestino(undefined);
-                setErroMover(null);
-              }}
-              moverAberto={moverAberto}
+          {vista === "planta" && (
+            <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
+              <PlantaSvg
+                metrosCelula={planta.metrosCelula ?? PADRAO_METROS_CELULA}
+                leiaute={leiaute}
+                elementos={planta.elementos}
+                tema={tema}
+                resumo={`Planta baixa do galpão: ${leiaute.ruas.map((r) => `Rua ${r.codigo}`).join(", ")}${endereco ? `, caixa ${endereco.caixa} da rua ${endereco.rua} módulo ${endereco.modulo} em laranja` : ""}`}
+                moduloSelecionado={moduloSel?.id ?? null}
+                codigoCaixa={endereco ? `C${String(endereco.caixa).padStart(2, "0")}` : null}
+                modulosDestacados={modulosDestacados}
+                faixaDoModulo={ocupacaoLigada && ocupacao ? (m) => (m.primeira < 0 ? null : faixaMedia(Array.from({ length: m.caixas }, (_, k) => ocupacao.get(leiaute.caixas.ids[m.primeira + k]) ?? { documentos: 0, capacidade: 1 }))) : undefined}
+                onModulo={(m) => m.primeira >= 0 && escolher(leiaute.caixas.ids[m.primeira])}
+              />
+            </div>
+          )}
+
+          {vista === "corredor" && (
+            <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={fundo}>
+              <Corredor rua={ruaSel} tema={tema} selecionada={selecionada} onSelecionar={(id) => escolher(id)} />
+            </div>
+          )}
+
+          <ul aria-label="Legenda" className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
+            {ocupacaoLigada ? (
+              <>
+                <li className="text-[11px] font-semibold tracking-[.05em] text-texto-suave uppercase">Ocupação da caixa</li>
+                {FAIXAS.map((f) => (
+                  <li key={f.faixa} className="flex items-center gap-1.5">
+                    <span aria-hidden className="size-3.5 rounded" style={{ background: paleta.ocupacao[f.faixa] }} />
+                    {f.rotulo}
+                  </li>
+                ))}
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.selecionada.frente }} />Caixa selecionada</li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.selecionada.frente }} />Caixa selecionada</li>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.caixa.frente }} />Caixa-arquivo guardada</li>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.estante.frente }} />Estante de aço</li>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.faixaSeguranca }} />Faixa de segurança</li>
+              </>
+            )}
+          </ul>
+          {vista === "3d" && webgl === "ok" && (
+            <p className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-texto-suave">
+              <span>Arraste para andar · botão direito ou dois dedos para girar · roda do mouse para zoom</span>
+              <span className="font-mono text-xs">Ângulo {angulo}°</span>
+            </p>
+          )}
+          <div aria-live="polite" className="sr-only">
+            {anuncio}
+          </div>
+          <p className="sr-only">{resumo}</p>
+        </section>
+
+        <aside ref={painelRef} className="sc flex min-w-0 flex-col gap-4 scroll-mt-4 lg:min-h-0 lg:overflow-y-auto">
+          {selecionada && detalhe === null ? (
+            <section aria-label="Caixa selecionada" className={estilos.cartao}>
+              <p role="status" className="text-sm">Caixa não encontrada.</p>
+            </section>
+          ) : (
+            <>
+              <CaixaSelecionada d={detalhe ?? null} carregando={!!selecionada && detalhe === undefined} />
+              <DentroDaCaixa
+                d={detalhe ?? null}
+                marcaveis={podeMover && marcaveis.length > 0}
+                marcados={marcados}
+                onMarcar={(id) => setMarcados((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set(s).add(id)))}
+                onMarcarTodos={() => setMarcados((s) => (s.size === marcaveis.length ? new Set() : new Set(marcaveis.map((d) => d.id))))}
+                onMover={() => {
+                  setMoverAberto(true);
+                  setDestinoId(null);
+                  setDestino(undefined);
+                  setErroMover(null);
+                }}
+                moverAberto={moverAberto}
+              />
+            </>
+          )}
+          {moduloArvore && endereco && (
+            <NiveisDoModulo
+              modulo={moduloArvore}
+              nivelSel={endereco.nivel}
+              caixaSel={selecionada}
+              vazia={ocupacaoLigada && ocupacao ? (id) => (ocupacao.get(id)?.documentos ?? 0) === 0 : undefined}
+              onSelecionar={(id) => escolher(id)}
             />
-          </>
-        )}
-        {moverAberto && detalhe && (
-          <MoverDocumentos
-            arvore={arvore}
-            origem={detalhe}
-            marcados={marcadosLinhas}
-            destinoId={destinoId}
-            destino={destino}
-            onDestino={(id) => (setDestinoId(id), setDestino(undefined))}
-            onCancelar={() => setMoverAberto(false)}
-            onConfirmar={confirmarMover}
-            pendente={movendo}
-            erro={erroMover}
-          />
-        )}
-        {listaAberta && <ListaCaixas arvore={arvore} selecionada={selecionada} onSelecionar={(id) => escolher(id, true)} />}
-      </aside>
-    </div>
+          )}
+          {listaAberta && <ListaCaixas arvore={arvore} selecionada={selecionada} onSelecionar={(id) => escolher(id, true)} />}
+          <div className="mt-auto flex flex-col gap-2.5">
+            <button type="button" disabled title="Registrar empréstimo · em breve" className="min-h-11 cursor-not-allowed rounded-lg bg-[linear-gradient(135deg,#0e7490,#0f766e)] px-5 text-sm font-semibold text-white opacity-50 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]">
+              Registrar empréstimo
+            </button>
+            <button type="button" disabled title="Imprimir etiqueta · em breve" className="min-h-11 cursor-not-allowed rounded-lg border border-linha bg-white/40 px-5 text-sm font-medium opacity-50 dark:border-[#1b3a44] dark:bg-transparent">
+              Imprimir etiqueta
+            </button>
+          </div>
+        </aside>
+      </div>
+      {moverAberto && detalhe && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#0b2e3a]/45 p-4" onKeyDown={(e) => e.key === "Escape" && setMoverAberto(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Mover documentos" className="max-h-[92dvh] w-full max-w-[670px] overflow-y-auto rounded-2xl bg-white p-6 shadow-[0_24px_60px_rgba(11,46,58,.35)] dark:bg-[#0b1418]">
+            <MoverDocumentos
+              arvore={arvore}
+              origem={detalhe}
+              marcados={marcadosLinhas}
+              destinoId={destinoId}
+              destino={destino}
+              onDestino={(id) => (setDestinoId(id), setDestino(undefined))}
+              onCancelar={() => setMoverAberto(false)}
+              onConfirmar={confirmarMover}
+              pendente={movendo}
+              erro={erroMover}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -316,9 +316,6 @@ export default function Mapa3D(props: Props) {
   }, []);
   const deslocX = -(leiaute.largura * CELULA) / 2;
   const deslocZ = -(leiaute.profundidade * CELULA) / 2;
-  const sel = selecionada === null ? null : centroDaCaixa(leiaute, selecionada);
-  const endereco = selecionada === null ? null : enderecoDaInstancia(leiaute, selecionada);
-  const altSel = selecionada === null ? 0 : leiaute.caixas.tamanho[selecionada * 3 + 1];
   return (
     <div className="relative size-full">
       <Canvas
@@ -351,17 +348,6 @@ export default function Mapa3D(props: Props) {
             {r.codigo}
           </span>
         ))}
-        {sel && endereco && (
-          <div
-            data-x={deslocX + sel[0]}
-            data-y={sel[1] + altSel + 0.9}
-            data-z={deslocZ + sel[2]}
-            className="absolute top-0 left-0 flex flex-col items-center gap-0.5 rounded-xl border border-[#d97706] bg-[#0b2e3a] px-3 py-1.5 whitespace-nowrap shadow-lg select-none"
-          >
-            <span className="text-[11px] font-semibold tracking-[.06em] text-[#ffd27a] uppercase">Caixa selecionada</span>
-            <span className="font-mono text-sm font-medium text-white">{`${endereco.rua}-M${endereco.modulo}-N${endereco.nivel}-C${String(endereco.caixa).padStart(2, "0")}`}</span>
-          </div>
-        )}
       </div>
     </div>
   );
