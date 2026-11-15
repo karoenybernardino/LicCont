@@ -51,7 +51,7 @@ select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-00
 select throws_ok($$select * from public.equipe_integracoes()$$, '42501', null, 'administrador de prefeitura não executa integrações');
 select throws_ok($$select * from public.equipe_auditoria()$$, '42501', null, 'administrador de prefeitura não lê auditoria da equipe');
 select lives_ok($$update public.prefeituras set tce_ativo = false where id = '22222222-2222-2222-2222-222222222222'$$, 'administrador não liga nem desliga o TCE da outra prefeitura (RLS filtra)');
-select lives_ok($update public.prefeituras set valor_mensalidade_centavos = 1 where id = '11111111-1111-1111-1111-111111111111'$$,'administrador não consegue alterar (RLS filtra, sem erro)');
+select lives_ok($$update public.prefeituras set valor_mensalidade_centavos = 1 where id = '11111111-1111-1111-1111-111111111111'$$, 'administrador não consegue alterar (RLS filtra, sem erro)');
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
 select is((select valor_mensalidade_centavos from public.prefeituras where id = '11111111-1111-1111-1111-111111111111'), 150000, 'o contrato continua como a equipe gravou');
 
