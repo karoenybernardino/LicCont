@@ -5,7 +5,8 @@
 // de módulo. Desfazer e refazer guardam fotografias do estado.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent } from "react";
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { salvarPlanta } from "./acoes";
@@ -82,6 +83,12 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
   const [elSel, setElSel] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<{ erro: boolean; texto: string } | null>(null);
   const [salvando, salvar] = useTransition();
+  const [alvoAcoes, setAlvoAcoes] = useState<HTMLElement | null>(null);
+  // Status, Descartar e Salvar ficam no cabeçalho da página, como no quadro.
+  useEffect(() => {
+    const t = window.setTimeout(() => setAlvoAcoes(document.getElementById("acoes-editor")), 0);
+    return () => window.clearTimeout(t);
+  }, []);
   const atual = rascunho ?? estados[indice];
 
   const plantaAtual: Planta = { largura: atual.largura, profundidade: atual.profundidade, entradaLado: atual.lado, entradaPosicao: atual.posicao, metrosCelula: atual.metros, ruas: atual.ruas, elementos: atual.elementos };
@@ -219,35 +226,22 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
   return (
     <>
       <div className="max-lg:hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p role="status" className="text-sm font-medium">
-            {mudou === 0 ? "Nenhuma alteração" : mudou === 1 ? "1 alteração não salva" : `${mudou} alterações não salvas`}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={indice === 0} onClick={() => setIndice((i) => i - 1)} className={estilos.botaoBorda}>Desfazer</button>
-            <button type="button" disabled={indice >= estados.length - 1} onClick={() => setIndice((i) => i + 1)} className={estilos.botaoBorda}>Refazer</button>
-            <button type="button" disabled={mudou === 0} onClick={() => window.confirm("Descartar todas as alterações não salvas?") && (setEstados([estados[0]]), setIndice(0), setMensagem(null))} className={estilos.botaoBorda}>Descartar</button>
-            <button type="button" disabled={salvando || mudou === 0 || problemas.length > 0 || foraElemento} onClick={aoSalvar} className={estilos.botaoCheio}>
-              {salvando ? "Salvando…" : "Salvar planta"}
-            </button>
-          </div>
-        </div>
-        {(fora || foraElemento) && (
-          <p role="alert" className="mt-2 rounded-lg border border-[#d14343] bg-[#fee2e2] px-3 py-2 text-[13px] text-[#991b1b] dark:bg-[#3f1d1d] dark:text-[#fca5a5]">
-            {fora
-              ? fora.problema === "fora"
-                ? `Rua ${fora.codigo} passa da parede. Arraste para dentro do galpão ou gire 90° para salvar.`
-                : `Rua ${fora.codigo} está sobre a Rua ${fora.sobrepoeCom}. Afaste uma delas para salvar.`
-              : "Há elemento fora das paredes. Arraste para dentro do galpão para salvar."}
-          </p>
-        )}
-        {mensagem && (
-          <p role={mensagem.erro ? "alert" : "status"} className={`mt-2 text-[13px] ${mensagem.erro ? "text-erro" : "text-texto-suave"}`}>
-            {mensagem.texto}
-          </p>
-        )}
-
-        <div className="mt-3 grid grid-cols-[230px_minmax(0,1fr)_260px] items-start gap-4" onKeyDown={aoTeclar}>
+        {alvoAcoes &&
+          createPortal(
+            <>
+              <p role="status" className="text-[13px] text-texto-suave">
+                {mudou === 0 ? "Nenhuma alteração" : mudou === 1 ? "1 alteração não salva" : `${mudou} alterações não salvas`}
+              </p>
+              <button type="button" disabled={mudou === 0} onClick={() => window.confirm("Descartar todas as alterações não salvas?") && (setEstados([estados[0]]), setIndice(0), setMensagem(null))} className={estilos.botaoBorda}>
+                Descartar
+              </button>
+              <button type="button" disabled={salvando || mudou === 0 || problemas.length > 0 || foraElemento} onClick={aoSalvar} className={estilos.botaoCheio}>
+                {salvando ? "Salvando…" : "Salvar planta"}
+              </button>
+            </>,
+            alvoAcoes,
+          )}
+        <div className="grid grid-cols-[230px_minmax(0,1fr)_260px] items-start gap-4" onKeyDown={aoTeclar}>
           <aside className={estilos.cartao} aria-label="Ajustes do galpão">
             <h2 className={rotulo}>Tamanho do galpão</h2>
             <div className="grid grid-cols-2 gap-2">
@@ -289,6 +283,32 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
           </aside>
 
           <section aria-label="Planta do galpão" className={estilos.cartao}>
+            <div className="flex items-start justify-between gap-3">
+              <p id="dica-editor" className="text-xs text-texto-suave">
+                Arraste as ruas na grade · clique no ícone laranja para girar · Delete remove o elemento. Com o foco aqui: setas movem, R gira.
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <button type="button" aria-label="Desfazer" title="Desfazer" disabled={indice === 0} onClick={() => setIndice((i) => i - 1)} className={`${estilos.botaoBorda} !w-10 !px-0`}>↶</button>
+                <button type="button" aria-label="Refazer" title="Refazer" disabled={indice >= estados.length - 1} onClick={() => setIndice((i) => i + 1)} className={`${estilos.botaoBorda} !w-10 !px-0`}>↷</button>
+              </div>
+            </div>
+            {(fora || foraElemento) && (
+              <p role="alert" className="flex items-center gap-2 rounded-lg border border-[#d14343] bg-[#fee2e2] px-3 py-2 text-[13px] text-[#991b1b] dark:bg-[#3f1d1d] dark:text-[#fca5a5]">
+                <span aria-hidden>⚠</span>
+                <span>
+                  {fora
+                    ? fora.problema === "fora"
+                      ? `Rua ${fora.codigo} passa da parede. Arraste para dentro do galpão ou gire 90° para salvar.`
+                      : `Rua ${fora.codigo} está sobre a Rua ${fora.sobrepoeCom}. Afaste uma delas para salvar.`
+                    : "Há elemento fora das paredes. Arraste para dentro do galpão para salvar."}
+                </span>
+              </p>
+            )}
+            {mensagem && (
+              <p role={mensagem.erro ? "alert" : "status"} className={`text-[13px] ${mensagem.erro ? "text-erro" : "text-texto-suave"}`}>
+                {mensagem.texto}
+              </p>
+            )}
             <div className="rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
               <PlantaSvg
                 metrosCelula={atual.metros}
@@ -299,16 +319,22 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                 editor={{ ruaSelecionada: ruaSel, elementoSelecionado: elSel, onRua: aoRua, onElemento: aoElemento, onFundo: aoFundo, onGirar: girarRua, svgRef }}
               />
             </div>
-            <p id="dica-editor" className="text-xs text-texto-suave">
-              Arraste as ruas na grade · clique no ícone laranja para girar · Delete remove o elemento. Com o foco aqui: setas movem, R gira.
-            </p>
+            <ul aria-label="Legenda" className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-texto-suave">
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-3 w-5 rounded-sm bg-[linear-gradient(145deg,#2dd4bf,#0e7490)]" />Rua</li>
+              <li className="flex items-center gap-1.5"><span aria-hidden className="size-3 bg-[#5fa8b5]" />Pilar</li>
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-[3px] w-5 bg-[#0e7490] dark:bg-[#8fd0da]" />Parede</li>
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-3 w-5 border border-dashed border-texto-suave" />Área</li>
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-[3px] w-5 bg-[#ff9f1c]" />Entrada</li>
+            </ul>
           </section>
 
           <aside className={estilos.cartao} aria-label="Selecionado">
-            <h2 className={rotulo}>Selecionado</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className={rotulo}>Selecionado</h2>
+              {selRua && <span className="rounded-lg bg-[#ff9f1c] px-2 py-0.5 text-[11px] font-semibold text-[#0b2e3a]">Rua {selRua.codigo}</span>}
+            </div>
             {selRua ? (
               <>
-                <p className="font-titulo font-bold">Rua {selRua.codigo}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
                     Coluna x
@@ -355,13 +381,20 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             ) : (
               <p className="text-sm text-texto-suave">Clique numa rua ou num elemento.</p>
             )}
-            <h2 className={`${rotulo} mt-2`}>Ruas</h2>
+          </aside>
+
+          <aside className={`${estilos.cartao} col-start-3`} aria-label="Ruas do galpão">
+            <h2 className={rotulo}>Ruas</h2>
             <ul className="flex flex-col gap-1.5">
               {leiaute.ruas.map((r) => (
                 <li key={r.id}>
-                  <button type="button" onClick={() => (setRuaSel(r.id), setElSel(null))} aria-pressed={ruaSel === r.id} className={`${estilos.botaoBorda} w-full justify-between gap-3 ${ruaSel === r.id ? "!border-[#ff9f1c]" : ""}`}>
-                    <span className="font-mono">Rua {r.codigo}</span>
-                    <span className={`text-xs ${r.problema ? "text-erro" : "text-texto-suave"}`}>
+                  <button type="button" onClick={() => (setRuaSel(r.id), setElSel(null))} aria-pressed={ruaSel === r.id} className={`${estilos.botaoBorda} w-full justify-between gap-2 !px-2.5 ${ruaSel === r.id ? "!border-[#ff9f1c]" : ""}`}>
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden className={`flex size-6 items-center justify-center rounded-full font-mono text-xs ${ruaSel === r.id ? "bg-[#ff9f1c] text-[#0b2e3a]" : "bg-[#0b2e3a]/10 dark:bg-white/10"}`}>{r.codigo}</span>
+                      <span className="sr-only">Rua {r.codigo}, </span>
+                      <span className="text-[13px] font-normal">{r.modulos} módulos</span>
+                    </span>
+                    <span className={`rounded-xl px-2 py-0.5 text-[11px] font-semibold ${r.problema ? "bg-[#fef3c7] text-[#7c2d12] dark:bg-[#3b2f0b] dark:text-[#fcd34d]" : "bg-[#ccfbf1] text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]"}`}>
                       {r.problema === "fora" ? "Passa da parede" : r.problema === "sobreposta" ? "Sobreposta" : r.estado === "posicionada" ? "Posicionada" : "Automática"}
                     </span>
                   </button>
