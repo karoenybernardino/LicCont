@@ -125,7 +125,7 @@
   "tema": "escuro",
   "largura": 1280,
   "altura": 740,
-  "rota": "(ainda sem rota)",
+  "rota": "/temporalidade",
   "html": "html/TemporalidadeEscuro.html",
   "png": "png/TemporalidadeEscuro.png"
  },
@@ -135,7 +135,7 @@
   "tema": "claro",
   "largura": 1280,
   "altura": 740,
-  "rota": "(ainda sem rota)",
+  "rota": "/temporalidade",
   "html": "html/TemporalidadeClaro.html",
   "png": "png/TemporalidadeClaro.png"
  },

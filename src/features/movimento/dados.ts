@@ -8,10 +8,12 @@ import { tituloDocumento } from "@/features/documentos/titulo";
 import { posicaoLegivel } from "@/features/inicio/resumo";
 import { quando } from "@/features/estrutura/alteracoes";
 import type { ItemPesquisa } from "@/features/documentos/tipos";
+import { CLASSES } from "@/features/temporalidade/regras";
+import { lerRegras, lerTemporalidadeReal } from "@/features/temporalidade/dados";
 import { situacaoEmprestimo } from "./situacao";
 import type { Emprestimo, Movimentacao, PrazoAVencer, ProntoEliminacao, RegistroAuditoria, RegraPrazo, ResumoTemporalidade } from "./tipos";
 
-// Empréstimos (Fase 6) e temporalidade (Fase 7): sem tabela ainda, vazio em produção.
+// Empréstimos (Fase 6): sem tabela ainda, vazio em produção. Temporalidade (Fase 7): lê o banco.
 export async function listarEmprestimos(): Promise<Emprestimo[]> {
   return emDemo() ? emprestimosDemo() : [];
 }
@@ -25,7 +27,14 @@ export type Temporalidade = { resumo: ResumoTemporalidade; regras: RegraPrazo[];
 
 export async function lerTemporalidade(): Promise<Temporalidade> {
   if (emDemo()) return { resumo: RESUMO_TEMPORALIDADE_DEMO, regras: REGRAS_DEMO, prontos: PRONTOS_DEMO, aVencer: PRAZOS_DEMO };
-  return { resumo: { vencem90: 0, prontos: 0, permanentes: 0 }, regras: [], prontos: [], aVencer: [] };
+  const [regras, real] = await Promise.all([lerRegras(), lerTemporalidadeReal()]);
+  const anos = (n: number) => `${n} ${n === 1 ? "ano" : "anos"}`;
+  return {
+    resumo: real.resumo,
+    regras: regras.map((r) => ({ tipo: CLASSES[r.classe], corrente: anos(r.corrente), intermediaria: anos(r.intermediaria), permanente: r.destinacao === "guarda_permanente" })),
+    prontos: real.prontos.slice(0, 200).map((p) => ({ id: p.id, titulo: p.titulo, caixa: p.caixa, venceu: `${p.vencimento.slice(5, 7)}/${p.vencimento.slice(0, 4)}`, marcado: false, secretariaId: p.secretariaId })),
+    aVencer: real.aVencer.slice(0, 4).map((p) => ({ titulo: p.titulo, posicao: posicaoLegivel(p.posicao), emDias: p.emDias })),
+  };
 }
 
 // Últimas movimentações do Início: cadastros mais recentes do acervo.

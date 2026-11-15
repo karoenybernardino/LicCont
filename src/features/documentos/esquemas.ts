@@ -60,6 +60,8 @@ export const esquemaDocumento = z
     situacao: z.string().min(1, "Escolha a situação."),
     vigencia_inicio: data,
     vigencia_fim: data,
+    // Início da contagem do prazo de guarda da licitação (Fase 7); contrato conta do fim da vigência.
+    encerrado_em: data,
   })
   .superRefine((d, ctx) => {
     const erro = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message });
@@ -67,8 +69,9 @@ export const esquemaDocumento = z
       if (!d.modalidade) erro("modalidade", "Escolha a modalidade.");
       if (!(d.situacao in SITUACOES_LICITACAO)) erro("situacao", "Situação inválida para licitação.");
       if (d.vigencia_inicio || d.vigencia_fim) erro("vigencia_fim", "Vigência é só de contrato.");
-    } else if (!(d.situacao in SITUACOES_CONTRATO)) {
-      erro("situacao", "Situação inválida para contrato.");
+    } else {
+      if (!(d.situacao in SITUACOES_CONTRATO)) erro("situacao", "Situação inválida para contrato.");
+      if (d.encerrado_em) erro("encerrado_em", "Encerramento é só de licitação.");
     }
     if (d.vigencia_inicio && d.vigencia_fim && d.vigencia_fim < d.vigencia_inicio) {
       erro("vigencia_fim", "O fim da vigência não pode vir antes do início.");

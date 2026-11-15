@@ -40,6 +40,7 @@ export type DocumentoDetalhe = {
   situacao: string;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
+  encerrado_em: string | null;
   conferido: boolean;
   ativo: boolean;
   secretariaId: string;
@@ -103,7 +104,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
     const cx = caixaDemo(d.caixa_id);
     const sec = SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "";
     return {
-      ...d, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
+      ...d, encerrado_em: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
       posicao: cx ? posicaoDe(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero) : null,
       arquivo: d.arquivo
         ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null }
@@ -115,7 +116,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
+      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -131,7 +132,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   return {
     id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto,
     empresa: d.empresa, cnpj: d.cnpj, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
-    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, conferido: !!d.conferido_em, ativo: d.ativo,
+    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em, conferido: !!d.conferido_em, ativo: d.ativo,
     secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "", caixaId: d.caixa_id,
     posicao: cx ? posicaoDe(cx.niveis.modulos.ruas.codigo, cx.niveis.modulos.numero, cx.niveis.numero, cx.numero) : null,
     arquivo: a

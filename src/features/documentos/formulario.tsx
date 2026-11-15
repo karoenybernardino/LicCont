@@ -38,6 +38,7 @@ export type Inicial = {
   situacao: string;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
+  encerrado_em: string | null;
   secretariaId: string;
   caixaId: string;
   ruaId: string;
@@ -324,6 +325,11 @@ export function FormularioDocumento({
             <Campo rotulo="CNPJ (opcional)">
               {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="00.000.000/0000-00" className={caixaCampo} />}
             </Campo>
+            {tipo === "licitacao" && (
+              <Campo rotulo="Encerramento do processo">
+                {(id) => <input id={id} name="encerrado_em" type="date" defaultValue={inicial?.encerrado_em ?? ""} className={caixaCampo} />}
+              </Campo>
+            )}
             {tipo === "contrato" && (
               <>
                 <Campo rotulo="Vigência · início">

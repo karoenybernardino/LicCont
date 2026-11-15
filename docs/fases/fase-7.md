@@ -1,8 +1,8 @@
 # Fase 7 — Temporalidade e descarte
 
-Status: **só plano** (2026-11-15). Nenhum código, migração ou tela foi feito.
-Depende do merge do PR #51 (Fase 5), ainda aberto; ver "O que a Fase 5
-deixou". Plano geral: `docs/plano-de-desenvolvimento.md`, linha "7 ·
+Status: **implementada, aguardando CI** (2026-11-15). O PR #51 (Fase 5) já
+está na `main`. As decisões do responsável estão em "Decisões do responsável"
+e o que foi feito em "Entregue neste PR". Plano geral: `docs/plano-de-desenvolvimento.md`, linha "7 ·
 Temporalidade": tabela de prazos, fila de descarte, termo de eliminação com
 aprovação. Fidelidade ao canvas: `docs/telas/` (quadros `TemporalidadeEscuro`
 e `TemporalidadeClaro`).
@@ -191,43 +191,49 @@ eliminados fora do sistema.
 - Decisão em `docs/decisoes/` sobre "o que significa eliminar" (pergunta 7),
   antes da tarefa 6.
 
-## Perguntas em aberto para o responsável
+## Decisões do responsável (2026-11-15)
 
-1. **Aviso por e-mail** de vencimento: agora, ou só a sinalização na tela?
-   (Mesma resposta da pergunta 1 da Fase 6.)
-2. **Tabela de prazos**: a prefeitura piloto tem tabela oficial (por
-   exemplo, a do arquivo estadual ou do CONARQ)? Podemos usá-la como
-   modelo inicial no lugar dos prazos de exemplo do quadro? Quais tipos de
-   documento entram (o quadro tem 6; o sistema hoje distingue licitação e
-   contrato por modalidade)?
-3. **Aprovação**: quem aprova o termo (administrador, coordenador, comissão
-   de avaliação)? Quem gerou pode aprovar o próprio termo? Precisa de mais
-   de um aprovador?
-4. **Comissão e assinaturas**: a comissão permanente de avaliação de
-   documentos é cadastrada como usuários do sistema ou só nomes no termo?
-5. **Modelo do termo**: existe modelo de termo de eliminação e de listagem
-   da prefeitura (ou do estado)? O canvas não tem quadro do termo; podemos
-   desenhar um novo antes da tarefa 7?
-6. **Início da contagem**: o prazo conta a partir de quê (encerramento do
-   processo, fim da vigência do contrato, data do último ato)? Hoje o
-   documento tem datas de vigência, mas não "data de encerramento" para
-   licitação sem contrato.
-7. **O que é eliminar no sistema**: depois do termo aprovado, apagar o PDF
-   do Storage ou só desativar o documento e manter o PDF? Manter os
-   metadados do documento no sistema? Há prazo legal para guardar o próprio
-   termo? Afeta LGPD (minimização) e o backup; precisa de revisão do
-   advogado.
-8. **Termo por secretaria ou por prefeitura**: um termo por secretaria
-   (padrão proposto, respeita o isolamento) ou termo único da prefeitura
-   com documentos de várias secretarias (só administrador)?
-9. **Antecedência do aviso**: 90 dias, como no quadro, ou configurável por
-   prefeitura?
-10. **Guarda permanente**: pode a prefeitura mudar a destinação de uma
-    regra de permanente para eliminação depois de documentos já cadastrados?
-    (Proposta: só administrador, com registro na auditoria; nunca
-    retroativo sobre termo aprovado.)
-11. **Documento só em papel**: entra na fila de descarte mesmo sem PDF
-    anexado? (Hoje o cadastro aceita documento sem arquivo pronto.)
+| # | Pergunta | Decisão |
+| --- | --- | --- |
+| 1 | Aviso por e-mail | **Só na tela.** Tarefa 8 fica fora (sem serviço externo) |
+| 2 | Tabela de prazos | O sistema **não traz prazos oficiais**: a comissão da prefeitura cadastra os seus. Referência de estrutura: Resolução CONARQ 14/2001 (tabela básica das atividades-meio) |
+| 3 | Quem aprova | **Administrador, diferente de quem gerou** (dois fatores). Coordenador gera, registra o edital e cancela |
+| 4 | Comissão | Usuários do sistema (futuro); por ora o termo traz linhas de assinatura em branco, sem nome de pessoa |
+| 5 | Modelo do termo | Não achei modelo oficial único para município. O termo segue a estrutura da Resolução CONARQ 40/2014 (listagem, edital, termo). **Pendente:** envio do modelo próprio da prefeitura (PDF) como alternativa |
+| 6 | Início da contagem | Contrato: **fim da vigência**. Licitação: **encerramento do processo** (campo novo `encerrado_em`) |
+| 7 | O que é eliminar | **Desativar** o documento; registro, PDF e auditoria permanecem |
+| 8 | Termo por secretaria | **Um termo por secretaria** (respeita o isolamento do acervo) |
+| 9 | Antecedência do aviso | 90 dias, fixo (`AVISO_DIAS`) |
+| 10 | Permanente → eliminação | Pode, só administrador, na auditoria; nunca muda termo já aprovado |
+| 11 | Documento só em papel | Entra na fila (o prazo não depende do PDF) |
+
+Base legal (ver `docs/decisoes/0009-termo-de-eliminacao-pdf-word.md`): Lei
+8.159/1991 art. 9º e Resolução CONARQ 40/2014 com a 44/2020. O fluxo é:
+**rascunho (listagem) → edital de ciência (45 dias) → aprovação**. O prazo de
+45 dias, a autorização do arquivo público e a aprovação da listagem pela
+autoridade máxima ficam **a confirmar com o jurídico da prefeitura**.
+
+## Entregue neste PR
+
+| # | Tarefa | Estado |
+| --- | --- | --- |
+| 1 | `tabela_temporalidade` com RLS e pgTAP | feito (pgTAP só roda no CI) |
+| 2 | Editar a tabela (diálogo "Nova regra de prazo" / "Editar tabela", só administrador) | feito |
+| 3 | Cálculo de vencimento, cartões e fila de verdade | feito, Vitest |
+| 4 | `descartes` e `descarte_itens`, funções `public.descarte_*`, imutabilidade | feito (pgTAP só roda no CI) |
+| 5 | Fila de descarte e geração do termo | feito |
+| 6 | Edital, aprovação e eliminação (desativa) | feito |
+| 7 | PDF e Word do termo e da listagem | feito, Vitest |
+| 8 | Aviso por e-mail | **fora** (decisão 1) |
+| 9 | Comparação com o canvas | feito (imagens no PR) |
+
+Desvios do canvas (não há quadro): janela de regra, página do termo
+(`/temporalidade/termo/[id]`), painel "Termos de eliminação" (só aparece com
+termo existente) e o campo "Encerramento do processo" no cadastro de
+licitação. **Pedir quadros ao responsável.**
+
+Fora do PR: teste Playwright do fluxo (precisa de Supabase local e dados no
+`seed.sql`) e o envio do modelo de termo da prefeitura.
 
 ## Pronto quando
 
