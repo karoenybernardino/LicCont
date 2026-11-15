@@ -10,6 +10,8 @@ import { carregarEstrutura } from "@/features/estrutura/dados";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { aplicarFiltros } from "./aplicar";
 import type { Filtros } from "./filtros";
+import type { DocumentoSemPdf } from "./lote";
+import { tituloDocumento } from "./titulo";
 import type { Modalidade, ResultadoPesquisa, Tipo } from "./tipos";
 
 // Leitura pela sessão do usuário: o RLS devolve só a prefeitura e as
@@ -158,6 +160,29 @@ export const secretariasParaCadastro = cache(async (u: Usuario) => {
   const ids = new Set((data ?? []).map((v) => v.secretaria_id as string));
   return lista.filter((s) => ids.has(s.id));
 });
+
+// Documentos ativos das secretarias em que a pessoa cadastra e que ainda não têm PDF pronto
+// (para o envio de vários PDFs de uma vez).
+export async function documentosSemPdf(secretarias: string[]): Promise<DocumentoSemPdf[]> {
+  if (secretarias.length === 0) return [];
+  if (emDemo()) {
+    return DOCUMENTOS_DEMO.filter((d) => secretarias.includes(d.secretaria_id) && !d.tem_pdf).map((d) => ({
+      id: d.id, titulo: tituloDocumento({ tipo: d.tipo as Tipo, modalidade: d.modalidade as Modalidade | null, numero: d.numero, ano: d.ano }), numero: d.numero, ano: d.ano,
+    }));
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("documentos")
+    .select("id, tipo, modalidade, numero, ano, arquivos(ativo)")
+    .eq("ativo", true)
+    .in("secretaria_id", secretarias)
+    .order("criado_em", { ascending: false })
+    .limit(1000);
+  if (error) throw new Error(FALHA);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).filter((d) => !(d.arquivos ?? []).some((a: { ativo: boolean }) => a.ativo)).map((d) => ({ id: d.id, titulo: tituloDocumento(d), numero: d.numero, ano: d.ano }));
+}
 
 export async function podeCadastrar(u: Usuario) {
   return (await secretariasParaCadastro(u)).length > 0;
