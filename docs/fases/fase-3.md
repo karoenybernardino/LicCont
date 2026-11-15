@@ -1,6 +1,6 @@
 # Fase 3 — Documentos
 
-Status: **plano, aguardando aprovação do responsável** (2026-11-14).
+Status: **implementada e na `main`** (atualizado em 2026-11-15).
 Nenhum código antes da aprovação das perguntas do fim.
 
 Segue `docs/plano-de-desenvolvimento.md`:

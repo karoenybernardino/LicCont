@@ -1,6 +1,6 @@
 # Fase 4 — Mapa
 
-Status: **plano aprovado com mudanças pelo responsável** (2026-11-14). Ver
+Status: **implementada e na `main`** (atualizado em 2026-11-15; plano aprovado com mudanças pelo responsável em 2026-11-14). Ver
 "Decisões do responsável" no fim. O plano foi escrito com o Opus; o código
 será escrito com o Sonnet, a partir deste texto.
 

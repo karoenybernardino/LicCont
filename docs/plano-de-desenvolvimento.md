@@ -235,17 +235,17 @@ liccont/
 
 São nove fases em sequência; cada uma só começa depois que a anterior passa nos critérios de pronto e você aprova.
 
-| Fase | Entrega | Pronta quando |
-| --- | --- | --- |
-| 0 · Fundação | Repositório, CLAUDE.md, CI, ambientes de teste e produção, tema e componentes base | CI roda testes, lint, checagem de tipos e busca de segredos em todo PR |
-| 1 · Acesso | Prefeituras, secretarias, usuários, vínculos, login em duas etapas, dois fatores, saída por inatividade, auditoria básica | Teste prova que um usuário não lê outra prefeitura nem secretaria sem vínculo |
-| 2 · Estrutura física | Galpões, ruas, módulos, níveis, caixas, capacidade e ocupação | Cadastro por listas de escolha, como no protótipo; ocupação calculada |
-| 3 · Documentos | Cadastro, edição, upload de PDF com checagem e cópia leve, visualizador, pesquisa com o painel de filtros aprovado (busca única, abas por tipo, Período, Licitação e Contratos) | Pesquisa responde em menos de 1 s com 100 mil documentos de teste, combinando qualquer filtro; contagem das abas atualiza junto |
-| 4 · Mapa | Mapa 3D, planta baixa, painel "Dentro da caixa", ir até a caixa | Clicar numa caixa mostra os documentos reais dela |
-| 5 · Etiquetas e QR | Geração e impressão em lote, leitura pelo celular | QR lido no celular abre a caixa só depois do login |
-| 6 · Empréstimos | Retirada, devolução, prazo, alerta de atraso, termo em PDF e Word | Documento emprestado aparece como tal no mapa e na pesquisa |
-| 7 · Temporalidade | Tabela de prazos, fila de descarte, termo de eliminação com aprovação | Nenhum documento é apagado sem termo aprovado e registrado |
-| 8 · Prontidão | Painel da equipe LicCONT, relatórios, documentação de LGPD, revisão de segurança, pentest se aprovado | Checklist de segurança completo e piloto rodando com dados reais |
+| Fase | Entrega | Pronta quando | Estado em 15/11/2026 |
+| --- | --- | --- | --- |
+| 0 · Fundação | Repositório, CLAUDE.md, CI, ambientes de teste e produção, tema e componentes base | CI roda testes, lint, checagem de tipos e busca de segredos em todo PR | Concluída |
+| 1 · Acesso | Prefeituras, secretarias, usuários, vínculos, login em duas etapas, dois fatores, saída por inatividade, auditoria básica | Teste prova que um usuário não lê outra prefeitura nem secretaria sem vínculo | Concluída |
+| 2 · Estrutura física | Galpões, ruas, módulos, níveis, caixas, capacidade e ocupação | Cadastro por listas de escolha, como no protótipo; ocupação calculada | Na `main` |
+| 3 · Documentos | Cadastro, edição, upload de PDF com checagem e cópia leve, visualizador, pesquisa com o painel de filtros aprovado (busca única, abas por tipo, Período, Licitação e Contratos) | Pesquisa responde em menos de 1 s com 100 mil documentos de teste, combinando qualquer filtro; contagem das abas atualiza junto | Na `main` |
+| 4 · Mapa | Mapa 3D, planta baixa, painel "Dentro da caixa", ir até a caixa | Clicar numa caixa mostra os documentos reais dela | Na `main` (mapa 3D, planta e editor da planta) |
+| 5 · Etiquetas e QR | Geração e impressão em lote, leitura pelo celular | QR lido no celular abre a caixa só depois do login | Na `main` (PR #51) |
+| 6 · Empréstimos | Retirada, devolução, prazo, alerta de atraso, termo em PDF e Word | Documento emprestado aparece como tal no mapa e na pesquisa | **Núcleo na `main` (PR #52)**: retirada, devolução, atraso, situação "Emprestado". Faltam aprovação de empréstimo, termo em PDF e Word e aviso por e-mail |
+| 7 · Temporalidade | Tabela de prazos, fila de descarte, termo de eliminação com aprovação | Nenhum documento é apagado sem termo aprovado e registrado | **Na `main` (PR #53)**: tabela de prazos, fila, termo com edital de ciência e aprovação, PDF e Word. Faltam aviso por e-mail, modelo de termo da prefeitura e teste Playwright do fluxo |
+| 8 · Prontidão | Painel da equipe LicCONT, relatórios, documentação de LGPD, revisão de segurança, pentest se aprovado | Checklist de segurança completo e piloto rodando com dados reais | **Fase atual**: só plano (PR #54, aberto) |
 
 A Fase 1 já nasce com a auditoria, para que toda ação das fases seguintes seja registrada desde o primeiro dia.
 

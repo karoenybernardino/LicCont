@@ -1,6 +1,6 @@
 # Fase 5 — Etiquetas e QR, e o que a Fase 4 deixou
 
-Status: em execução (2026-11-14). Um PR por tarefa, cada um com o teste antes
+Status: **concluída e na `main`** (PR #51; atualizado em 2026-11-15). Um PR por tarefa, cada um com o teste antes
 do código, mesclado na `main` só com o CI verde. Plano geral:
 `docs/plano-de-desenvolvimento.md` (linha "5 · Etiquetas e QR": geração e
 impressão em lote, leitura pelo celular; pronta quando o QR lido no celular

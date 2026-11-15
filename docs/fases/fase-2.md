@@ -1,6 +1,6 @@
 # Fase 2 — Estrutura física
 
-Status: **implementada, aguardando aprovação da demonstração** (2026-11-08).
+Status: **concluída e na `main`** (atualizado em 2026-11-15).
 O responsável aprovou todas as recomendações do fim e pediu a fase inteira
 num PR só, com o link da demonstração para aprovar. Ver "Resultado" no fim.
 
