@@ -87,7 +87,16 @@ export async function conferirMolduraFixa(page: Page) {
       expect(await page.evaluate(() => window.scrollY)).toBe(0);
       expect([await caixa("[data-moldura] > aside"), await caixa("[data-moldura] header")]).toEqual(antes);
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // Se estourar, a mensagem lista quem passa da borda (fora do menu, que rola por dentro).
+    const estouram = await page.evaluate(() =>
+      document.documentElement.scrollWidth <= window.innerWidth
+        ? []
+        : [...document.querySelectorAll("body *:not(aside *)")]
+            .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1)
+            .slice(0, 5)
+            .map((e) => `${e.tagName}.${String(e.getAttribute("class")).slice(0, 50)}`),
+    );
+    expect(estouram).toEqual([]);
     await page.evaluate(() => document.querySelector("[data-teste=alto]")?.remove());
   }
   await page.setViewportSize(original);
