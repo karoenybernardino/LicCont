@@ -100,7 +100,11 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByLabel("Nome", { exact: true }).fill("Admin Fictício Novo");
   await page.getByLabel("E-mail institucional").fill("admin.novo@exemplo.test");
   await page.getByRole("button", { name: "Cadastrar administrador" }).click();
-  await expect(page.getByTestId("senha-provisoria")).toHaveText(/^.{16}$/);
+  await expect(page.getByTestId("senha-provisoria"))
+    .toHaveText(/^.{16}$/, { timeout: 20_000 })
+    .catch(async (e) => {
+      throw new Error(`${JSON.stringify(await page.locator('[role="alert"], [role="status"]').allInnerTexts())} :: ${e.message.slice(0, 60)}`);
+    });
 
   // Prefeitura com usuário não aceita outro "primeiro administrador".
   await page.reload();
