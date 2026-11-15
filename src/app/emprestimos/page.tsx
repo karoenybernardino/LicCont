@@ -3,16 +3,18 @@ import { Busca, CabecalhoPainel, Filtros, Pilula } from "@/ui/canvas";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { exigirSessao } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
-import { contarEmprestimos, listarEmprestimos } from "@/features/movimento/dados";
+import { contarEmprestimos, documentosEmprestaveis, listarEmprestimos } from "@/features/movimento/dados";
 import { dataBR, situacaoEmprestimo } from "@/features/movimento/situacao";
-import { BotaoBreve, CampoRotulado, LinhaVazia, campo } from "@/features/movimento/ui";
+import { BotaoBreve, LinhaVazia } from "@/features/movimento/ui";
+import { BotaoDevolver } from "@/features/movimento/botao-devolver";
+import { FormularioEmprestimo } from "@/features/movimento/formulario-emprestimo";
+import { hojeBrasilia } from "@/features/movimento/esquemas";
+import { secretariasParaCadastro } from "@/features/documentos/dados";
 
 export const metadata: Metadata = { title: "Empréstimos · LicCONT" };
 
 const ABAS = ["abertos", "atrasados", "devolvidos"] as const;
 type Aba = (typeof ABAS)[number];
-
-const desativado = { disabled: true, "aria-disabled": true, title: "Em breve", className: campo } as const;
 
 export default async function Emprestimos({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { usuario, secretaria } = await exigirSessao();
@@ -21,7 +23,11 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
   const aba: Aba = (ABAS as readonly string[]).includes(um(p.situacao)) ? (um(p.situacao) as Aba) : "abertos";
   const q = um(p.q).trim().slice(0, 100);
 
-  const todos = await listarEmprestimos();
+  const listaCadastro = await secretariasParaCadastro(usuario);
+  const paraCadastro = listaCadastro.map((x) => x.id);
+  const setores = listaCadastro.map((x) => x.nome);
+  const cadastra = paraCadastro.length > 0;
+  const [todos, emprestaveis] = await Promise.all([listarEmprestimos(), documentosEmprestaveis(paraCadastro)]);
   const { abertos, atrasados } = contarEmprestimos(todos);
   const busca = q.toLowerCase();
   const linhas = todos
@@ -80,7 +86,7 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
                       </td>
                       <td className={`${td} text-[13px]`}>{dataBR(e.prazo)}</td>
                       <td className={td}>{s ? <Pilula tom={s.tom}>{s.texto}</Pilula> : <Pilula tom="ok">Devolvido</Pilula>}</td>
-                      <td className={td}>{!e.devolvido && <BotaoBreve variante="linha">Devolver</BotaoBreve>}</td>
+                      <td className={td}>{!e.devolvido && cadastra && <BotaoDevolver id={e.id} />}</td>
                     </tr>
                   );
                 })}
@@ -98,32 +104,7 @@ export default async function Emprestimos({ searchParams }: { searchParams: Prom
             }
             titulo="Registrar empréstimo"
           />
-          <CampoRotulado rotulo="Documento">
-            <input {...desativado} />
-          </CampoRotulado>
-          <CampoRotulado rotulo="Retirado por">
-            <input {...desativado} />
-          </CampoRotulado>
-          <CampoRotulado rotulo="Setor">
-            <select {...desativado} />
-          </CampoRotulado>
-          <div className="grid grid-cols-2 gap-3">
-            <CampoRotulado rotulo="Data da retirada">
-              <input {...desativado} />
-            </CampoRotulado>
-            <CampoRotulado rotulo="Prazo de devolução">
-              <input {...desativado} />
-            </CampoRotulado>
-          </div>
-          <CampoRotulado rotulo="Observação">
-            <input {...desativado} />
-          </CampoRotulado>
-          <div className="mt-1 flex gap-2.5">
-            <BotaoBreve variante="primario" className="flex-1">
-              Registrar empréstimo
-            </BotaoBreve>
-            <BotaoBreve>Limpar</BotaoBreve>
-          </div>
+          <FormularioEmprestimo documentos={emprestaveis} hoje={hojeBrasilia()} setores={setores} />
           <p className="text-[13px] leading-5 text-texto-suave">
             O documento passa para &quot;Emprestado&quot; e a caixa fica marcada no mapa até a devolução.
           </p>

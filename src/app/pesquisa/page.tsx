@@ -11,6 +11,7 @@ import { EscolhaCompacta } from "@/features/documentos/escolha-compacta";
 import { PainelDocumento, tomSituacao } from "@/features/documentos/painel";
 import { MODALIDADES, SITUACOES, SITUACOES_CONTRATO } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
+import { documentosEmprestados } from "@/features/movimento/dados";
 
 export const metadata: Metadata = { title: "Pesquisa · LicCONT" };
 
@@ -63,7 +64,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
   const { usuario, secretaria } = await exigirSessao();
   const params = await searchParams;
   const f = lerFiltros(params);
-  const [r, secretarias] = await Promise.all([pesquisar(usuario, f), secretariasPermitidas(usuario)]);
+  const [r, secretarias, emprestados] = await Promise.all([pesquisar(usuario, f), secretariasPermitidas(usuario), documentosEmprestados()]);
   const nomes = new Map(secretarias.filter((s) => s.id).map((s) => [s.id as string, s.nome]));
   const pedido = typeof params.doc === "string" && esquemaId.safeParse({ id: params.doc }).success ? params.doc : null;
   // Como no quadro: sem documento escolhido, o primeiro da lista já aparece no detalhe.
@@ -280,7 +281,10 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="font-titulo text-[15px] font-semibold">{tituloDocumento(d)}</span>
-                        <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                        <span className="flex items-center gap-1.5">
+                          {emprestados.has(d.id) && <Pilula tom="aviso">Emprestado</Pilula>}
+                          <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                        </span>
                       </span>
                       <span className="text-[13px] text-texto-suave">
                         {d.objeto}

@@ -121,7 +121,8 @@ export function DentroDaCaixa({
                   {[x.empresa, x.secretaria, x.ano].filter(Boolean).join(" · ")}
                 </span>
               </Link>
-              <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
+              {x.emprestado && <span className="shrink-0 rounded-xl bg-[#fff1d6] px-2 py-0.5 text-[11px] font-semibold text-[#7a4a00] dark:bg-[#3a2a08] dark:text-[#ffd27a]">Emprestado</span>}
+                  <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
             </li>
           ))}
         </ul>
@@ -220,6 +221,7 @@ export function PainelPlanta({ d, carregando }: { d: DetalheCaixa | null; carreg
                     <span className="block truncate font-titulo text-[13px] font-semibold">{x.titulo}</span>
                     <span className="block truncate text-[11px] text-texto-suave">{[x.empresa, x.secretaria, x.ano].filter(Boolean).join(" · ")}</span>
                   </span>
+                  {x.emprestado && <span className="shrink-0 rounded-xl bg-[#fff1d6] px-2 py-0.5 text-[11px] font-semibold text-[#7a4a00] dark:bg-[#3a2a08] dark:text-[#ffd27a]">Emprestado</span>}
                   <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
                 </Link>
               </li>

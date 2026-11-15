@@ -105,7 +105,7 @@
   "tema": "escuro",
   "largura": 1280,
   "altura": 720,
-  "rota": "(ainda sem rota)",
+  "rota": "/emprestimos",
   "html": "html/EmprestimosEscuro.html",
   "png": "png/EmprestimosEscuro.png"
  },
@@ -115,7 +115,7 @@
   "tema": "claro",
   "largura": 1280,
   "altura": 720,
-  "rota": "(ainda sem rota)",
+  "rota": "/emprestimos",
   "html": "html/EmprestimosClaro.html",
   "png": "png/EmprestimosClaro.png"
  },

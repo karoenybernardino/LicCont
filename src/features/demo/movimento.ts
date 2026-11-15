@@ -20,7 +20,7 @@ const EMPRESTIMOS: [string, string, string, string, string, string, number][] = 
 export function emprestimosDemo(agora = new Date()): Emprestimo[] {
   return EMPRESTIMOS.map(([titulo, objeto, caixa, quem, setor, , d], i) => ({
     id: `de600000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-    titulo, objeto, caixa, quem, setor, prazo: somar(agora, d), devolvido: i === EMPRESTIMOS.length - 1,
+    documentoId: "", titulo, objeto, caixa, quem, setor, prazo: somar(agora, d), devolvido: i === EMPRESTIMOS.length - 1,
   }));
 }
 

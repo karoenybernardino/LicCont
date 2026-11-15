@@ -10,6 +10,8 @@ describe("auditoria", () => {
     expect(classificar("arquivos.ver")).toEqual({ rotulo: "Visualização", tom: "neutro" });
     expect(classificar("descarte.termo")).toEqual({ rotulo: "Descarte", tom: "erro" });
     expect(classificar("emprestimos.insert")).toEqual({ rotulo: "Empréstimo", tom: "aviso" });
+    expect(classificar("emprestimos.retirada")).toEqual({ rotulo: "Empréstimo", tom: "aviso" });
+    expect(classificar("emprestimos.devolucao")).toEqual({ rotulo: "Devolução", tom: "ok" });
   });
   it("categoria do filtro", () => {
     expect(categoriaDe("emprestimos.update")).toBe("emprestimos");
