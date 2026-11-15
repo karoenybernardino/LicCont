@@ -14,6 +14,16 @@ que será feito antes do piloto com revisão jurídica.
 | E-mail transacional (Resend, **pronto e desligado**: só liga com a chave na Vercel) | Avisos por e-mail (recuperação de senha segue pelo Supabase) | E-mail institucional e texto curto do aviso | EUA (transferência a validar) | Fases 5 a 7 | 0010 |
 | GitHub | Código-fonte e CI | Nenhum dado pessoal de prefeitura (só dados fictícios) | EUA | Fase 0 | 0003 |
 
+## Fontes públicas de dados (não são suboperadores)
+
+O LicCONT só **lê** destas fontes, e não envia a elas nenhum dado do acervo.
+Decisão 0012.
+
+| Fonte | Finalidade | O que o LicCONT envia | O que traz | Região |
+| --- | --- | --- | --- | --- |
+| API de Dados Abertos do TCE-CE (SIM) | Importar licitações e contratos da prefeitura | Código do município, ano e tipo | Dados públicos de processos e contratos; CPF descartado antes de gravar (só nome e CNPJ) | Brasil (só aceita IP brasileiro) |
+| PNCP (Portal Nacional de Contratações Públicas) | Buscar PDFs públicos de uma compra | CNPJ do órgão, ano e número da compra | Arquivos públicos da compra | Brasil |
+
 ## Pendências
 
 - Transferência internacional: a rede de borda da Vercel passa por fora do

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
@@ -155,6 +156,9 @@ export function PainelFila({
             <button type="button" disabled={pendente} className={`${botaoPrimario} disabled:opacity-55`} onClick={confirmar}>
               {pendente ? "Confirmando…" : "Confirmar e tirar da fila"}
             </button>
+            <Link href={`/importados/${atual.id}/pncp`} className={botaoContorno}>
+              Buscar PDF no PNCP
+            </Link>
           </>
         ) : (
           <p className="text-sm text-texto-suave">Selecione um documento da lista.</p>
