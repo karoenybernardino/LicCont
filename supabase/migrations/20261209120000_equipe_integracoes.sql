@@ -44,17 +44,27 @@ revoke execute on function public.equipe_importacoes_tce(integer) from public, a
 grant execute on function public.equipe_importacoes_tce(integer) to authenticated;
 
 -- O pedido recebido entra na auditoria da equipe (sem nenhum dado de contato).
+-- Mesma função da revisão de segurança (8 argumentos), com uma linha a mais.
 create or replace function public.registrar_pedido_demonstracao(
-  p_nome text, p_cargo text, p_orgao text, p_email text, p_email_hash text, p_telefone text, p_mensagem text
-) returns boolean
+  p_nome text, p_cargo text, p_orgao text, p_email text, p_email_hash text, p_ip_hash text,
+  p_telefone text, p_mensagem text
+) returns text
 language plpgsql security definer set search_path = '' as $$
 begin
-  if (select count(*) from public.pedidos_demonstracao where email_hash = p_email_hash and criado_em > now() - interval '24 hours') >= 3
-     or (select count(*) from public.pedidos_demonstracao where criado_em > now() - interval '24 hours') >= 200 then
-    return false;
+  perform pg_advisory_xact_lock(hashtext(p_email_hash));
+  if p_ip_hash is not null then
+    perform pg_advisory_xact_lock(hashtext('ip:' || p_ip_hash));
   end if;
-  insert into public.pedidos_demonstracao (nome, cargo, orgao, email, email_hash, telefone, mensagem)
-  values (p_nome, nullif(p_cargo, ''), p_orgao, p_email, p_email_hash, nullif(p_telefone, ''), nullif(p_mensagem, ''));
+  if (select count(*) from public.pedidos_demonstracao where criado_em > now() - interval '24 hours') >= 200 then
+    return 'teto';
+  end if;
+  if (select count(*) from public.pedidos_demonstracao where email_hash = p_email_hash and criado_em > now() - interval '24 hours') >= 3
+     or (p_ip_hash is not null
+         and (select count(*) from public.pedidos_demonstracao where ip_hash = p_ip_hash and criado_em > now() - interval '1 hour') >= 5) then
+    return 'descartado';
+  end if;
+  insert into public.pedidos_demonstracao (nome, cargo, orgao, email, email_hash, ip_hash, telefone, mensagem)
+  values (p_nome, nullif(p_cargo, ''), p_orgao, p_email, p_email_hash, p_ip_hash, nullif(p_telefone, ''), nullif(p_mensagem, ''));
   insert into public.auditoria (acao) values ('equipe.pedido_recebido');
-  return true;
+  return 'ok';
 end $$;

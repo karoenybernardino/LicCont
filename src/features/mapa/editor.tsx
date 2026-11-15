@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { ajustarModulosDaRua, criarRuaNaPlanta, salvarPlanta } from "./acoes";
-import { encaixarNaParede, entradaPorPonto, modulosDoArrasto, paredeDesenhada } from "./edicao";
+import { ajusteDoTeclado, encaixarNaParede, entradaPorPonto, fantasmaDaPonta, modulosDoArrasto, paredeDesenhada, rotuloDoArrasto } from "./edicao";
 import { calcularLeiaute } from "./geometria";
 import { MARGEM, PX, PlantaSvg } from "./planta";
 import { estilos } from "./painel-caixa";
@@ -62,6 +62,8 @@ function Num({ valor, min, max, onValor, passo = 0.1 }: { valor: number; min: nu
   );
 }
 
+type Previa = { x: number; y: number; largura: number; profundidade: number; n?: number; vertical?: boolean; tira?: boolean; rotulo?: string };
+
 export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin = false }: { estrutura: Estrutura; planta: Planta; galpaoId: string; nomeGalpao: string; ehAdmin?: boolean }) {
   const tema = useTema();
   const router = useRouter();
@@ -89,7 +91,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   const [mensagem, setMensagem] = useState<{ erro: boolean; texto: string } | null>(null);
   const [salvando, salvar] = useTransition();
   const [mexendo, mexer] = useTransition();
-  const [previa, setPrevia] = useState<{ x: number; y: number; largura: number; profundidade: number } | null>(null);
+  const [previa, setPrevia] = useState<Previa | null>(null);
   const [nova, setNova] = useState({ aberta: false, modulos: 5, niveis: 4, capacidade: 20 });
 
   // Estrutura (rua nova, mais ou menos módulos): grava na hora, com auditoria, fora do "Salvar planta".
@@ -205,8 +207,10 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     setElSel(null);
     const vertical = r.giro === 90 || r.giro === 270;
     const delta = (dx: number, dy: number) => modulosDoArrasto((vertical ? dy : dx) * m, m, r.modulos);
-    const fantasma = (d: number) =>
-      d === 0 ? null : vertical ? { x: r.x, y: r.y + r.h + Math.min(0, d), largura: r.w, profundidade: Math.abs(d) } : { x: r.x + r.w + Math.min(0, d), y: r.y, largura: Math.abs(d), profundidade: r.h };
+    const fantasma = (d: number) => {
+      const f = fantasmaDaPonta(r, vertical, d);
+      return f && { ...f, rotulo: rotuloDoArrasto(d, r.modulos) };
+    };
     const base = atual;
     arrastar(
       e,
@@ -280,7 +284,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   function aoTeclar(e: KeyboardEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "SELECT") return;
     const passo: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-    if (passo[e.key]) {
+    if (passo[e.key] && !(e.shiftKey && ruaSel && ehAdmin)) {
       const [dx, dy] = passo[e.key].map((v) => v * m);
       if (ruaSel) {
         const p = posicaoDe(ruaSel);
@@ -289,6 +293,11 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
         confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === elSel ? { ...x, x: limitar(x.x + dx), y: limitar(x.y + dy) } : x)) });
       } else return;
     } else if (e.key.toLowerCase() === "r" && ruaSel) girarRua(ruaSel);
+    else if (ruaSel && ehAdmin && ajusteDoTeclado(e.key, e.shiftKey)) {
+      const q = ajusteDoTeclado(e.key, e.shiftKey);
+      const r = leiaute.ruas.find((x) => x.id === ruaSel);
+      if (r && !mexendo && !(q < 0 && r.modulos <= 1)) estrutural(() => ajustarModulosDaRua({ rua: ruaSel, quantidade: q }));
+    }
     else if ((e.key === "Delete" || e.key === "Backspace") && elSel) remover();
     else return;
     e.preventDefault();
@@ -385,7 +394,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
           <section aria-label="Planta do galpão" className={estilos.cartao}>
             <div className="flex items-start justify-between gap-3">
               <p id="dica-editor" className="text-xs text-texto-suave">
-                Arraste as ruas na grade, o traço laranja da entrada e (administrador) a ponta de uma rua para mudar o tamanho · parede: arraste na planta · porta e janela: clique perto de uma parede externa · Delete remove o elemento. Com o foco aqui: setas movem, R gira.
+                Arraste as ruas na grade, o traço laranja da entrada e (administrador) a ponta de uma rua para mudar o tamanho · parede: arraste na planta · porta e janela: clique perto de uma parede externa · Delete remove o elemento. Com o foco aqui: setas movem, R gira; com a rua escolhida, + e − (ou Shift e setas) somam e tiram módulos.
               </p>
               <div className="flex shrink-0 gap-2">
                 <button type="button" aria-label="Desfazer" title="Desfazer" disabled={indice === 0} onClick={() => setIndice((i) => i - 1)} className={`${estilos.botaoBorda} !w-10 !px-0`}>↶</button>
@@ -404,6 +413,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                 </span>
               </p>
             )}
+            <p aria-live="polite" className="sr-only">{previa?.rotulo ?? ""}</p>
             {mensagem && (
               <p role={mensagem.erro ? "alert" : "status"} className={`text-[13px] ${mensagem.erro ? "text-erro" : "text-texto-suave"}`}>
                 {mensagem.texto}

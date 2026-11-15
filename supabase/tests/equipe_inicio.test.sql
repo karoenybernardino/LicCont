@@ -61,7 +61,7 @@ insert into public.lotes_importacao (prefeitura_id, nome_arquivo, linhas_total, 
   ('11111111-1111-1111-1111-111111111111', 'arquivo-fictício.xlsx', 10, 10, 'gravado', '0a000000-0000-0000-0000-000000000001');
 set local role service_role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
-select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Órgão Fictício', 'a@exemplo.test', 'h9', '', '');
+select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Órgão Fictício', 'a@exemplo.test', 'h9', null, '', '');
 reset role;
 set local role authenticated;
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');

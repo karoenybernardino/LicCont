@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Marca } from "@/ui/logo";
 
 // Barra lateral de ícones do canvas ("Menu"). Telas de fases futuras
@@ -79,7 +79,7 @@ const ICONES = {
 } as const;
 
 export type IconeMenu = keyof typeof ICONES;
-export type ItemMenu = { href?: string; rotulo: string; dica?: string; icone: IconeMenu; prefixos?: string[]; contagem?: number };
+export type ItemMenu = { href?: string; rotulo: string; dica?: string; icone: IconeMenu; prefixos?: string[]; contagem?: number; filhos?: ItemMenu[] };
 
 export function Icone({ nome, className = "" }: { nome: IconeMenu; className?: string }) {
   return (
@@ -152,6 +152,7 @@ export function BarraLateral({
   });
 
   function renderItem(i: ItemMenu) {
+    if (i.filhos) return <Agrupador key={i.rotulo} item={i} ativo={ativo} />;
     const chave = i.href ?? i.rotulo;
     const desc = dica?.chave === chave ? idDica : undefined;
     if (!i.href) {
@@ -233,5 +234,107 @@ export function BarraLateral({
         </div>
       )}
     </aside>
+  );
+}
+
+// Item que abre um submenu ao lado da barra (ao clicar, passar o mouse ou focar). Esc fecha
+// e devolve o foco ao botão; clicar fora fecha. Posição fixa: a barra rola e cortaria o painel.
+function Agrupador({ item, ativo }: { item: ItemMenu; ativo: (i: ItemMenu) => boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number; embaixo: boolean }>({ x: 0, y: 0, embaixo: false });
+  const raiz = useRef<HTMLLIElement>(null);
+  const botaoRef = useRef<HTMLButtonElement>(null);
+  const idPainel = useId();
+  const caminho = usePathname();
+  const filhos = item.filhos ?? [];
+  const aqui = filhos.some(ativo) || caminho === "/configuracoes";
+
+  const abrir = () => {
+    const r = botaoRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const embaixo = window.innerWidth < 768;
+    setPos({
+      embaixo,
+      x: embaixo ? Math.min(Math.max(r.left + r.width / 2, 130), window.innerWidth - 130) : r.right,
+      // No computador a barra termina no rodapé: o painel cresce para cima, alinhado ao fim do ícone.
+      y: embaixo ? r.bottom : window.innerHeight - r.bottom,
+    });
+    setAberto(true);
+  };
+
+  useEffect(() => {
+    if (!aberto) return;
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setAberto(false);
+      botaoRef.current?.focus();
+    };
+    const fora = (e: MouseEvent) => !raiz.current?.contains(e.target as Node) && setAberto(false);
+    document.addEventListener("keydown", tecla);
+    document.addEventListener("mousedown", fora);
+    return () => {
+      document.removeEventListener("keydown", tecla);
+      document.removeEventListener("mousedown", fora);
+    };
+  }, [aberto]);
+
+  return (
+    <li
+      ref={raiz}
+      onMouseEnter={abrir}
+      onMouseLeave={() => setAberto(false)}
+      onBlur={(e) => !raiz.current?.contains(e.relatedTarget as Node | null) && setAberto(false)}
+    >
+      <button
+        ref={botaoRef}
+        type="button"
+        aria-label={item.rotulo}
+        aria-haspopup="true"
+        aria-expanded={aberto}
+        aria-controls={aberto ? idPainel : undefined}
+        aria-current={aqui ? "page" : undefined}
+        onClick={() => (aberto ? setAberto(false) : abrir())}
+        className={`${botao} ${aqui ? "bg-aqua text-petroleo" : "text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)]"}`}
+      >
+        <Icone nome={item.icone} />
+      </button>
+      {aberto && (
+        <div
+          style={pos.embaixo ? { left: pos.x, top: pos.y } : { left: pos.x, bottom: pos.y }}
+          className={`fixed z-50 ${pos.embaixo ? "-translate-x-1/2 pt-2.5" : "pl-3.5"}`}
+        >
+          <div
+            id={idPainel}
+            role="group"
+            aria-label={item.rotulo}
+            onClick={(e) => (e.target as HTMLElement).closest("a") && setAberto(false)}
+            className="w-[250px] max-w-[calc(100vw-24px)] rounded-2xl border border-white/18 bg-[#0b2e3a] p-1.5 shadow-lg dark:border-[#1b3a44] dark:bg-[#02090c]"
+          >
+            <Link
+              href="/configuracoes"
+              className="block rounded-xl px-3 py-2 text-[13px] font-bold text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-aqua"
+            >
+              {item.rotulo}
+              {item.dica && <span className="mt-0.5 block text-xs font-normal leading-snug text-[#8cc5cf]">{item.dica}</span>}
+            </Link>
+            <div aria-hidden className="mx-2 my-1 h-px bg-white/18" />
+            <ul className="flex flex-col">
+              {filhos.map((f) => (
+                <li key={f.href}>
+                  <Link
+                    href={f.href!}
+                    aria-current={ativo(f) ? "page" : undefined}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] focus-visible:outline-2 focus-visible:outline-aqua ${ativo(f) ? "bg-aqua text-petroleo" : "text-white hover:bg-white/10"}`}
+                  >
+                    <Icone nome={f.icone} className="shrink-0" />
+                    {f.rotulo}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
