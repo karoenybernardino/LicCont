@@ -82,6 +82,7 @@ grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 -- ---------------------------------------------------------------------------
 -- Administrador A grava os campos novos
 -- ---------------------------------------------------------------------------
+set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select lives_ok($$update public.secretarias set sigla = 'SESAU', telefone = '(88) 0000-0000',
   email_contato = 'saude@exemplo.test', responsavel_id = '0a000000-0000-0000-0000-000000000002',
