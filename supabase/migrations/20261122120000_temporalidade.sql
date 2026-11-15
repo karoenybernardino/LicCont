@@ -174,73 +174,47 @@ create trigger auditar_descarte_itens after insert or update on public.descarte_
   for each row execute function app.auditar_alteracao();
 
 -- Termo aprovado ou cancelado não muda mais; ninguém apaga termo nem item.
+-- Uma função por tabela: cada uma só cita campos da própria linha.
 create or replace function app.descarte_imutavel()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
-  if tg_op = 'DELETE' then
-    raise exception 'termo não se apaga' using errcode = 'LD009';
-  end if;
-  if tg_table_name = 'descartes' and old.situacao in ('aprovado', 'cancelado') then
+  if tg_op = 'DELETE' or old.situacao in ('aprovado', 'cancelado') then
     raise exception 'termo encerrado não muda' using errcode = 'LD009';
   end if;
-  if tg_table_name = 'descarte_itens' and (
-       select d.situacao in ('aprovado', 'cancelado') from public.descartes d
-       where d.id = old.descarte_id and d.prefeitura_id = old.prefeitura_id
-     ) and not (old.aberto and not new.aberto and (
-       select d.situacao = 'cancelado' from public.descartes d where d.id = old.descarte_id and d.prefeitura_id = old.prefeitura_id)) then
-    raise exception 'termo encerrado não muda' using errcode = 'LD009';
-  end if;
-  return coalesce(new, old);
+  return new;
 end
 $$;
 revoke execute on function app.descarte_imutavel() from public;
 create trigger descartes_imutavel before update or delete on public.descartes
   for each row execute function app.descarte_imutavel();
-create trigger descarte_itens_imutavel before update or delete on public.descarte_itens
-  for each row execute function app.descarte_imutavel();
 
--- ---------------------------------------------------------------------------
--- Por que um documento NÃO pode ser eliminado agora (null = pode).
--- p_ignorar: termo em que ele já está (a aprovação confere de novo).
--- ---------------------------------------------------------------------------
-create or replace function app.motivo_inelegivel(p_documento uuid, p_ignorar uuid default null)
-returns text
+-- Item: só muda de aberto para fechado, e só quando o termo foi cancelado.
+create or replace function app.descarte_item_imutavel()
+returns trigger
 language plpgsql
-stable
-security definer
 set search_path = ''
 as $$
 declare
-  d public.documentos;
-  r public.tabela_temporalidade;
-  v_inicio date;
+  v_situacao text;
 begin
-  select * into d from public.documentos
-  where id = p_documento and prefeitura_id = app.prefeitura_atual();
-  if not found then return 'inexistente'; end if;
-  if not d.ativo then return 'inativo'; end if;
-  select * into r from public.tabela_temporalidade
-  where prefeitura_id = d.prefeitura_id and classe = app.classe_documento(d.tipo, d.modalidade);
-  if not found then return 'sem_regra'; end if;
-  if r.destinacao <> 'eliminacao' then return 'guarda_permanente'; end if;
-  v_inicio := case when d.tipo = 'contrato' then d.vigencia_fim else d.encerrado_em end;
-  if v_inicio is null then return 'sem_data'; end if;
-  if app.hoje() < (v_inicio + make_interval(years => r.prazo_corrente_anos + r.prazo_intermediaria_anos))::date then
-    return 'prazo_nao_cumprido';
+  if tg_op = 'DELETE' then
+    raise exception 'termo encerrado não muda' using errcode = 'LD009';
   end if;
-  if app.documento_emprestado(d.id) then return 'emprestado'; end if;
-  if exists (
-    select 1 from public.descarte_itens i
-    where i.documento_id = d.id and i.aberto and i.descarte_id is distinct from p_ignorar
-  ) then return 'em_outro_termo'; end if;
-  return null;
+  select d.situacao into v_situacao from public.descartes d
+  where d.id = old.descarte_id and d.prefeitura_id = old.prefeitura_id;
+  if v_situacao in ('aprovado', 'cancelado')
+     and not (v_situacao = 'cancelado' and old.aberto and not new.aberto) then
+    raise exception 'termo encerrado não muda' using errcode = 'LD009';
+  end if;
+  return new;
 end
 $$;
-revoke execute on function app.motivo_inelegivel(uuid, uuid) from public, anon;
-grant execute on function app.motivo_inelegivel(uuid, uuid) to authenticated;
+revoke execute on function app.descarte_item_imutavel() from public;
+create trigger descarte_itens_imutavel before update or delete on public.descarte_itens
+  for each row execute function app.descarte_item_imutavel();
 
 -- ---------------------------------------------------------------------------
 -- Documento de termo aprovado não muda nem volta a ficar ativo (o termo diria
