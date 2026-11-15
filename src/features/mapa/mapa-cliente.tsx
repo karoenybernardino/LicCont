@@ -21,9 +21,9 @@ import { Corredor } from "./corredor";
 import type { ComandosCamera } from "./mapa-3d";
 import { MoverDocumentos } from "./mover";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
-import { CaixaSelecionada, DentroDaCaixa, NiveisDoModulo, estilos } from "./painel-caixa";
-import { PlantaSvg } from "./planta";
-import { FAIXAS, PADRAO_METROS_CELULA, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
+import { CaixaSelecionada, DentroDaCaixa, NiveisDoModulo, PainelPlanta, estilos } from "./painel-caixa";
+import { PlantaEsquema } from "./planta-esquema";
+import { FAIXAS, VISTAS, type CaixaCompacta, type Planta, type Vista } from "./tipos";
 import { caminhoDeVolta, urlMapa } from "./url";
 import { useMovimentoReduzido, useTema } from "./usar-tema";
 
@@ -287,6 +287,21 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
 
   const botao = `${estilos.botaoBorda} !min-h-9 !px-3 max-md:!min-h-11`;
   const fundo = { background: `linear-gradient(180deg, ${paleta.fundo[0]}, ${paleta.fundo[1]})` };
+  const segmentado = (
+    <div role="group" aria-label="Vista do mapa" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-superficie p-[3px]">
+      {(Object.keys(VISTAS) as Vista[]).map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={vista === v}
+          onClick={() => escolherVista(v)}
+          className={`min-h-[34px] rounded-[10px] border-2 px-4 text-[13px] max-md:min-h-11 ${estilos.foco} ${vista === v ? "border-[#0e7490] bg-[rgba(45,212,191,.18)] font-semibold dark:border-[#2dd4bf]" : "border-transparent hover:bg-superficie-2"}`}
+        >
+          {VISTAS[v]}
+        </button>
+      ))}
+    </div>
+  );
   const moduloArvore = endereco ? ruaSel?.modulos.find((m) => m.numero === endereco.modulo) : undefined;
 
   return (
@@ -316,20 +331,32 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
         )}
       <div className="grid grid-cols-[minmax(0,1fr)_330px] items-stretch gap-4 max-lg:grid-cols-1 lg:h-full lg:min-h-0">
         <section aria-label="Mapa do galpão" className={`${estilos.cartao} !p-5 lg:min-h-0`}>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div role="group" aria-label="Vista do mapa" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-superficie p-[3px]">
-              {(Object.keys(VISTAS) as Vista[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  aria-pressed={vista === v}
-                  onClick={() => escolherVista(v)}
-                  className={`min-h-[34px] rounded-[10px] border-2 px-4 text-[13px] max-md:min-h-11 ${estilos.foco} ${vista === v ? "border-[#0e7490] bg-[rgba(45,212,191,.18)] font-semibold dark:border-[#2dd4bf]" : "border-transparent hover:bg-superficie-2"}`}
-                >
-                  {VISTAS[v]}
-                </button>
-              ))}
+          {vista === "planta" && (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[linear-gradient(145deg,#0e7490,#0b2e3a)] text-white">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+                    <path d="M12 2l9 5v10l-9 5-9-5V7z" />
+                    <path d="M12 12l9-5M12 12L3 7M12 12v10" />
+                  </svg>
+                </span>
+                <div>
+                  <h2 className="font-titulo text-base leading-5 font-bold">Planta baixa</h2>
+                  <p className="text-xs text-texto-suave">Galpão · visão de cima</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {segmentado}
+                {podeEditar && (
+                  <Link href={grande ? "/mapa/editar" : `/mapa/editar?galpao=${galpaoId}`} className={estilos.botaoBorda}>
+                    Editar planta
+                  </Link>
+                )}
+              </div>
             </div>
+          )}
+          <div className={`flex flex-wrap items-center gap-2.5 ${vista === "planta" ? "sr-only" : ""}`}>
+            {vista !== "planta" && segmentado}
             <button
               type="button"
               aria-pressed={ocupacaoLigada}
@@ -431,13 +458,10 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
           )}
 
           {vista === "planta" && (
-            <div className="rounded-[14px] border border-linha p-3.5 lg:min-h-0 lg:flex-1 lg:overflow-hidden" style={{ background: `linear-gradient(180deg, ${paleta.planta.fundo[0]}, ${paleta.planta.fundo[1]})` }}>
-              <PlantaSvg
-                metrosCelula={planta.metrosCelula ?? PADRAO_METROS_CELULA}
+            <div className="overflow-hidden rounded-[14px] border border-linha lg:min-h-0 lg:flex-1">
+              <PlantaEsquema
                 leiaute={leiaute}
-                elementos={planta.elementos}
                 tema={tema}
-                resumo={`Planta baixa do galpão: ${leiaute.ruas.map((r) => `Rua ${r.codigo}`).join(", ")}${endereco ? `, caixa ${endereco.caixa} da rua ${endereco.rua} módulo ${endereco.modulo} em laranja` : ""}`}
                 moduloSelecionado={moduloSel?.id ?? null}
                 codigoCaixa={endereco ? `C${String(endereco.caixa).padStart(2, "0")}` : null}
                 modulosDestacados={modulosDestacados}
@@ -454,7 +478,13 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
           )}
 
           <ul aria-label="Legenda" className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
-            {ocupacaoLigada ? (
+            {vista === "planta" ? (
+              <>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.planta.modulo[1] }} />Módulo com caixas</li>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded border border-dashed" style={{ borderColor: paleta.planta.livreBorda, background: paleta.planta.livre }} />Posição livre</li>
+                <li className="flex items-center gap-1.5"><span aria-hidden className="size-3.5 rounded" style={{ background: paleta.selecionada.frente }} />Caixa selecionada</li>
+              </>
+            ) : ocupacaoLigada ? (
               <>
                 <li className="text-[11px] font-semibold tracking-[.05em] text-texto-suave uppercase">Ocupação da caixa</li>
                 {FAIXAS.map((f) => (
@@ -492,6 +522,9 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
               <p role="status" className="text-sm">Caixa não encontrada.</p>
             </section>
           ) : (
+            vista === "planta" ? (
+              <PainelPlanta d={detalhe ?? null} carregando={!!selecionada && detalhe === undefined} />
+            ) : (
             <>
               <CaixaSelecionada d={detalhe ?? null} carregando={!!selecionada && detalhe === undefined} />
               <DentroDaCaixa
@@ -509,8 +542,9 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
                 moverAberto={moverAberto}
               />
             </>
+            )
           )}
-          {moduloArvore && endereco && (
+          {vista !== "planta" && moduloArvore && endereco && (
             <NiveisDoModulo
               modulo={moduloArvore}
               nivelSel={endereco.nivel}
