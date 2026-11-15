@@ -4,6 +4,8 @@ import { emDemo } from "@/features/demo/dados";
 import {
   MOVIMENTACOES_DEMO, PRAZOS_DEMO, PRONTOS_DEMO, REGRAS_DEMO, RESUMO_TEMPORALIDADE_DEMO, auditoriaDemo, emprestimosDemo,
 } from "@/features/demo/movimento";
+import { DOCUMENTOS_DEMO, caixaDemo } from "@/features/demo/documentos";
+import type { Modalidade, Tipo } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { posicaoLegivel } from "@/features/inicio/resumo";
 import { quando } from "@/features/estrutura/alteracoes";
@@ -13,9 +15,77 @@ import { lerRegras, lerTemporalidadeReal } from "@/features/temporalidade/dados"
 import { situacaoEmprestimo } from "./situacao";
 import type { Emprestimo, Movimentacao, PrazoAVencer, ProntoEliminacao, RegistroAuditoria, RegraPrazo, ResumoTemporalidade } from "./tipos";
 
-// Empréstimos (Fase 6): sem tabela ainda, vazio em produção. Temporalidade (Fase 7): lê o banco.
+// Empréstimos (Fase 6): leitura pela sessão da pessoa (o RLS limita à prefeitura
+// e às secretarias dela). Temporalidade (Fase 7): lê o banco.
+const FALHA_EMPRESTIMOS = "Não foi possível ler os empréstimos.";
+
+const codigoDaCaixa = (rua: string, modulo: number, nivel: number, caixa: number) => `${rua}-M${modulo}-N${nivel}-C${String(caixa).padStart(2, "0")}`;
+
 export async function listarEmprestimos(): Promise<Emprestimo[]> {
-  return emDemo() ? emprestimosDemo() : [];
+  if (emDemo()) return emprestimosDemo();
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("emprestimos")
+    .select("id, documento_id, retirado_por_nome, retirado_por_setor, prazo_em, devolvido_em, documentos(tipo, modalidade, numero, ano, objeto), caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
+    .order("prazo_em", { ascending: true })
+    .limit(500);
+  if (error) throw new Error(FALHA_EMPRESTIMOS);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((e) => ({
+    id: e.id,
+    documentoId: e.documento_id,
+    titulo: tituloDocumento(e.documentos),
+    objeto: e.documentos.objeto,
+    caixa: codigoDaCaixa(e.caixas.niveis.modulos.ruas.codigo, e.caixas.niveis.modulos.numero, e.caixas.niveis.numero, e.caixas.numero),
+    quem: e.retirado_por_nome,
+    setor: e.retirado_por_setor,
+    prazo: e.prazo_em,
+    devolvido: e.devolvido_em !== null,
+  }));
+}
+
+// Ids dos documentos com empréstimo aberto (só os que a pessoa pode ler).
+// Em demonstração os documentos fictícios não têm empréstimo.
+export async function documentosEmprestados(): Promise<Set<string>> {
+  if (emDemo()) return new Set();
+  const sb = await clienteSessao();
+  if (!sb) return new Set();
+  const { data, error } = await sb.from("emprestimos").select("documento_id").is("devolvido_em", null).limit(2000);
+  if (error) throw new Error(FALHA_EMPRESTIMOS);
+  return new Set((data ?? []).map((x) => x.documento_id as string));
+}
+
+export type DocumentoEmprestavel = { id: string; titulo: string; caixa: string; prazoDias: number };
+
+// Documentos ativos das secretarias em que a pessoa cadastra e que não estão emprestados.
+export async function documentosEmprestaveis(secretarias: string[]): Promise<DocumentoEmprestavel[]> {
+  if (secretarias.length === 0) return [];
+  if (emDemo()) {
+    return DOCUMENTOS_DEMO.filter((d) => secretarias.includes(d.secretaria_id))
+      .slice(0, 30)
+      .flatMap((d) => {
+        const cx = caixaDemo(d.caixa_id);
+        return cx ? [{ id: d.id, titulo: tituloDocumento({ tipo: d.tipo as Tipo, modalidade: d.modalidade as Modalidade | null, numero: d.numero, ano: d.ano }), caixa: codigoDaCaixa(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero), prazoDias: 15 }] : [];
+      });
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const [docs, fora] = await Promise.all([
+    sb
+      .from("documentos")
+      .select("id, tipo, modalidade, numero, ano, secretarias(prazo_emprestimo_dias), caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
+      .eq("ativo", true)
+      .in("secretaria_id", secretarias)
+      .order("criado_em", { ascending: false })
+      .limit(300),
+    documentosEmprestados(),
+  ]);
+  if (docs.error) throw new Error(FALHA_EMPRESTIMOS);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (docs.data as any[])
+    .filter((d) => !fora.has(d.id))
+    .map((d) => ({ id: d.id, titulo: tituloDocumento(d), caixa: codigoDaCaixa(d.caixas.niveis.modulos.ruas.codigo, d.caixas.niveis.modulos.numero, d.caixas.niveis.numero, d.caixas.numero), prazoDias: d.secretarias?.prazo_emprestimo_dias ?? 15 }));
 }
 
 export function contarEmprestimos(lista: Emprestimo[]) {

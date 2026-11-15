@@ -38,8 +38,8 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Mapa 3D — claro](png/MapaClaro.png) | claro | 1280×880 | /mapa |
 | [Início — escuro](png/InicioEscuro.png) | escuro | 1280×940 | /inicio |
 | [Início — claro](png/InicioClaro.png) | claro | 1280×940 | /inicio |
-| [Empréstimos — escuro](png/EmprestimosEscuro.png) | escuro | 1280×720 | (ainda sem rota) |
-| [Empréstimos — claro](png/EmprestimosClaro.png) | claro | 1280×720 | (ainda sem rota) |
+| [Empréstimos — escuro](png/EmprestimosEscuro.png) | escuro | 1280×720 | /emprestimos |
+| [Empréstimos — claro](png/EmprestimosClaro.png) | claro | 1280×720 | /emprestimos |
 | [Temporalidade e descarte — escuro](png/TemporalidadeEscuro.png) | escuro | 1280×740 | /temporalidade |
 | [Temporalidade e descarte — claro](png/TemporalidadeClaro.png) | claro | 1280×740 | /temporalidade |
 | [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | (ainda sem rota) |

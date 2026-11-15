@@ -5,8 +5,8 @@ export type Categoria = "emprestimos" | "cadastro" | "descarte" | "outras";
 
 export function classificar(acao: string): { rotulo: string; tom: Tom } {
   const [tabela, verbo = ""] = acao.split(".");
+  if (tabela.startsWith("devolucao") || (tabela === "emprestimos" && verbo === "devolucao")) return { rotulo: "Devolução", tom: "ok" };
   if (tabela.startsWith("emprestimo")) return { rotulo: "Empréstimo", tom: "aviso" };
-  if (tabela.startsWith("devolucao")) return { rotulo: "Devolução", tom: "ok" };
   if (tabela.startsWith("descarte")) return { rotulo: "Descarte", tom: "erro" };
   if (["sessao", "login", "mfa", "senha"].includes(tabela)) return { rotulo: "Login", tom: "neutro" };
   if (tabela === "arquivos" && (verbo === "ver" || verbo === "baixar")) return { rotulo: "Visualização", tom: "neutro" };

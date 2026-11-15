@@ -264,6 +264,18 @@ select throws_ok($$select public.descarte_cancelar((select id from public.descar
   '42501', null, 'consulta de Obras não cancela termo de Saúde');
 
 -- ---------------------------------------------------------------------------
+-- Documento emprestado não entra em termo
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.emprestimos (prefeitura_id, secretaria_id, documento_id, caixa_id, retirado_por_nome, retirado_por_setor, retirado_em, prazo_em)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd1000000-0000-0000-0000-000000000009',
+          'c4a00000-0000-0000-0000-000000000001', 'Pessoa Fictícia', 'Setor Fictício', app.hoje(), app.hoje() + 10);
+set local role authenticated;
+select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
+select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000009']::uuid[])$$,
+  'LD001', null, 'documento emprestado não entra em termo');
+
+-- ---------------------------------------------------------------------------
 -- Privilégios
 -- ---------------------------------------------------------------------------
 reset role;

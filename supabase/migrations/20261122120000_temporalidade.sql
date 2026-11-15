@@ -44,14 +44,22 @@ as $$ select (now() at time zone 'America/Sao_Paulo')::date $$;
 revoke execute on function app.hoje() from public, anon;
 grant execute on function app.hoje() to authenticated;
 
--- Fase 6 (empréstimos) redefine esta função com `create or replace`. Até lá,
--- nenhum documento está emprestado.
+-- Documento emprestado (Fase 6): existe empréstimo aberto. security definer: o
+-- coordenador só lê os empréstimos das secretarias dele, e a regra vale para todas.
 create or replace function app.documento_emprestado(p_documento uuid)
 returns boolean
 language sql
 stable
+security definer
 set search_path = ''
-as $$ select false $$;
+as $$
+  select exists (
+    select 1 from public.emprestimos e
+    where e.documento_id = p_documento
+      and e.devolvido_em is null
+      and e.prefeitura_id = app.prefeitura_atual()
+  )
+$$;
 revoke execute on function app.documento_emprestado(uuid) from public, anon;
 grant execute on function app.documento_emprestado(uuid) to authenticated;
 
