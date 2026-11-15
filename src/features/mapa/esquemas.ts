@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { idSchema } from "@/features/login/esquemas";
 import { LIMITES } from "@/features/estrutura/esquemas";
-import { GIROS, LIMITES_METROS_CELULA, LIMITES_PLANTA } from "./tipos";
+import { GIROS, LIMITES_METROS_CELULA, LIMITES_PLANTA, arredondar } from "./tipos";
 
 // Entrada validada no servidor antes de qualquer gravação (limites iguais aos
-// do banco, supabase/migrations/20261115120000_mapa.sql).
-const celula = z.number().int().min(0).max(LIMITES_PLANTA.maxCelula);
-const tamanho = z.number().int().min(1).max(LIMITES_PLANTA.maxGalpao);
+// do banco, supabase/migrations/20261120120000_planta_em_metros.sql). Tudo em
+// metros, com duas casas.
+const metros = (min: number, max: number) => z.number().min(min).max(max).transform(arredondar);
+const celula = metros(0, LIMITES_PLANTA.maxPosicao);
+const tamanho = metros(LIMITES_PLANTA.minElemento, LIMITES_PLANTA.maxGalpao);
 const giro = z.number().refine((v): v is 0 | 90 | 180 | 270 => (GIROS as readonly number[]).includes(v), "Giro inválido.");
 
 const rua = z
@@ -27,11 +29,11 @@ const elemento = z.object({
 
 export const esquemaPlantaEntrada = z.object({
   galpao: idSchema,
-  largura: z.number().int().min(LIMITES_PLANTA.minGalpao).max(LIMITES_PLANTA.maxGalpao),
-  profundidade: z.number().int().min(LIMITES_PLANTA.minGalpao).max(LIMITES_PLANTA.maxGalpao),
+  largura: metros(LIMITES_PLANTA.minGalpao, LIMITES_PLANTA.maxGalpao),
+  profundidade: metros(LIMITES_PLANTA.minGalpao, LIMITES_PLANTA.maxGalpao),
   entradaLado: z.enum(["frente", "fundo", "esquerda", "direita"]),
   entradaPosicao: celula,
-  metrosCelula: z.number().min(LIMITES_METROS_CELULA.min).max(LIMITES_METROS_CELULA.max),
+  metrosCelula: metros(LIMITES_METROS_CELULA.min, LIMITES_METROS_CELULA.max),
   ruas: z.array(rua).max(500),
   elementos: z.array(elemento).max(LIMITES_PLANTA.maxElementos),
 });

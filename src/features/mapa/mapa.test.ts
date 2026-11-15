@@ -3,7 +3,7 @@ import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { DOCUMENTOS_DEMO, idCaixaDemo } from "@/features/demo/documentos";
 import { lerCodigo, formatarCodigo } from "./codigo";
 import { CORES } from "./cores";
-import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, tamanhoRua, validarPlanta, vizinha } from "./geometria";
+import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { PLANTA_VAZIA, type CaixaCompacta, type Planta } from "./tipos";
@@ -108,7 +108,8 @@ describe("leiaute do galpão fictício", () => {
 describe("planta salva", () => {
   const caixas = caixasDemo();
   const [a, b] = ESTRUTURA_DEMO.ruas;
-  const base: Planta = { ...PLANTA_VAZIA, largura: 20, profundidade: 12 };
+  // 1 m por célula: metros = células, as contas dos testes ficam as mesmas.
+  const base: Planta = { ...PLANTA_VAZIA, metrosCelula: 1, largura: 20, profundidade: 12 };
   it("usa as posições salvas e gira", () => {
     const l = calcularLeiaute(ESTRUTURA_DEMO, caixas, { ...base, ruas: { [a.id]: { x: 2, y: 1, giro: 0 }, [b.id]: { x: 12, y: 1, giro: 90 } } });
     const ra = l.ruas.find((r) => r.id === a.id)!;
@@ -202,6 +203,41 @@ describe("demonstração", () => {
     const m3 = ESTRUTURA_DEMO.modulos.find((m) => m.ruaId === ruaB.id && m.numero === 3)!;
     const n3 = ESTRUTURA_DEMO.niveis.find((n) => n.moduloId === m3.id && n.numero === 3)!;
     expect(DOCUMENTOS_DEMO.filter((d) => d.caixa_id === idCaixaDemo(n3.id, 2))).toHaveLength(14);
+  });
+});
+
+describe("planta em metros", () => {
+  const caixas = caixasDemo();
+  const [a] = ESTRUTURA_DEMO.ruas;
+  it("converte metros em células pelo módulo (padrão 1,20 m)", () => {
+    const c = paraCelulas({ ...PLANTA_VAZIA, largura: 14.4, profundidade: 12, entradaPosicao: 2.4, ruas: { x: { x: 3.6, y: 1.2, giro: 90 } }, elementos: [{ id: "e", tipo: "pilar", rotulo: null, x: 6, y: 1.2, largura: 0.6, profundidade: 2.4, giro: 0 }] });
+    expect([c.largura, c.profundidade, c.entradaPosicao, c.metrosCelula]).toEqual([12, 10, 2, 1.2]);
+    expect([c.ruas.x.x, c.ruas.x.y]).toEqual([3, 1]);
+    expect(c.elementos[0]).toMatchObject({ x: 5, y: 1, largura: 0.5, profundidade: 2 });
+  });
+  it("o leiaute continua em células e guarda os metros", () => {
+    const l = calcularLeiaute(ESTRUTURA_DEMO, caixas, { ...PLANTA_VAZIA, metrosCelula: 1.2, largura: 24, profundidade: 14.4, ruas: { [a.id]: { x: 2.4, y: 1.2, giro: 0 } } });
+    const r = l.ruas.find((x) => x.id === a.id)!;
+    expect([l.largura, l.profundidade, l.metros]).toEqual([20, 12, 1.2]);
+    expect([r.x, r.y, r.w, r.h, r.problema]).toEqual([2, 1, 5, 2, null]);
+  });
+  it("posição que não cai na grade de células também vale", () => {
+    const l = calcularLeiaute(ESTRUTURA_DEMO, caixas, { ...PLANTA_VAZIA, metrosCelula: 1.2, largura: 24, profundidade: 14.4, ruas: { [a.id]: { x: 1.8, y: 0.6, giro: 0 } } });
+    const r = l.ruas.find((x) => x.id === a.id)!;
+    expect([r.x, r.y]).toEqual([1.5, 0.5]);
+    expect(r.problema).toBeNull();
+  });
+  it("a validação do servidor usa metros: tamanho da rua = módulos x metros", () => {
+    const ruas = [
+      { id: "1", codigo: "A", modulos: 5, x: 0, y: 0, giro: 0 as const },
+      { id: "2", codigo: "B", modulos: 5, x: 18, y: 0, giro: 0 as const },
+    ];
+    // 5 módulos de 1,2 m = 6 m: a rua B vai até 24 m, o galpão tem 22,8 m.
+    expect(validarPlanta({ largura: 22.8, profundidade: 12, metros: 1.2, ruas })).toEqual([{ ruaId: "2", tipo: "fora", com: null }]);
+    expect(validarPlanta({ largura: 24, profundidade: 12, metros: 1.2, ruas })).toEqual([]);
+    // encostada (6 m = fim da rua A) não sobrepõe; entrar 1,2 m na rua A sobrepõe
+    expect(validarPlanta({ largura: 24, profundidade: 12, metros: 1.2, ruas: [ruas[0], { ...ruas[1], x: 6, y: 1.2 }] })).toEqual([]);
+    expect(validarPlanta({ largura: 24, profundidade: 12, metros: 1.2, ruas: [ruas[0], { ...ruas[1], x: 4.8, y: 1.2 }] })).toHaveLength(2);
   });
 });
 

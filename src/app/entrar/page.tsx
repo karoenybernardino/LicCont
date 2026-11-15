@@ -23,7 +23,7 @@ export default async function EscolherPrefeitura({ searchParams }: PageProps<"/e
           papel="status"
           icone="relogio"
           titulo="Sua sessão terminou"
-          texto="Por segurança, o LicCONT sai sozinho depois de 30 minutos sem uso. Entre de novo para continuar."
+          texto="Por segurança, o LicCONT sai sozinho depois de 30 minutos sem uso. Entre de novo para continuar de onde parou."
         >
           <Acoes>
             <LinkPrincipal href="/entrar" className="min-w-[200px]">

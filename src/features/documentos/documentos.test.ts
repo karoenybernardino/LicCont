@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Conferidor } from "./conferencia";
 import { cnpjValido, esquemaDocumento } from "./esquemas";
-import { descreverArquivo, formatarTamanho, lerValor } from "./formato";
+import { abreviarSha, descreverArquivo, formatarTamanho, lerValor } from "./formato";
 import { lerFiltros, paraQuery } from "./filtros";
 import { tituloDocumento } from "./titulo";
 
@@ -23,6 +23,10 @@ describe("formato", () => {
   it("tamanho e descrição do arquivo", () => {
     expect(formatarTamanho(2.4 * 1024 * 1024)).toBe("2,4 MB");
     expect(descreverArquivo("pregao.pdf", 38, 2.4 * 1024 * 1024)).toBe("pregao.pdf · 38 páginas · 2,4 MB");
+  });
+  it("SHA-256 abreviado (4 + 4) ou nada", () => {
+    expect(abreviarSha("9f2c" + "0".repeat(56) + "a71e")).toBe("9f2c…a71e");
+    expect(abreviarSha(null)).toBeNull();
   });
   it("valor em reais", () => {
     expect(lerValor("1.234,56")).toBe(1234.56);

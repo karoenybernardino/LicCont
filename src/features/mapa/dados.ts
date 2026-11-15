@@ -58,35 +58,35 @@ export async function plantaDoGalpao(galpaoId: string): Promise<Planta> {
   ]);
   if (g.error || r.error || e.error) throw new Error(FALHA);
   return {
-    largura: g.data?.planta_largura ?? null,
-    profundidade: g.data?.planta_profundidade ?? null,
+    largura: g.data?.planta_largura != null ? Number(g.data.planta_largura) : null,
+    profundidade: g.data?.planta_profundidade != null ? Number(g.data.planta_profundidade) : null,
     entradaLado: (g.data?.entrada_lado as LadoEntrada | null) ?? null,
-    entradaPosicao: g.data?.entrada_posicao ?? null,
+    entradaPosicao: g.data?.entrada_posicao != null ? Number(g.data.entrada_posicao) : null,
     metrosCelula: g.data?.planta_metros_celula != null ? Number(g.data.planta_metros_celula) : null,
     ruas: Object.fromEntries(
-      (r.data ?? []).map((x) => [x.id as string, { x: x.planta_x as number | null, y: x.planta_y as number | null, giro: ((x.planta_giro as Giro | null) ?? 0) as Giro, lados: x.planta_lados === 1 ? (1 as const) : (2 as const) }]),
+      (r.data ?? []).map((x) => [x.id as string, { x: x.planta_x != null ? Number(x.planta_x) : null, y: x.planta_y != null ? Number(x.planta_y) : null, giro: ((x.planta_giro as Giro | null) ?? 0) as Giro, lados: x.planta_lados === 1 ? (1 as const) : (2 as const) }]),
     ),
     elementos: (e.data ?? []).map((x) => ({
       id: x.id as string,
       tipo: x.tipo as TipoElemento,
       rotulo: (x.rotulo as string | null) ?? null,
-      x: x.x as number,
-      y: x.y as number,
-      largura: x.largura as number,
-      profundidade: x.profundidade as number,
+      x: Number(x.x),
+      y: Number(x.y),
+      largura: Number(x.largura),
+      profundidade: Number(x.profundidade),
       giro: x.giro as Giro,
     })),
   };
 }
 
-// Planta fictícia da demonstração: entrada na frente, um pilar e uma porta
-// lateral. As ruas ficam sem posição (desenho automático) para o editor
+// Planta fictícia da demonstração, em metros (módulo de 1,20 m): galpão de
+// 16,8 x 19,2 m, entrada na frente, um pilar e uma porta lateral. As ruas ficam sem posição (desenho automático) para o editor
 // poder mostrar o estado "Automática" e o coordenador posicioná-las.
 const ELEMENTOS_DEMO: ElementoPlanta[] = [
-  { id: "de700000-0000-0000-0000-000000000001", tipo: "pilar", rotulo: null, x: 9, y: 4, largura: 1, profundidade: 1, giro: 0 },
-  { id: "de700000-0000-0000-0000-000000000002", tipo: "porta", rotulo: "Porta lateral", x: 13, y: 5, largura: 1, profundidade: 2, giro: 0 },
+  { id: "de700000-0000-0000-0000-000000000001", tipo: "pilar", rotulo: null, x: 10.8, y: 4.8, largura: 1.2, profundidade: 1.2, giro: 0 },
+  { id: "de700000-0000-0000-0000-000000000002", tipo: "porta", rotulo: "Porta lateral", x: 15.6, y: 6, largura: 1.2, profundidade: 2.4, giro: 0 },
 ];
-export const PLANTA_DEMO: Planta = { ...PLANTA_VAZIA, largura: 14, profundidade: 16, entradaLado: "frente", entradaPosicao: 3, elementos: ELEMENTOS_DEMO };
+export const PLANTA_DEMO: Planta = { ...PLANTA_VAZIA, metrosCelula: 1.2, largura: 16.8, profundidade: 19.2, entradaLado: "frente", entradaPosicao: 3.6, elementos: ELEMENTOS_DEMO };
 
 export type LinhaDocumento = {
   id: string;

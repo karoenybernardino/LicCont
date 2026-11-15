@@ -188,9 +188,9 @@ export default async function RuaDoGalpao({
                 <Link href={`/mapa?galpao=${galpaoId}&caixa=${detalhe.id}`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#0e7490,#0f766e)] px-5 text-sm font-semibold text-white dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]">
                   Ver no mapa 3D
                 </Link>
-                <button type="button" disabled title="Imprimir etiqueta · em breve" className="min-h-11 cursor-not-allowed rounded-lg border border-linha px-5 text-sm font-medium opacity-50">
+                <Link href={`/etiquetas?caixas=${detalhe.id}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-linha px-5 text-sm font-medium hover:border-destaque">
                   Imprimir etiqueta
-                </button>
+                </Link>
               </>
             )}
           </Painel>

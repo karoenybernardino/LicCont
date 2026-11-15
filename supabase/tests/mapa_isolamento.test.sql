@@ -94,7 +94,7 @@ select ok(not has_column_privilege('authenticated', 'public.planta_elementos', '
 select ok(not has_column_privilege('authenticated', 'public.planta_elementos', 'galpao_id', 'update'), 'elemento não muda de galpão');
 select ok(not has_function_privilege('anon', 'public.ocupacao_galpao(uuid)', 'execute'), 'anon não executa ocupacao_galpao');
 select ok(not has_function_privilege('anon', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'anon não executa mover_documentos');
-select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, int, int, text, int, jsonb, jsonb, numeric)', 'execute'), 'anon não executa salvar_planta');
+select ok(not has_function_privilege('anon', 'public.salvar_planta(uuid, numeric, numeric, text, numeric, jsonb, jsonb, numeric)', 'execute'), 'anon não executa salvar_planta');
 select ok(has_function_privilege('authenticated', 'public.mover_documentos(uuid[], uuid)', 'execute'), 'authenticated executa mover_documentos');
 select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y)
   values ('11111111-1111-1111-1111-111111111111', 'c0b00000-0000-0000-0000-000000000000', 'pilar', 1, 1)$$,
@@ -192,7 +192,27 @@ select isnt_empty($$update public.planta_elementos set ativo = false where id = 
   'coordenador A remove (desativa) elemento');
 select throws_ok($$delete from public.planta_elementos$$, '42501', null, 'coordenador A não apaga elemento');
 select throws_ok($$update public.ruas set planta_x = null$$, '23514', null, 'posição da rua precisa de coluna e linha juntas');
-select throws_ok($$update public.galpoes set planta_largura = 3$$, '23514', null, 'galpão menor que 4 células é recusado');
+select throws_ok($$update public.galpoes set planta_largura = 0.5$$, '23514', null, 'galpão menor que 1 m é recusado');
+select throws_ok($$update public.galpoes set planta_profundidade = 1001$$, '23514', null, 'galpão maior que 1.000 m é recusado');
+select lives_ok($$update public.galpoes set planta_largura = 7.25, planta_profundidade = 9.6, entrada_posicao = 1.8$$, 'planta aceita metros com casas decimais');
+select results_eq($$select planta_largura, planta_profundidade, entrada_posicao from public.galpoes where id = 'c0a00000-0000-0000-0000-000000000000'$$,
+  $$values (7.25::numeric, 9.60::numeric, 1.80::numeric)$$, 'a planta ficou salva em metros');
+select throws_ok($$update public.ruas set planta_x = 1001, planta_y = 1$$, '23514', null, 'rua fora de 0 a 1.000 m é recusada');
+select throws_ok($$update public.galpoes set planta_metros_celula = null$$, '23502', null, 'metros por célula é obrigatório');
+select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y, largura, profundidade)
+  values ('11111111-1111-1111-1111-111111111111', 'c0a00000-0000-0000-0000-000000000000', 'pilar', 1, 1, 0.01, 1)$$,
+  '23514', null, 'elemento menor que 0,1 m é recusado');
+select lives_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y, largura, profundidade)
+  values ('11111111-1111-1111-1111-111111111111', 'c0a00000-0000-0000-0000-000000000000', 'pilar', 1.2, 3.6, 0.4, 0.4)$$,
+  'elemento aceita metros com casas decimais');
+select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 19.2, 14.4, 'frente', 2.4,
+  '[{"id":"c1a00000-0000-0000-0000-000000000000","x":3.6,"y":1.2,"giro":0}]'::jsonb,
+  '[{"tipo":"area","rotulo":"Sala","x":0.5,"y":0.5,"largura":2.4,"profundidade":1.8,"giro":0}]'::jsonb, 1.2)$$,
+  'coordenador A salva a planta em metros');
+select results_eq($$select planta_x, planta_y from public.ruas where id = 'c1a00000-0000-0000-0000-000000000000'$$,
+  $$values (3.60::numeric, 1.20::numeric)$$, 'a rua foi posicionada em metros');
+select results_eq($$select x, largura from public.planta_elementos where rotulo = 'Sala'$$,
+  $$values (0.50::numeric, 2.40::numeric)$$, 'o elemento foi salvo em metros');
 select throws_ok($$update public.ruas set planta_giro = 45$$, '23514', null, 'giro só em 0, 90, 180 ou 270');
 select throws_ok($$update public.ruas set planta_lados = 3$$, '23514', null, 'rua tem um ou dois lados');
 select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,

@@ -10,6 +10,8 @@ export const LADOS: Record<LadoEntrada, string> = { frente: "Frente", fundo: "Fu
 export type TipoElemento = "porta" | "pilar" | "parede" | "area";
 export const TIPOS_ELEMENTO: Record<TipoElemento, string> = { porta: "Porta", pilar: "Pilar", parede: "Parede", area: "Área com nome" };
 
+// Planta e elementos guardam METROS (banco e editor); só o leiaute (geometria.ts)
+// trabalha em células de módulo: metros ÷ metrosCelula.
 export type ElementoPlanta = {
   id: string;
   tipo: TipoElemento;
@@ -25,7 +27,7 @@ export type ElementoPlanta = {
 export type Lados = 1 | 2;
 export type PosicaoRua = { x: number | null; y: number | null; giro: Giro; lados?: Lados };
 
-// Planta salva do galpão. Tudo opcional: vazio = desenho automático.
+// Planta salva do galpão, em metros. Tudo opcional: vazio = desenho automático.
 export type Planta = {
   largura: number | null;
   profundidade: number | null;
@@ -51,7 +53,11 @@ export function formatarMetros(m: number): string {
   return `${(Math.round(m * 100) / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} m`;
 }
 
-export const LIMITES_PLANTA = { minGalpao: 4, maxGalpao: 200, maxCelula: 199, maxElementos: 200 } as const;
+/** Limites em metros (iguais aos do banco): 4 a 200 células de 0,25 a 5 m. */
+export const LIMITES_PLANTA = { minGalpao: 1, maxGalpao: 1000, maxPosicao: 1000, minElemento: 0.1, maxElementos: 200 } as const;
+
+/** Duas casas, como no banco (numeric(7,2)). */
+export const arredondar = (v: number) => Math.round(v * 100) / 100;
 
 // Faixas de ocupação da caixa (mesmos cortes do cadastro da Fase 3).
 export type Faixa = 0 | 1 | 2 | 3;
