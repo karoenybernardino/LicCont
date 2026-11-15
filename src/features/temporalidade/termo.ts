@@ -4,8 +4,8 @@
 // único para município; o modelo da prefeitura pode substituir este texto
 // (decisão em aberto no plano). Sem CPF, sem nome de pessoa: as assinaturas
 // são linhas em branco para a comissão.
-import type { TermoCompleto } from "./dados";
-import { CLASSES, PRAZO_CIENCIA_DIAS } from "./regras";
+import type { TermoCompleto } from "./tipos";
+import { CLASSES, PRAZO_CIENCIA_DIAS, dataBR } from "./regras";
 
 export type ConteudoTermo = {
   arquivo: string;
@@ -17,7 +17,7 @@ export type ConteudoTermo = {
   rodape: string;
 };
 
-const data = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
+const data = dataBR;
 const corta = (t: string, max: number) => (t.length > max ? `${t.slice(0, max - 1)}…` : t);
 
 export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situacao" | "prefeitura" | "secretaria" | "editalEm" | "aprovadoEm" | "geradoEm" | "observacao" | "documentos">): ConteudoTermo {

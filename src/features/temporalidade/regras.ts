@@ -41,6 +41,13 @@ export function somarAnos(iso: string, anos: number) {
   return paraIso(alvo, m, Math.min(d, ultimo));
 }
 
+// "AAAA-MM-DD" ou instante ISO -> DD/MM/AAAA (instante no fuso de São Paulo).
+export function dataBR(iso: string | null) {
+  if (!iso) return "—";
+  if (iso.length === 10) return iso.split("-").reverse().join("/");
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
 export function diasEntre(de: string, ate: string) {
   const [a1, m1, d1] = partes(de);
   const [a2, m2, d2] = partes(ate);
@@ -74,9 +81,21 @@ export function estadoDoPrazo(d: DocumentoPrazo, regras: Regra[], hoje: string):
   return { estado: emDias <= 0 ? "pronto" : emDias <= AVISO_DIAS ? "vence" : "vigente", vencimento, emDias };
 }
 
-// Edital publicado + 45 dias: a partir de quando o administrador pode aprovar.
-export function aprovavelDesde(editalPublicadoEm: string) {
-  return somarDias(editalPublicadoEm, PRAZO_CIENCIA_DIAS);
+// Primeiro dia em que o administrador pode aprovar: edital + 45 dias (igual ao banco).
+export const aprovavelDesde = (editalPublicadoEm: string) => somarDias(editalPublicadoEm, PRAZO_CIENCIA_DIAS);
+
+// Frase curta da lista de termos, ao lado da situação.
+export function observacaoTermo(
+  t: { situacao: "rascunho" | "em_ciencia" | "aprovado" | "cancelado"; editalEm: string | null; aprovadoEm: string | null; canceladoEm: string | null },
+  hoje: string,
+) {
+  const dm = (iso: string) => dataBR(iso).slice(0, 5);
+  if (t.situacao === "rascunho") return "falta registrar o edital";
+  if (t.situacao === "aprovado") return `eliminados em ${dataBR(t.aprovadoEm)}`;
+  if (t.situacao === "cancelado") return `cancelado em ${dataBR(t.canceladoEm)}`;
+  if (!t.editalEm) return "";
+  const libera = aprovavelDesde(t.editalEm);
+  return hoje >= libera ? `aprovação liberada desde ${dm(libera)}` : `aprovação liberada em ${dm(libera)}`;
 }
 
 export const MOTIVOS: Record<string, string> = {

@@ -121,6 +121,7 @@ create table public.descartes (
   edital_publicado_em date,
   aprovado_por uuid references auth.users (id),
   aprovado_em timestamptz,
+  cancelado_em timestamptz,
   unique (prefeitura_id, ano, numero),
   unique (id, prefeitura_id),
   foreign key (secretaria_id, prefeitura_id) references public.secretarias (id, prefeitura_id),
@@ -360,6 +361,7 @@ begin
   if auth.uid() = d.gerado_por then
     raise exception 'quem gerou o termo não o aprova' using errcode = 'LD005';
   end if;
+  -- Edital + 45 dias: a aprovação é liberada nesse dia (como no quadro: edital em 01/10, liberada desde 15/11).
   if app.hoje() < d.edital_publicado_em + 45 then
     raise exception 'prazo de ciência não cumprido' using errcode = 'LD006';
   end if;
@@ -395,7 +397,7 @@ begin
   if d.situacao not in ('rascunho', 'em_ciencia') then
     raise exception 'termo encerrado não muda' using errcode = 'LD009';
   end if;
-  update public.descartes set situacao = 'cancelado' where id = d.id;
+  update public.descartes set situacao = 'cancelado', cancelado_em = now() where id = d.id;
   update public.descarte_itens set aberto = false where descarte_id = d.id;
 end
 $$;

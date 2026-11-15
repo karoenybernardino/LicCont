@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aprovavelDesde, classeDocumento, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
+import { aprovavelDesde, dataBR, observacaoTermo, classeDocumento, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
 
 const regras: Regra[] = [
   { classe: "contrato", corrente: 2, intermediaria: 3, destinacao: "eliminacao" },
@@ -49,12 +49,25 @@ describe("estadoDoPrazo", () => {
 });
 
 describe("datas", () => {
-  it("edital + 45 dias e dias entre datas", () => {
+  it("aprovação liberada em edital + 45 dias; dias entre datas", () => {
     expect(aprovavelDesde("2026-01-01")).toBe("2026-02-15");
     expect(diasEntre("2026-01-01", "2026-02-15")).toBe(45);
   });
   it("hoje no fuso de São Paulo (23h do dia 14 em SP ainda é dia 14)", () => {
     expect(hojeSaoPaulo(new Date("2026-11-15T02:00:00Z"))).toBe("2026-11-14");
+  });
+});
+
+describe("termos na lista", () => {
+  it("formata datas e escreve a observação de cada situação", () => {
+    expect(dataBR("2026-11-10")).toBe("10/11/2026");
+    expect(dataBR("2026-11-15T02:00:00Z")).toBe("14/11/2026");
+    const base = { editalEm: null, aprovadoEm: null, canceladoEm: null };
+    expect(observacaoTermo({ ...base, situacao: "rascunho" }, "2026-11-15")).toBe("falta registrar o edital");
+    expect(observacaoTermo({ ...base, situacao: "em_ciencia", editalEm: "2026-10-01" }, "2026-11-15")).toBe("aprovação liberada desde 15/11");
+    expect(observacaoTermo({ ...base, situacao: "em_ciencia", editalEm: "2026-10-01" }, "2026-11-14")).toBe("aprovação liberada em 15/11");
+    expect(observacaoTermo({ ...base, situacao: "aprovado", aprovadoEm: "2026-09-30T12:00:00Z" }, "2026-11-15")).toBe("eliminados em 30/09/2026");
+    expect(observacaoTermo({ ...base, situacao: "cancelado", canceladoEm: "2026-03-12T12:00:00Z" }, "2026-11-15")).toBe("cancelado em 12/03/2026");
   });
 });
 

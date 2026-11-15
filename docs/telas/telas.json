@@ -618,5 +618,185 @@
   "rota": "/mapa/editar",
   "html": "html/EditorPlantaClaro.html",
   "png": "png/EditorPlantaClaro.png"
+ },
+ {
+  "quadro": "TemporalidadeTermosEscuro",
+  "titulo": "Fase 7 · Temporalidade com termos de eliminação — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1083,
+  "rota": "/temporalidade (painel Termos de eliminação)",
+  "html": "html/TemporalidadeTermosEscuro.html",
+  "png": "png/TemporalidadeTermosEscuro.png"
+ },
+ {
+  "quadro": "TemporalidadeTermosClaro",
+  "titulo": "Fase 7 · Temporalidade com termos de eliminação — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1083,
+  "rota": "/temporalidade (painel Termos de eliminação)",
+  "html": "html/TemporalidadeTermosClaro.html",
+  "png": "png/TemporalidadeTermosClaro.png"
+ },
+ {
+  "quadro": "TemporalidadeRegraEscuro",
+  "titulo": "Fase 7 · Temporalidade: janela da regra de prazo — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/temporalidade (janela Nova regra / Editar tabela)",
+  "html": "html/TemporalidadeRegraEscuro.html",
+  "png": "png/TemporalidadeRegraEscuro.png"
+ },
+ {
+  "quadro": "TemporalidadeRegraClaro",
+  "titulo": "Fase 7 · Temporalidade: janela da regra de prazo — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/temporalidade (janela Nova regra / Editar tabela)",
+  "html": "html/TemporalidadeRegraClaro.html",
+  "png": "png/TemporalidadeRegraClaro.png"
+ },
+ {
+  "quadro": "TermoCienciaEscuro",
+  "titulo": "Fase 7 · Termo de eliminação (em ciência) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (em ciência)",
+  "html": "html/TermoCienciaEscuro.html",
+  "png": "png/TermoCienciaEscuro.png"
+ },
+ {
+  "quadro": "TermoCienciaClaro",
+  "titulo": "Fase 7 · Termo de eliminação (em ciência) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (em ciência)",
+  "html": "html/TermoCienciaClaro.html",
+  "png": "png/TermoCienciaClaro.png"
+ },
+ {
+  "quadro": "TermoRascunhoEscuro",
+  "titulo": "Fase 7 · Termo de eliminação (rascunho) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (rascunho)",
+  "html": "html/TermoRascunhoEscuro.html",
+  "png": "png/TermoRascunhoEscuro.png"
+ },
+ {
+  "quadro": "TermoRascunhoClaro",
+  "titulo": "Fase 7 · Termo de eliminação (rascunho) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (rascunho)",
+  "html": "html/TermoRascunhoClaro.html",
+  "png": "png/TermoRascunhoClaro.png"
+ },
+ {
+  "quadro": "CadastroEncerramentoEscuro",
+  "titulo": "Fase 7 · Cadastro: encerramento do processo — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/documentos/novo e /documentos/[id]/editar (licitação)",
+  "html": "html/CadastroEncerramentoEscuro.html",
+  "png": "png/CadastroEncerramentoEscuro.png"
+ },
+ {
+  "quadro": "CadastroEncerramentoClaro",
+  "titulo": "Fase 7 · Cadastro: encerramento do processo — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/documentos/novo e /documentos/[id]/editar (licitação)",
+  "html": "html/CadastroEncerramentoClaro.html",
+  "png": "png/CadastroEncerramentoClaro.png"
+ },
+ {
+  "quadro": "TermoAndamentoEscuro",
+  "titulo": "Fase 7 · Termo de eliminação (prazo de ciência em andamento) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (em ciência, prazo correndo)",
+  "html": "html/TermoAndamentoEscuro.html",
+  "png": "png/TermoAndamentoEscuro.png"
+ },
+ {
+  "quadro": "TermoAndamentoClaro",
+  "titulo": "Fase 7 · Termo de eliminação (prazo de ciência em andamento) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (em ciência, prazo correndo)",
+  "html": "html/TermoAndamentoClaro.html",
+  "png": "png/TermoAndamentoClaro.png"
+ },
+ {
+  "quadro": "TermoAprovadoEscuro",
+  "titulo": "Fase 7 · Termo de eliminação (aprovado) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (aprovado)",
+  "html": "html/TermoAprovadoEscuro.html",
+  "png": "png/TermoAprovadoEscuro.png"
+ },
+ {
+  "quadro": "TermoAprovadoClaro",
+  "titulo": "Fase 7 · Termo de eliminação (aprovado) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (aprovado)",
+  "html": "html/TermoAprovadoClaro.html",
+  "png": "png/TermoAprovadoClaro.png"
+ },
+ {
+  "quadro": "TermoCanceladoEscuro",
+  "titulo": "Fase 7 · Termo de eliminação (cancelado) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (cancelado)",
+  "html": "html/TermoCanceladoEscuro.html",
+  "png": "png/TermoCanceladoEscuro.png"
+ },
+ {
+  "quadro": "TermoCanceladoClaro",
+  "titulo": "Fase 7 · Termo de eliminação (cancelado) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/temporalidade/termo/[id] (cancelado)",
+  "html": "html/TermoCanceladoClaro.html",
+  "png": "png/TermoCanceladoClaro.png"
+ },
+ {
+  "quadro": "TemporalidadeRegraPermanenteEscuro",
+  "titulo": "Fase 7 · Janela da regra: guarda permanente — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/temporalidade (janela da regra, guarda permanente)",
+  "html": "html/TemporalidadeRegraPermanenteEscuro.html",
+  "png": "png/TemporalidadeRegraPermanenteEscuro.png"
+ },
+ {
+  "quadro": "TemporalidadeRegraPermanenteClaro",
+  "titulo": "Fase 7 · Janela da regra: guarda permanente — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 740,
+  "rota": "/temporalidade (janela da regra, guarda permanente)",
+  "html": "html/TemporalidadeRegraPermanenteClaro.html",
+  "png": "png/TemporalidadeRegraPermanenteClaro.png"
  }
 ]

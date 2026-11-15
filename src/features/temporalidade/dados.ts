@@ -4,8 +4,11 @@ import type { Usuario } from "@/features/sessao/dal";
 import { emDemo } from "@/features/demo/dados";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import type { Modalidade, Tipo } from "@/features/documentos/tipos";
-import { REGRAS_EDITAVEIS_DEMO } from "@/features/demo/temporalidade";
+import { NUMERO_SO_POR_ENDERECO_DEMO, REGRAS_EDITAVEIS_DEMO, termosDemo } from "@/features/demo/temporalidade";
 import { classeDocumento, estadoDoPrazo, hojeSaoPaulo, type Classe, type Destinacao, type Regra } from "./regras";
+import type { ItemTermo, Termo, TermoCompleto } from "./tipos";
+
+export type { ItemTermo, Termo, TermoCompleto } from "./tipos";
 
 // Leitura pela sessão do usuário: o RLS devolve só a prefeitura e as
 // secretarias permitidas. A conta do prazo é a de regras.ts (o banco repete
@@ -88,59 +91,60 @@ export async function lerTemporalidadeReal(): Promise<LeituraTemporalidade> {
   return { resumo: { vencem90, prontos: prontos.length, permanentes }, prontos, aVencer };
 }
 
-export type Termo = {
-  id: string; numero: number; ano: number; situacao: "rascunho" | "em_ciencia" | "aprovado" | "cancelado"; secretariaId: string;
-  geradoPor: string; geradoEm: string; editalEm: string | null; aprovadoEm: string | null; observacao: string | null; itens: number;
-};
-
 export async function listarTermos(): Promise<Termo[]> {
-  if (emDemo()) return [];
+  if (emDemo()) return termosDemo(hojeSaoPaulo()).filter((t) => t.numero !== NUMERO_SO_POR_ENDERECO_DEMO).map((t) => ({ ...t, documentos: undefined, prefeitura: undefined }));
   const sb = await clienteSessao();
   if (!sb) return [];
   const { data } = await sb
     .from("descartes")
-    .select("id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, observacao, descarte_itens(count)")
+    .select("id, numero, ano, situacao, secretaria_id, secretarias(nome), gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, descarte_itens(count)")
     .order("ano", { ascending: false })
     .order("numero", { ascending: false })
     .limit(50);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ((data ?? []) as any[]).map((t) => ({
-    id: t.id, numero: t.numero, ano: t.ano, situacao: t.situacao, secretariaId: t.secretaria_id, geradoPor: t.gerado_por,
-    geradoEm: t.gerado_em, editalEm: t.edital_publicado_em, aprovadoEm: t.aprovado_em, observacao: t.observacao,
-    itens: t.descarte_itens?.[0]?.count ?? 0,
+    id: t.id, numero: t.numero, ano: t.ano, situacao: t.situacao, secretariaId: t.secretaria_id, secretaria: t.secretarias?.nome ?? "",
+    geradoPor: t.gerado_por, geradoEm: t.gerado_em, editalEm: t.edital_publicado_em, aprovadoEm: t.aprovado_em, canceladoEm: t.cancelado_em,
+    observacao: t.observacao, itens: t.descarte_itens?.[0]?.count ?? 0,
   }));
 }
 
-export type ItemTermo = { titulo: string; objeto: string; caixa: string; inicio: string | null; fim: string | null; classe: Classe };
-export type TermoCompleto = Termo & { secretaria: string; prefeitura: string; documentos: ItemTermo[] };
+const ano = (iso: string | null) => (iso ? iso.slice(0, 4) : "—");
 
 export async function obterTermo(id: string): Promise<TermoCompleto | null> {
-  if (emDemo()) return null;
+  if (emDemo()) return termosDemo(hojeSaoPaulo()).find((t) => t.id === id) ?? null;
   const sb = await clienteSessao();
   if (!sb) return null;
   const { data, error } = await sb
     .from("descartes")
     .select(
-      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, vigencia_inicio, vigencia_fim, encerrado_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
+      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, vigencia_inicio, vigencia_fim, encerrado_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
     )
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = data as any;
+  const regras = await lerRegras();
+  const hoje = hojeSaoPaulo();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const documentos: ItemTermo[] = (t.descarte_itens ?? []).map((i: any) => {
     const d = i.documentos;
+    const prazo = estadoDoPrazo(d, regras, hoje);
+    const contrato = d.tipo === "contrato";
+    const fim = contrato ? d.vigencia_fim : d.encerrado_em;
     return {
       titulo: tituloDocumento(d), objeto: d.objeto, caixa: codigoCaixa(d.caixas), classe: classeDocumento(d.tipo, d.modalidade),
-      inicio: d.tipo === "contrato" ? d.vigencia_inicio : null, fim: d.tipo === "contrato" ? d.vigencia_fim : d.encerrado_em,
+      inicio: contrato ? d.vigencia_inicio : null, fim,
+      extremos: `${contrato ? ano(d.vigencia_inicio) : d.ano} – ${ano(fim)}`,
+      vencimento: "vencimento" in prazo ? prazo.vencimento : null,
     };
   });
   documentos.sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR", { numeric: true }));
   return {
-    id: t.id, numero: t.numero, ano: t.ano, situacao: t.situacao, secretariaId: t.secretaria_id, geradoPor: t.gerado_por, geradoEm: t.gerado_em,
-    editalEm: t.edital_publicado_em, aprovadoEm: t.aprovado_em, observacao: t.observacao, itens: documentos.length,
-    secretaria: t.secretarias?.nome ?? "", prefeitura: t.prefeituras?.nome ?? "", documentos,
+    id: t.id, numero: t.numero, ano: t.ano, situacao: t.situacao, secretariaId: t.secretaria_id, secretaria: t.secretarias?.nome ?? "",
+    geradoPor: t.gerado_por, geradoEm: t.gerado_em, editalEm: t.edital_publicado_em, aprovadoEm: t.aprovado_em, canceladoEm: t.cancelado_em,
+    observacao: t.observacao, itens: documentos.length, prefeitura: t.prefeituras?.nome ?? "", documentos,
   };
 }
 

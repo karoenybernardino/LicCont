@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Pilula } from "@/ui/canvas";
 import { CartaoNumero, Etiqueta, Painel, TituloPainel, classeLinha, linhaCabecalho, th } from "@/features/estrutura/componentes";
 import { numeroBR } from "@/features/estrutura/ocupacao";
@@ -10,13 +9,20 @@ import { LinhaVazia } from "@/features/movimento/ui";
 import { lerRegras, listarTermos, podeGerarTermo } from "@/features/temporalidade/dados";
 import { DialogoRegra } from "@/features/temporalidade/dialogo-regra";
 import { FilaEliminacao } from "@/features/temporalidade/fila";
-import { ROTULO_SITUACAO } from "@/features/temporalidade/rotulos";
+import { PainelTermos } from "@/features/temporalidade/painel-termos";
+import { dataBR, hojeSaoPaulo, observacaoTermo } from "@/features/temporalidade/regras";
 
 export const metadata: Metadata = { title: "Temporalidade · LicCONT" };
 
 export default async function Temporalidade() {
   const { usuario, secretaria } = await exigirSessao();
   const [{ resumo, regras, prontos }, regrasEditaveis, termos, podeGerar] = await Promise.all([lerTemporalidade(), lerRegras(), listarTermos(), podeGerarTermo(usuario)]);
+  const hoje = hojeSaoPaulo();
+  const linhasTermos = termos.map((t) => ({
+    id: t.id, termo: `Termo ${String(t.numero).padStart(3, "0")}/${t.ano}`, secretaria: t.secretaria,
+    documentos: `${t.itens} ${t.itens === 1 ? "documento" : "documentos"}`, geradoEm: dataBR(t.geradoEm), situacao: t.situacao,
+    observacao: observacaoTermo(t, hoje),
+  }));
   const colunas = ["Tipo de documento", "Fase corrente", "Intermediária", "Destinação final"];
 
   return (
@@ -72,23 +78,7 @@ export default async function Temporalidade() {
         </Painel>
       </div>
 
-      {termos.length > 0 && (
-        <Painel>
-          <TituloPainel>Termos de eliminação</TituloPainel>
-          <ul className="flex flex-col gap-1">
-            {termos.map((t) => (
-              <li key={t.id}>
-                <Link href={`/temporalidade/termo/${t.id}`} className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 hover:bg-superficie-2">
-                  <span className="min-w-0 flex-1 text-sm font-semibold">
-                    Termo {String(t.numero).padStart(3, "0")}/{t.ano} · {t.itens} {t.itens === 1 ? "documento" : "documentos"}
-                  </span>
-                  {t.situacao === "cancelado" ? <Etiqueta>{ROTULO_SITUACAO[t.situacao]}</Etiqueta> : <Pilula tom={t.situacao === "aprovado" ? "ok" : "aviso"}>{ROTULO_SITUACAO[t.situacao]}</Pilula>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Painel>
-      )}
+      {linhasTermos.length > 0 && <PainelTermos linhas={linhasTermos} />}
     </PaginaSistema>
   );
 }

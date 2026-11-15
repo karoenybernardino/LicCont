@@ -1,6 +1,6 @@
 # Fase 7 — Temporalidade e descarte
 
-Status: **implementada, aguardando CI** (2026-11-15). O PR #51 (Fase 5) já
+Status: **implementada, telas pelos quadros do canvas** (2026-11-15). O PR #51 (Fase 5) já
 está na `main`. As decisões do responsável estão em "Decisões do responsável"
 e o que foi feito em "Entregue neste PR". Plano geral: `docs/plano-de-desenvolvimento.md`, linha "7 ·
 Temporalidade": tabela de prazos, fila de descarte, termo de eliminação com
@@ -227,10 +227,14 @@ autoridade máxima ficam **a confirmar com o jurídico da prefeitura**.
 | 8 | Aviso por e-mail | **fora** (decisão 1) |
 | 9 | Comparação com o canvas | feito (imagens no PR) |
 
-Desvios do canvas (não há quadro): janela de regra, página do termo
-(`/temporalidade/termo/[id]`), painel "Termos de eliminação" (só aparece com
-termo existente) e o campo "Encerramento do processo" no cadastro de
-licitação. **Pedir quadros ao responsável.**
+Telas pelos quadros `Temporalidade*`, `Termo*` e `CadastroEncerramento*` (18
+quadros, claro e escuro; imagens da comparação no PR): janela da regra de prazo
+(eliminação e guarda permanente), painel "Termos de eliminação" (só aparece com
+termo existente), página do termo nos cinco estados (rascunho, em ciência com
+prazo correndo, em ciência liberada, aprovado, cancelado) e o campo
+"Encerramento do processo" com o quadro "Prazo de guarda". Os textos com datas
+("Faltam N dias", "Aprovação liberada em ...") saem das datas reais. O prazo de
+ciência fecha em edital + 45 dias e a aprovação é liberada nesse dia.
 
 Fora do PR: teste Playwright do fluxo (precisa de Supabase local e dados no
 `seed.sql`) e o envio do modelo de termo da prefeitura.
