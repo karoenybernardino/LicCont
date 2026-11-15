@@ -96,6 +96,10 @@ values ('f1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-1111111
         'd1000000-0000-0000-0000-000000000002', 'b.pdf', 1000, '0a000000-0000-0000-0000-000000000002',
         'enviando', false, null, null, null);
 
+-- O insert já nasce "enviando"; a conferência (feita pelo servidor) deixa pronto e ativo.
+update public.arquivos set situacao = 'pronto', ativo = true, sha256 = repeat('a', 64), paginas = 2, conferido_em = now()
+  where id = 'f1000000-0000-0000-0000-000000000001';
+
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
 select throws_ok($$select public.salvar_texto_pdf('f1000000-0000-0000-0000-000000000001', 'texto', 1)$$, '42501', null, 'consulta não grava texto');

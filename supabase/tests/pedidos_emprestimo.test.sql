@@ -125,7 +125,9 @@ select throws_ok($$update public.pedidos_emprestimo set situacao = 'pendente'$$,
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
 select lives_ok($$select public.pedir_emprestimo('d1000000-0000-0000-0000-000000000004', 'Pessoa Fictícia', 'Setor', 5, null)$$, 'coordenador pede outro');
 reset role;
+alter table public.pedidos_emprestimo disable trigger pedido_emprestimo_imutavel;
 update public.pedidos_emprestimo set criado_em = now() - interval '4 days' where documento_id = 'd1000000-0000-0000-0000-000000000004';
+alter table public.pedidos_emprestimo enable trigger pedido_emprestimo_imutavel;
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select throws_ok($$select public.aprovar_pedido_emprestimo((select id from public.pedidos_emprestimo where documento_id = 'd1000000-0000-0000-0000-000000000004'))$$,
