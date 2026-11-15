@@ -9,13 +9,17 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
   return (
     <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">
       <BarraLateral
-        principais={[{ href: "/equipe", rotulo: "Prefeituras", icone: "secretarias" }, { href: "/equipe/uso", rotulo: "Uso do mês", icone: "painel" }]}
-        admin={[]}
+        grupos={[
+          [
+            { href: "/equipe", rotulo: "Prefeituras", dica: "Lista as prefeituras clientes.", icone: "secretarias" },
+            { href: "/equipe/uso", rotulo: "Uso do mês", dica: "Mostra o uso de cada prefeitura no mês.", icone: "painel" },
+          ],
+        ]}
+        rodape={[]}
         sair={
           <form action={sair}>
             <BotaoEnviar
               aria-label="Sair"
-              title="Sair"
               className="flex size-11 items-center justify-center rounded-full text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua"
             >
               <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

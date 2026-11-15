@@ -52,3 +52,7 @@ partir do plano e testados com respostas **fictícias**. A API do TCE não
 respondeu a partir do ambiente de desenvolvimento (bloqueio por IP fora do
 Brasil). Antes de ligar em produção: conferir uma resposta real de cada fonte
 e ajustar esses dois arquivos.
+
+## Atualização 2026-11-15: API do TCE verificada
+
+Endereço base com `/sim/`, datas `AAAAMMDD`, paginação `$count`/`$start_index` (máx. 1000), sem autenticação. Licitação = `processos_administrativos_contratacoes`; contrato = `contratos` + `contratados` (empresa e CNPJ). Sem id próprio: a chave é número + data. CPFs vêm criptografados e nunca são guardados. A API tem acento quebrado (UTF-8 lido como Windows-1252); o cliente conserta o que dá. Detalhes em `src/features/tce/cliente.ts`.

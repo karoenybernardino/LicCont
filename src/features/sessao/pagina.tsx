@@ -9,29 +9,27 @@ import { contarFila } from "@/features/tce/dados";
 import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
 
-// Menu do canvas: Pesquisa, Mapa 3D, Cadastro, Empréstimos, Temporalidade e Auditoria
-// em cima; o que o sistema tem a mais (Início, Estrutura, Usuários, Secretarias) fica
-// embaixo, antes de Configurações e Sair. Sem "href": tela de fase futura, apagada.
-const PRINCIPAIS: ItemMenu[] = [
-  { href: "/pesquisa", rotulo: "Pesquisa", icone: "pesquisa", prefixos: ["/documentos/"] },
-  { href: "/mapa", rotulo: "Mapa 3D", icone: "mapa" },
-  { href: "/emprestimos", rotulo: "Empréstimos", icone: "emprestimos" },
-  { href: "/temporalidade", rotulo: "Temporalidade", icone: "temporalidade" },
-  { rotulo: "Auditoria", icone: "auditoria" },
+// Menu em grupos, separados por um traço: Início; Acervo (o dia a dia dos documentos);
+// Gestão (acompanhar e conferir); Administração (só administrador). Configurações e
+// Sair ficam no rodapé. Sem "href": tela de fase futura, apagada, "em breve".
+const INICIO: ItemMenu = { href: "/inicio", rotulo: "Início", dica: "Resumo do que precisa de atenção hoje.", icone: "inicio" };
+const ACERVO: ItemMenu[] = [
+  { href: "/pesquisa", rotulo: "Pesquisa", dica: "Busca documentos por número, assunto ou texto.", icone: "pesquisa", prefixos: ["/documentos/"] },
+  { href: "/mapa", rotulo: "Mapa 3D", dica: "Mostra onde cada caixa está no arquivo.", icone: "mapa" },
+  { href: "/emprestimos", rotulo: "Empréstimos", dica: "Controla retiradas e devoluções de documentos.", icone: "emprestimos" },
+  { href: "/temporalidade", rotulo: "Temporalidade", dica: "Prazos de guarda e eliminação de documentos.", icone: "temporalidade" },
 ];
-const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", icone: "cadastro" };
-const EXTRAS: ItemMenu[] = [
-  { href: "/inicio", rotulo: "Início", icone: "inicio" },
-  { href: "/painel", rotulo: "Painel", icone: "painel" },
-  { href: "/estrutura", rotulo: "Estrutura física", icone: "estrutura" },
-];
+const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", dica: "Registra um documento novo no acervo.", icone: "cadastro" };
+const PAINEL: ItemMenu = { href: "/painel", rotulo: "Painel", dica: "Números do acervo em gráficos.", icone: "painel" };
+const AUDITORIA: ItemMenu = { rotulo: "Auditoria", dica: "Histórico de quem fez o quê.", icone: "auditoria" };
+const ESTRUTURA: ItemMenu = { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" };
 const ADMIN: ItemMenu[] = [
-  { href: "/usuarios", rotulo: "Usuários e perfis", icone: "usuarios" },
-  { href: "/secretarias", rotulo: "Secretarias", icone: "secretarias" },
-  { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", icone: "configuracoes" },
-  { href: "/configuracoes/exportar", rotulo: "Exportar dados", icone: "relatorios" },
+  { href: "/usuarios", rotulo: "Usuários e perfis", dica: "Quem acessa o sistema e com qual perfil.", icone: "usuarios" },
+  { href: "/secretarias", rotulo: "Secretarias", dica: "Cadastro das secretarias da prefeitura.", icone: "secretarias" },
+  { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", dica: "Libera ou encerra o acesso da equipe LicCONT.", icone: "configuracoes" },
+  { href: "/configuracoes/exportar", rotulo: "Exportar dados", dica: "Baixa uma cópia dos dados da prefeitura.", icone: "relatorios" },
 ];
-const CONFIG: ItemMenu = { rotulo: "Configurações", icone: "configuracoes" };
+const CONFIG: ItemMenu = { rotulo: "Configurações", dica: "Ajustes da conta.", icone: "configuracoes" };
 
 function iniciais(nome: string) {
   return nome
@@ -63,30 +61,29 @@ export async function PaginaSistema({
 }) {
   const prefeitura = await nomePrefeitura(usuario);
   // Cadastrar só aparece para quem cadastra (o servidor também confere).
-  const principais = (await podeCadastrar(usuario))
-    ? [...PRINCIPAIS.slice(0, 2), CADASTRO, ...PRINCIPAIS.slice(2)]
-    : PRINCIPAIS;
-  // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
-  const menu = principais.map((i) => (i.icone === "auditoria" && usuario.administrador ? { ...i, href: "/auditoria" } : i));
+  const cadastra = await podeCadastrar(usuario);
   // Importados do TCE: quem confere (administrador ou coordenador), com a contagem da fila.
   // Relatórios: quem exporta (administrador ou quem cadastra).
   const confere = usuario.administrador || (await ehCoordenador(usuario));
   const exporta = usuario.administrador || (await secretariasParaCadastro(usuario)).length > 0;
-  const gerenciais: ItemMenu[] = [
-    ...(confere ? [{ href: "/importados", rotulo: "Importados do TCE", icone: "importados" as const, prefixos: ["/importados"], contagem: await contarFila() }] : []),
-    ...(exporta ? [{ href: "/relatorios", rotulo: "Relatórios", icone: "relatorios" as const }] : []),
+  const gestao: ItemMenu[] = [
+    PAINEL,
+    ...(confere ? [{ href: "/importados", rotulo: "Importados do TCE", dica: "Documentos vindos do TCE-CE para conferir.", icone: "importados" as const, prefixos: ["/importados"], contagem: await contarFila() }] : []),
+    ...(exporta ? [{ href: "/relatorios", rotulo: "Relatórios", dica: "Relatórios do acervo para imprimir ou baixar.", icone: "relatorios" as const }] : []),
+    // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
+    usuario.administrador ? { ...AUDITORIA, href: "/auditoria" } : AUDITORIA,
+    ESTRUTURA,
   ];
-  const admin = [...EXTRAS.slice(0, 2), ...gerenciais, ...EXTRAS.slice(2), ...(usuario.administrador ? ADMIN : []), CONFIG];
+  const grupos = [[INICIO], [...ACERVO.slice(0, 2), ...(cadastra ? [CADASTRO] : []), ...ACERVO.slice(2)], gestao, usuario.administrador ? ADMIN : []];
   return (
     <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral
-        principais={menu}
-        admin={admin}
+        grupos={grupos}
+        rodape={[CONFIG]}
         sair={
           <form action={sair}>
             <BotaoEnviar
               aria-label="Sair"
-              title="Sair"
               className="flex size-11 items-center justify-center rounded-full text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua"
             >
               <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

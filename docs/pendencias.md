@@ -10,7 +10,8 @@ Atualizado em 2026-11-15. O que ficou de fora e por quê.
 | Teste de carga do painel com 100 mil documentos (modelo: `supabase/tests/documentos_desempenho.test.sql`) | pgTAP só roda no CI; não dá para validar localmente | Próxima tarefa |
 | Revisão de segurança por agente (`auditor-seguranca`) das rotas novas | Não executada | Antes do piloto |
 | Rotina que apaga pedidos de demonstração antigos | Prazo de guarda ainda não validado com advogado | Depois do advogado |
-| Endereços e campos reais das APIs do TCE-CE e do PNCP | API do TCE só aceita IP brasileiro; não verificado. `tce_ativo` começa desligado | Testar em produção com a integração ligada em uma prefeitura de teste |
+| API do TCE-CE | **Conferida em 15/11/2026** contra a especificação oficial e respostas reais (`/sim/processos_administrativos_contratacoes`, `/sim/contratos`, `/sim/contratados`). Limites: só dispensa, inexigibilidade e pregão eletrônico entram (os outros códigos de modalidade não são documentados; ficam como "ignorados"); licitação não traz empresa nem valor; a API devolve acento quebrado e letras como Á/Í às vezes se perdem ("FÃ�SICO"), sem como recuperar | Rodar uma importação de teste em uma prefeitura de teste |
+| API do PNCP | Endereços ainda supostos; não verificados | Verificar como foi feito com o TCE |
 | Importar ZIP de PDFs (planejado 500 MB) | Não implementado; PDFs entram depois pelo envio existente | A decidir |
 | Opção "importar mesmo assim" em duplicados | O banco proíbe dois documentos ativos com o mesmo processo | Só com mudança de regra |
 | PNCP anexa um arquivo por vez | Simplificação | A decidir |

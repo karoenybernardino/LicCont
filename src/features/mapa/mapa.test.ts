@@ -3,7 +3,7 @@ import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { DOCUMENTOS_DEMO, idCaixaDemo } from "@/features/demo/documentos";
 import { lerCodigo, formatarCodigo } from "./codigo";
 import { CORES } from "./cores";
-import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha } from "./geometria";
+import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha, zoomAlvo } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
 import { encaixarNaParede, entradaPorPonto, modulosDoArrasto, paredeDesenhada } from "./edicao";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
@@ -274,5 +274,14 @@ describe("editor ao estilo Revit (edicao.ts)", () => {
     expect(modulosDoArrasto(-2.5, m, 5)).toBe(-2);
     expect(modulosDoArrasto(-99, m, 5)).toBe(-4);
     expect(modulosDoArrasto(0.3, m, 5)).toBe(0);
+
+describe("zoom do mapa 3D", () => {
+  it("multiplica o zoom atual pelo fator", () => {
+    expect(zoomAlvo(20, 1.25, 4, 160)).toBe(25);
+    expect(zoomAlvo(20, 0.8, 4, 160)).toBe(16);
+  });
+  it("não passa dos limites", () => {
+    expect(zoomAlvo(150, 1.25, 4, 160)).toBe(160);
+    expect(zoomAlvo(4.5, 0.8, 4, 160)).toBe(4);
   });
 });

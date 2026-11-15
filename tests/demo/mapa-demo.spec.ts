@@ -140,4 +140,21 @@ test("editor: administrador arrasta a ponta da rua e a demonstração avisa que 
   await page.mouse.move(p.x + p.width / 2 + 130, p.y + p.height / 2, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+
+test("3D: botões e teclas + e − mudam o zoom", async ({ page }) => {
+  await page.goto("/mapa");
+  const palco = page.getByRole("group", { name: "Mapa 3D do galpão" });
+  await expect(palco).toHaveAttribute("data-3d-pronto", "sim", { timeout: 60_000 });
+  const zoom = async () => Number(await palco.getAttribute("data-zoom"));
+  const base = await zoom();
+  expect(base).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Aproximar" }).click();
+  await expect.poll(zoom).toBeGreaterThan(base);
+  await page.getByRole("button", { name: "Afastar" }).click();
+  await expect.poll(zoom).toBeCloseTo(base, 0);
+  await palco.focus();
+  await page.keyboard.press("+");
+  await expect.poll(zoom).toBeGreaterThan(base);
+  await page.keyboard.press("-");
+  await expect.poll(zoom).toBeCloseTo(base, 0);
 });

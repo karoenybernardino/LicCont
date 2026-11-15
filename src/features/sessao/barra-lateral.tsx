@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Marca } from "@/ui/logo";
 
 // Barra lateral de ícones do canvas ("Menu"). Telas de fases futuras
@@ -79,7 +79,7 @@ const ICONES = {
 } as const;
 
 export type IconeMenu = keyof typeof ICONES;
-export type ItemMenu = { href?: string; rotulo: string; icone: IconeMenu; prefixos?: string[]; contagem?: number };
+export type ItemMenu = { href?: string; rotulo: string; dica?: string; icone: IconeMenu; prefixos?: string[]; contagem?: number };
 
 export function Icone({ nome, className = "" }: { nome: IconeMenu; className?: string }) {
   return (
@@ -103,28 +103,65 @@ export function Icone({ nome, className = "" }: { nome: IconeMenu; className?: s
 const botao =
   "relative flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua";
 
+type Dica = { chave: string; rotulo: string; texto?: string; x: number; y: number; embaixo: boolean };
+
+// Grupos separados por um traço; o rodapé (Configurações, Sair) fica no fim da barra.
 export function BarraLateral({
-  principais,
-  admin,
+  grupos,
+  rodape,
   sair,
 }: {
-  principais: ItemMenu[];
-  admin: ItemMenu[];
+  grupos: ItemMenu[][];
+  rodape: ItemMenu[];
   sair: ReactNode;
 }) {
   const caminho = usePathname();
+  const idDica = useId();
+  const [dica, setDica] = useState<Dica | null>(null);
   const ativo = (i: ItemMenu) =>
     !!i.href &&
     (caminho !== "/documentos/novo" || i.href === "/documentos/novo") && (caminho === i.href || caminho.startsWith(`${i.href}/`) || !!i.prefixos?.some((p) => caminho.startsWith(p)));
 
+  // Esc fecha a aba sem tirar o foco de onde está.
+  useEffect(() => {
+    if (!dica) return;
+    const fechar = (e: KeyboardEvent) => e.key === "Escape" && setDica(null);
+    document.addEventListener("keydown", fechar);
+    return () => document.removeEventListener("keydown", fechar);
+  }, [dica]);
+
+  // Posição fixa (a barra rola e cortaria uma aba absoluta): ao lado do ícone no
+  // computador, embaixo dele no celular, onde a barra é uma faixa no topo.
+  function mostrar(chave: string, rotulo: string, texto: string | undefined, alvo: HTMLElement) {
+    const r = alvo.getBoundingClientRect();
+    const embaixo = window.innerWidth < 768;
+    setDica({
+      chave,
+      rotulo,
+      texto,
+      embaixo,
+      x: embaixo ? Math.min(Math.max(r.left + r.width / 2, 110), window.innerWidth - 110) : r.right + 14,
+      y: embaixo ? r.bottom + 10 : r.top + r.height / 2,
+    });
+  }
+  const dicaDe = (chave: string, rotulo: string, texto?: string) => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => mostrar(chave, rotulo, texto, e.currentTarget),
+    onMouseLeave: () => setDica(null),
+    onFocus: (e: React.FocusEvent<HTMLElement>) => mostrar(chave, rotulo, texto, e.currentTarget),
+    onBlur: () => setDica(null),
+  });
+
   function renderItem(i: ItemMenu) {
+    const chave = i.href ?? i.rotulo;
+    const desc = dica?.chave === chave ? idDica : undefined;
     if (!i.href) {
       return (
-        <li key={i.rotulo}>
+        <li key={chave} {...dicaDe(chave, i.rotulo, i.dica ? `${i.dica} Em breve.` : "Em breve.")}>
           <span
             role="img"
+            tabIndex={0}
             aria-label={`${i.rotulo} (em breve)`}
-            title={`${i.rotulo} · em breve`}
+            aria-describedby={desc}
             className={`${botao} cursor-not-allowed text-[#8cc5cf] opacity-35`}
           >
             <Icone nome={i.icone} />
@@ -134,11 +171,11 @@ export function BarraLateral({
     }
     const a = ativo(i);
     return (
-      <li key={i.href}>
+      <li key={chave} {...dicaDe(chave, i.rotulo, i.dica)}>
         <Link
           href={i.href}
-          aria-label={i.contagem ? `${i.rotulo} (${i.contagem})` : i.rotulo}
-          title={i.rotulo}
+          aria-label={i.contagem ? `${i.rotulo}, ${i.contagem > 99 ? "99+" : i.contagem} na fila` : i.rotulo}
+          aria-describedby={desc}
           aria-current={a ? "page" : undefined}
           className={`${botao} ${a ? "bg-aqua text-petroleo" : "text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)]"}`}
         >
@@ -154,6 +191,8 @@ export function BarraLateral({
     );
   }
 
+  const traco = <div aria-hidden className="h-px w-7 shrink-0 bg-white/18 max-md:h-7 max-md:w-px md:my-1" />;
+
   return (
     <aside
       aria-label="Menu"
@@ -166,16 +205,33 @@ export function BarraLateral({
       >
         <Marca largura={30} />
       </Link>
-      <div aria-hidden className="h-px w-7 bg-white/18 max-md:h-7 max-md:w-px md:my-1" />
-      <nav aria-label="Menu do sistema" className="max-md:contents">
-        <ul className="flex gap-3 max-md:flex-row md:flex-col md:items-center">{principais.map(renderItem)}</ul>
+      <nav aria-label="Menu do sistema" className="flex gap-3 max-md:flex-row max-md:items-center md:flex-col md:items-center">
+        {grupos
+          .filter((g) => g.length > 0)
+          .map((g) => (
+            <div key={g[0]!.rotulo} className="contents">
+              {traco}
+              <ul className="flex gap-3 max-md:flex-row md:flex-col md:items-center">{g.map(renderItem)}</ul>
+            </div>
+          ))}
       </nav>
       <div className="max-md:hidden md:flex-1" />
-      <div aria-hidden className="h-px w-7 bg-white/18 max-md:h-7 max-md:w-px" />
+      {traco}
       <ul className="flex gap-3 max-md:flex-row md:flex-col md:items-center">
-        {admin.map(renderItem)}
-        <li>{sair}</li>
+        {rodape.map(renderItem)}
+        <li {...dicaDe("sair", "Sair", "Encerra a sessão neste aparelho.")}>{sair}</li>
       </ul>
+      {dica && (
+        <div
+          id={idDica}
+          role="tooltip"
+          style={{ left: dica.x, top: dica.y }}
+          className={`pointer-events-none fixed z-50 w-max max-w-[220px] rounded-2xl border border-white/18 bg-[#0b2e3a] px-3 py-2 text-left shadow-lg dark:border-[#1b3a44] dark:bg-[#02090c] ${dica.embaixo ? "-translate-x-1/2" : "-translate-y-1/2"}`}
+        >
+          <span className="block text-[13px] font-bold text-white">{dica.rotulo}</span>
+          {dica.texto && <span className="mt-0.5 block text-xs leading-snug text-[#8cc5cf]">{dica.texto}</span>}
+        </div>
+      )}
     </aside>
   );
 }
