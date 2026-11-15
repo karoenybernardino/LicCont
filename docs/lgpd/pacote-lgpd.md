@@ -33,7 +33,7 @@ Nada aqui é parecer jurídico. Tudo que é lei está marcado **a validar com ad
 | --- | --- |
 | Acervo da prefeitura | Enquanto durar o contrato; depois de confirmada a exportação, eliminar em 90 dias |
 | Auditoria | Acompanha o acervo; só inclusão |
-| Pedido de demonstração | 90 dias depois da resposta (hoje **sem rotina automática**) |
+| Pedido de demonstração | 12 meses depois do pedido, apagado pela rotina diária (`/api/limpeza/envios`, função `limpar_pedidos_demonstracao`). Prazo **a validar** com o advogado; a rotina já roda |
 | Aceites | Enquanto a conta existir |
 | Cópias de backup | Apagar o dump local após o uso; cópia restaurada segue o prazo do acervo |
 

@@ -26,9 +26,12 @@ describe("limpeza de envios abandonados", () => {
   });
   it("com o segredo limpa e devolve só a contagem", async () => {
     vi.stubEnv("CRON_SECRET", "segredo-de-teste");
-    rpc.mockResolvedValue({ data: [{ caminho: "p/a.pdf", miniatura: "p/a.webp" }], error: null });
+    rpc.mockImplementation(async (nome: string) => ({
+      data: { limpar_envios_todos: [{ caminho: "p/a.pdf", miniatura: "p/a.webp" }], limpar_pedidos_demonstracao: 2, exportacoes_vencidas: [{ caminho: "p/x.zip" }] }[nome],
+      error: null,
+    }));
     const r = await GET(pede("Bearer segredo-de-teste"));
-    expect(await r.json()).toEqual({ limpos: 1 });
-    expect(remove).toHaveBeenCalledTimes(2);
+    expect(await r.json()).toEqual({ limpos: 1, pedidos: 2, exportacoes: 1 });
+    expect(remove).toHaveBeenCalledTimes(3);
   });
 });

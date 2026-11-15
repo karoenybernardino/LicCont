@@ -19,3 +19,9 @@ ligado (decisão 0010 deixa o e-mail pronto para quando houver chave).
 ## Pendência
 Prazo de guarda e eliminação dos pedidos: propor 90 dias após a resposta, a
 validar com o advogado. Hoje não há rotina automática de eliminação.
+
+## Revisão de segurança (Fase 9)
+
+- O HMAC do e-mail e do IP usa a variável própria `PEDIDO_HMAC_SECRET` (Vercel Production), nunca a `service_role`. Sem ela o formulário responde erro genérico.
+- Limites: 3 por e-mail em 24 h e 5 por IP em 1 h (descartados em silêncio, resposta igual à de sucesso); 200 por dia no total devolve erro genérico.
+- Guarda de 12 meses, apagada no cron `/api/limpeza/envios`.
