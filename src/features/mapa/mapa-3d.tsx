@@ -11,7 +11,7 @@ import CameraControlsImpl from "camera-controls";
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type RefObject, type Ref } from "react";
 import { BoxGeometry, Color, EdgesGeometry, Float32BufferAttribute, InstancedMesh, Matrix4, Quaternion, Vector3, type OrthographicCamera } from "three";
 import { ALTURA_NIVEL, CELULA, centroDaCaixa, enderecoDaInstancia, type Instancias, type Leiaute } from "./geometria";
-import { CORES, type Tema, type Trio } from "./cores";
+import { CORES, type PaletaMapa, type Tema, type Trio } from "./cores";
 
 export type ComandosCamera = {
   irAte(instancia: number): void;
@@ -101,10 +101,9 @@ function Camera({
   leiaute,
   comandos,
   reduzir,
-  selecionada,
   onAngulo,
   onPronto,
-}: Pick<Props, "leiaute" | "selecionada" | "onAngulo" | "onPronto"> & { comandos: Ref<ComandosCamera>; reduzir: boolean }) {
+}: Pick<Props, "leiaute" | "onAngulo" | "onPronto"> & { comandos: Ref<ComandosCamera>; reduzir: boolean }) {
   const controles = useRef<CameraControls>(null);
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const ultimo = useRef<number | null>(null);
@@ -147,7 +146,6 @@ function Camera({
         const oz = z - limites.fundo / 2;
         const animar = !reduzir;
         void c.moveTo(ox, y, oz, animar);
-        void c.zoomTo(Math.min(c.maxZoom, Math.max(camera.zoom, zoomGeral.current * 3)), animar);
       },
       girar(direcao) {
         void controles.current?.rotate(direcao * (Math.PI / 2), 0, !reduzir);
@@ -174,28 +172,6 @@ function Camera({
     centralizar(false);
     onPronto();
   };
-
-  // Ao abrir já com uma caixa selecionada, a câmera vai até ela.
-  const aberta = useRef(false);
-  const selecionadaInicial = useRef(selecionada);
-  useEffect(() => {
-    if (aberta.current) return;
-    // Só a seleção que veio com a página enquadra sem animar; cliques depois usam irAte.
-    if (selecionadaInicial.current === null) {
-      aberta.current = true;
-      return;
-    }
-    const alvo = selecionadaInicial.current;
-    const t = window.setTimeout(() => {
-      aberta.current = true;
-      const c = controles.current;
-      if (!c) return;
-      const [x, y, z] = centroDaCaixa(leiaute, alvo);
-      void c.moveTo(x - limites.largura / 2, y, z - limites.fundo / 2, false);
-      void c.zoomTo(Math.min(c.maxZoom, zoomGeral.current * 3), false);
-    }, 60);
-    return () => window.clearTimeout(t);
-  }, [leiaute, limites]);
 
   return (
     <CameraControls
@@ -239,6 +215,53 @@ function Projetar({ camada }: { camada: RefObject<HTMLDivElement | null> }) {
   return null;
 }
 
+const ALTURA_PAREDE = 3.4;
+const ALTURA_PORTA = 2.4;
+
+// Porta do galpão no sistema local (sem o deslocamento): centro e tamanho no piso.
+export function portaDoGalpao(leiaute: Leiaute) {
+  const { lado, posicao, largura } = leiaute.entrada;
+  const L = leiaute.largura * CELULA;
+  const P = leiaute.profundidade * CELULA;
+  const c = (posicao + largura / 2) * CELULA;
+  const t = largura * CELULA;
+  if (lado === "esquerda") return { x: 0, z: c, sx: 0.3, sz: t };
+  if (lado === "direita") return { x: L, z: c, sx: 0.3, sz: t };
+  if (lado === "fundo") return { x: c, z: 0, sx: t, sz: 0.3 };
+  return { x: c, z: P, sx: t, sz: 0.3 };
+}
+
+// Paredes do fundo (as duas que ficam atrás na vista isométrica), com faixa de
+// vidro em cima, e a porta de entrada, como no quadro.
+function Paredes({ leiaute, paleta }: { leiaute: Leiaute; paleta: PaletaMapa }) {
+  const L = leiaute.largura * CELULA;
+  const P = leiaute.profundidade * CELULA;
+  const base = 1.1;
+  const porta = portaDoGalpao(leiaute);
+  const parede = (x: number, z: number, sx: number, sz: number) => (
+    <>
+      <mesh position={[x, base / 2, z]}>
+        <boxGeometry args={[sx, base, sz]} />
+        <meshBasicMaterial color={paleta.galpao.parede} />
+      </mesh>
+      <mesh position={[x, base + (ALTURA_PAREDE - base) / 2, z]}>
+        <boxGeometry args={[sx, ALTURA_PAREDE - base, sz]} />
+        <meshBasicMaterial color={paleta.galpao.vidro} transparent opacity={0.5} depthWrite={false} />
+      </mesh>
+    </>
+  );
+  return (
+    <group>
+      {parede(L / 2, -0.1, L, 0.2)}
+      {parede(-0.1, P / 2, 0.2, P)}
+      <mesh position={[porta.x, ALTURA_PORTA / 2, porta.z]}>
+        <boxGeometry args={[porta.sx + 0.05, ALTURA_PORTA, porta.sz + 0.05]} />
+        <meshBasicMaterial color={paleta.galpao.porta} />
+      </mesh>
+    </group>
+  );
+}
+
 function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onAngulo, onPronto, comandos, reduzirMovimento, camada }: Props & { camada: RefObject<HTMLDivElement | null> }) {
   const paleta = CORES[tema];
   const deslocamento: [number, number, number] = [-(leiaute.largura * CELULA) / 2, 0, -(leiaute.profundidade * CELULA) / 2];
@@ -268,7 +291,7 @@ function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onA
   return (
     <>
       <Projetar camada={camada} />
-      <Camera leiaute={leiaute} comandos={comandos} reduzir={reduzirMovimento} selecionada={selecionada} onAngulo={onAngulo} onPronto={onPronto} />
+      <Camera leiaute={leiaute} comandos={comandos} reduzir={reduzirMovimento} onAngulo={onAngulo} onPronto={onPronto} />
       <group position={deslocamento}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[piso[0] / 2, -0.02, piso[1] / 2]}>
           <planeGeometry args={piso} />
@@ -280,6 +303,7 @@ function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onA
             <meshBasicMaterial color={paleta.sombra} transparent opacity={0.1} depthWrite={false} />
           </mesh>
         ))}
+        <Paredes leiaute={leiaute} paleta={paleta} />
         <Malha inst={leiaute.faixas} trio={{ topo: paleta.faixaSeguranca, frente: paleta.faixaSeguranca, lado: paleta.faixaSeguranca }} />
         <Malha inst={leiaute.montantes} trio={paleta.estante} />
         <Malha inst={leiaute.prateleiras} trio={paleta.estante} />
@@ -316,6 +340,10 @@ export default function Mapa3D(props: Props) {
   }, []);
   const deslocX = -(leiaute.largura * CELULA) / 2;
   const deslocZ = -(leiaute.profundidade * CELULA) / 2;
+  const porta = portaDoGalpao(leiaute);
+  const ruaDoModulo = selecionada === null ? leiaute.ruas[0] : leiaute.ruas.find((r) => r.id === leiaute.modulos.find((m) => m.primeira >= 0 && selecionada >= m.primeira && selecionada < m.primeira + m.caixas)?.ruaId) ?? leiaute.ruas[0];
+  const moduloSel = selecionada === null ? null : leiaute.modulos.find((m) => m.primeira >= 0 && selecionada >= m.primeira && selecionada < m.primeira + m.caixas);
+  const rotulosModulo = ruaDoModulo ? leiaute.modulos.filter((m) => m.ruaId === ruaDoModulo.id).sort((a, b) => a.numero - b.numero) : [];
   return (
     <div className="relative size-full">
       <Canvas
@@ -343,11 +371,33 @@ export default function Mapa3D(props: Props) {
             data-x={deslocX + (r.x + (r.w > r.h ? 0 : r.w / 2)) * CELULA}
             data-y={0.1}
             data-z={deslocZ + (r.y + (r.w > r.h ? r.h / 2 : 0)) * CELULA}
-            className="absolute top-0 left-0 rounded-lg bg-petroleo px-2 py-0.5 font-mono text-[13px] font-medium text-white select-none"
+            className="absolute top-0 left-0 flex size-6 items-center justify-center rounded-full border border-[#0b2e3a]/60 bg-white font-mono text-xs font-medium text-[#0b2e3a] select-none"
           >
             {r.codigo}
           </span>
         ))}
+        <span
+          data-x={deslocX + porta.x}
+          data-y={ALTURA_PORTA + 0.6}
+          data-z={deslocZ + porta.z}
+          className="absolute top-0 left-0 font-mono text-[10px] font-semibold tracking-[.08em] text-[#0e7490] uppercase select-none dark:text-[#2dd4bf]"
+        >
+          Entrada
+        </span>
+        {rotulosModulo.map((m) => {
+          const horizontal = (ruaDoModulo?.w ?? 0) >= (ruaDoModulo?.h ?? 0);
+          return (
+            <span
+              key={m.id}
+              data-x={deslocX + (horizontal ? (m.x + m.w / 2) * CELULA : (m.x + m.w) * CELULA + 1.2)}
+              data-y={0.1}
+              data-z={deslocZ + (horizontal ? (m.y + m.h) * CELULA + 1.2 : (m.y + m.h / 2) * CELULA)}
+              className={`absolute top-0 left-0 font-mono text-[11px] select-none ${moduloSel?.id === m.id ? "font-semibold text-[#ff9f1c]" : "text-texto-suave"}`}
+            >
+              M{m.numero}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

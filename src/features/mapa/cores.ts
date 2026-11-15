@@ -13,6 +13,7 @@ export type PaletaMapa = {
   fundo: [string, string];
   piso: string;
   sombra: string;
+  galpao: { parede: string; vidro: string; porta: string };
   planta: { fundo: [string, string]; rua: string; livreBorda: string; livre: string; modulo: [string, string]; rotulo: string; rotuloTexto: string; editor: string; grade: string; parede: string; pilar: string; entrada: string; cota: string };
 };
 
@@ -26,6 +27,7 @@ export const CORES: Record<Tema, PaletaMapa> = {
     fundo: ["#eef9f8", "#d6ecea"],
     piso: "#dcecef",
     sombra: "#0b2e3a",
+    galpao: { parede: "#c3dce3", vidro: "#8fcfdd", porta: "#0b2e3a" },
     planta: { fundo: ["#eef9f8", "#e2f2f1"], rua: "#dcecef", livreBorda: "#7fd4cc", livre: "#e6f7f5", modulo: ["#2dd4bf", "#0e7490"], rotulo: "#0b2e3a", rotuloTexto: "#ffffff", editor: "#f1faf9", grade: "rgba(11,46,58,.09)", parede: "#0e7490", pilar: "#5fa8b5", entrada: "#d97706", cota: "#4b7480" },
   },
   escuro: {
@@ -37,6 +39,7 @@ export const CORES: Record<Tema, PaletaMapa> = {
     fundo: ["#0e1d22", "#08131a"],
     piso: "#12262d",
     sombra: "#000000",
+    galpao: { parede: "#244a58", vidro: "#3f8196", porta: "#05090b" },
     planta: { fundo: ["#0e1d22", "#0a171c"], rua: "#13272e", livreBorda: "#2f6b73", livre: "#0f2127", modulo: ["#2dd4bf", "#0e7490"], rotulo: "#8cc5cf", rotuloTexto: "#0b2e3a", editor: "#08131a", grade: "rgba(140,197,207,.10)", parede: "#8fd0da", pilar: "#7fb7c2", entrada: "#ff9f1c", cota: "#6f9aa4" },
   },
 };
