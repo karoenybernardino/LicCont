@@ -42,11 +42,11 @@ describe("esquemaEdital", () => {
 
 describe("esquemaModelo", () => {
   it("aceita texto e até 6 assinaturas", () => {
-    expect(esquemaModelo.safeParse({ baseLegal: "Texto", assinaturas: "A\nB" }).success).toBe(true);
-    expect(esquemaModelo.safeParse({ baseLegal: "Texto", assinaturas: "1\n2\n3\n4\n5\n6\n7" }).success).toBe(false);
+    expect(esquemaModelo.safeParse({ tipo: "eliminacao", baseLegal: "Texto", assinaturas: "A\nB" }).success).toBe(true);
+    expect(esquemaModelo.safeParse({ tipo: "eliminacao", baseLegal: "Texto", assinaturas: "1\n2\n3\n4\n5\n6\n7" }).success).toBe(false);
   });
   it("recusa vazio e texto longo", () => {
-    expect(esquemaModelo.safeParse({ baseLegal: " ", assinaturas: "A" }).success).toBe(false);
-    expect(esquemaModelo.safeParse({ baseLegal: "x".repeat(1501), assinaturas: "A" }).success).toBe(false);
+    expect(esquemaModelo.safeParse({ tipo: "eliminacao", baseLegal: " ", assinaturas: "A" }).success).toBe(false);
+    expect(esquemaModelo.safeParse({ tipo: "eliminacao", baseLegal: "x".repeat(1501), assinaturas: "A" }).success).toBe(false);
   });
 });
