@@ -37,7 +37,7 @@ export default async function InicioEquipe() {
     })),
     ...(antigo && !["hoje", "ontem"].includes(haTempo(antigo.criadoEm))
       ? [{ id: "pedido", titulo: "Pedido de demonstração sem resposta", rotulo: "Demonstração", tom: "aviso" as const,
-          texto: `Chegou ${haTempo(antigo.criadoEm)}. ${antigo.orgao}.`, href: "/equipe/prefeituras" }]
+          texto: `Chegou ${haTempo(antigo.criadoEm)}. ${antigo.orgao}.`, href: "/equipe/demonstracoes" }]
       : []),
   ];
 
@@ -73,7 +73,7 @@ export default async function InicioEquipe() {
           <Painel>
             <div className="flex items-center justify-between gap-3">
               <TituloPainel>Pedidos de demonstração</TituloPainel>
-              <span className="text-[12.5px] text-texto-suave">Ver todos em Demonstrações</span>
+              <Link href="/equipe/demonstracoes" className="text-[12.5px] text-destaque hover:underline">Ver todos</Link>
             </div>
             <ul className="flex flex-col divide-y divide-linha">
               {pedidos.slice(0, 4).map((p) => (

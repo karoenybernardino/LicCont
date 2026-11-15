@@ -72,6 +72,15 @@ select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-00
 select throws_ok($$select * from public.equipe_lotes()$$, '42501', null, 'administrador de prefeitura não lê lotes de todas');
 select throws_ok($$select * from public.equipe_importacoes_tce()$$, '42501', null, 'administrador de prefeitura não lê o histórico');
 
+-- 9.20: andamento do pedido
+select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
+select is((select public.equipe_atualizar_pedido((select id from public.pedidos_demonstracao limit 1), 'agendado', '2026-11-20', 'Equipe')), true, 'equipe atualiza o pedido');
+select is((select situacao from public.pedidos_demonstracao limit 1), 'agendado', 'situação gravada');
+select throws_ok($$select public.equipe_atualizar_pedido((select id from public.pedidos_demonstracao limit 1), 'invalida', null, null)$$, '23514', null, 'situação fora da lista é recusada');
+select is((select count(*) from public.equipe_auditoria() where acao = 'equipe.pedido_atualizado'), 1::bigint, 'atualização entra na auditoria');
+select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
+select throws_ok($$select public.equipe_atualizar_pedido(gen_random_uuid(), 'feito', null, null)$$, '42501', null, 'administrador de prefeitura não atualiza pedido');
+
 reset role;
 set local role anon;
 select throws_ok($$select * from public.equipe_integracoes()$$, '42501', null, 'anon não executa integrações');

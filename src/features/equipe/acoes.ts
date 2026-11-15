@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { clienteServico } from "@/lib/supabase/servidor";
+import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
+import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
+import type { EstadoAcao } from "@/ui/formulario";
 import { exigirEquipe, origemDaRequisicao } from "@/features/sessao/dal";
-import { emDemo } from "@/features/demo/dados";
+import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { configuracoes, importarPrefeitura } from "@/features/tce/rotina";
 
 // "Importar agora" feito pela equipe, para uma prefeitura. A rotina é a mesma da
@@ -29,4 +31,27 @@ export async function importarPelaEquipe(formData: FormData): Promise<void> {
   });
   revalidatePath("/equipe", "layout");
   return volta(r.erro ? "erro" : "ok");
+}
+
+const esquemaPedido = z.object({
+  id: z.guid(),
+  situacao: z.enum(["novo", "contato", "agendado", "feito", "descartado"]),
+  demo_em: z.string().trim().transform((v) => v || null).pipe(z.iso.date("Data inválida.").nullable()),
+  responsavel: z.string().trim().max(80, "Nome do responsável muito longo."),
+});
+
+// Andamento do pedido de demonstração: só a equipe; o banco confere de novo (RPC com 2º fator).
+export async function atualizarPedido(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  await exigirEquipe();
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const supabase = await clienteSessao();
+  if (!supabase) return { erro: MENSAGEM_INDISPONIVEL };
+  const d = esquemaPedido.safeParse(Object.fromEntries(formData));
+  if (!d.success) return { erro: d.error.issues[0].message };
+  const { data, error } = await supabase.rpc("equipe_atualizar_pedido", {
+    p_id: d.data.id, p_situacao: d.data.situacao, p_demo_em: d.data.demo_em ?? undefined, p_responsavel: d.data.responsavel,
+  });
+  if (error || !data) return { erro: "Não foi possível salvar. Tente de novo." };
+  revalidatePath("/equipe", "layout");
+  return { aviso: "Pedido atualizado." };
 }

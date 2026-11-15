@@ -23,7 +23,7 @@ const PASSOS_SALVAR = [
 
 // Quadro EquipeNovaPrefeitura: quatro passos (Órgão, Contrato e TCE-CE, Administrador, Conferir)
 // num só formulário; o envio só acontece no último passo.
-export function NovaPrefeitura() {
+export function NovaPrefeitura({ nomeInicial }: { nomeInicial?: string }) {
   const [estado, enviar, pendente] = useActionState<EstadoAcao, FormData>(criarPrefeitura, undefined);
   const [passo, setPasso] = useState(1);
   const [resumo, setResumo] = useState<Record<string, string>>({});
@@ -55,7 +55,7 @@ export function NovaPrefeitura() {
           <div ref={(e) => { secao.current[0] = e; }} className={oculto(1)}>
             <Painel>
               <TituloPainel>Órgão</TituloPainel>
-              <Campo rotulo="Nome do órgão" name="nome" required maxLength={200} placeholder="Prefeitura Municipal de …" className={campo} />
+              <Campo rotulo="Nome do órgão" name="nome" required maxLength={200} defaultValue={nomeInicial} placeholder="Prefeitura Municipal de …" className={campo} />
               <Campo rotulo="CNPJ" name="cnpj" inputMode="numeric" required placeholder="00.000.000/0000-00" className={campo} />
             </Painel>
           </div>
