@@ -12,6 +12,10 @@ import { LIMITES } from "@/features/estrutura/esquemas";
 import { codigoPosicao, numeroBR, percentual, resumir } from "@/features/estrutura/ocupacao";
 import { BotaoAcao } from "@/features/estrutura/botao-acao";
 import { LegendaFrente, VistaFrente } from "@/features/estrutura/vista-frente";
+import { detalheDaCaixa, idDaCaixaPorPosicao } from "@/features/mapa/dados";
+import { SITUACOES } from "@/features/documentos/tipos";
+import { tomSituacao } from "@/features/documentos/painel";
+import { Pilula } from "@/ui/canvas";
 import {
   BarraOcupacao,
   Painel,
@@ -33,7 +37,7 @@ export default async function RuaDoGalpao({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ nivel?: string }>;
+  searchParams: Promise<{ nivel?: string; caixa?: string }>;
 }) {
   const { usuario, secretaria } = await exigirSessao();
   const { id } = await params;
@@ -46,13 +50,23 @@ export default async function RuaDoGalpao({
 
   const admin = usuario.administrador;
   const editaCaixas = await podeCaixas(usuario);
-  const { nivel: nivelBuscado } = await searchParams;
+  const { nivel: nivelBuscado, caixa: caixaBuscada } = await searchParams;
   const modulos = e.modulos.filter((m) => m.ruaId === rua.id);
   const niveisDaRua = e.niveis.filter((n) => modulos.some((m) => m.id === n.moduloId));
   const nivel = niveisDaRua.find((n) => n.id === nivelBuscado);
   const moduloDoNivel = nivel && modulos.find((m) => m.id === nivel.moduloId);
   const caixas = nivel ? await caixasDoNivel(nivel.id) : [];
   const resumo = resumir(e, rua.id);
+  const ativosDaRua = modulos.filter((m) => m.ativo);
+  const niveisPorModulo = Math.max(0, ...ativosDaRua.map((m) => niveisDaRua.filter((n) => n.moduloId === m.id && n.ativo).length));
+  const ocupacaoModulos = ativosDaRua.map((m) => {
+    const ns = niveisDaRua.filter((n) => n.moduloId === m.id && n.ativo);
+    const cx = ns.reduce((t, n) => t + n.caixas, 0);
+    return { id: m.id, numero: m.numero, caixas: cx, percentual: percentual(cx, ns.reduce((t, n) => t + n.capacidade, 0)) };
+  });
+  const numeroCaixa = Number(caixaBuscada);
+  const caixaId = nivel && Number.isInteger(numeroCaixa) && numeroCaixa >= 1 && numeroCaixa <= 200 ? await idDaCaixaPorPosicao(nivel.id, numeroCaixa) : null;
+  const detalhe = caixaId ? await detalheDaCaixa(usuario, caixaId) : null;
   const caixasPorNivel = new Map(await Promise.all(niveisDaRua.map(async (n) => [n.id, await caixasDoNivel(n.id)] as const)));
 
   return (
@@ -89,7 +103,7 @@ export default async function RuaDoGalpao({
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-4">
             <Dado rotulo="Módulos" valor={resumo.modulos} />
-            <Dado rotulo="Níveis" valor={resumo.niveis} />
+            <Dado rotulo="Níveis" valor={niveisPorModulo} />
             <Dado rotulo="Caixas" valor={`${numeroBR(resumo.caixas)} de ${numeroBR(resumo.capacidade)}`} />
             <div className="flex min-w-40 flex-col gap-1">
               <Rotulo>Ocupação</Rotulo>
@@ -107,13 +121,81 @@ export default async function RuaDoGalpao({
         {!rua.ativo && <p className="text-sm text-texto-suave">Esta rua está desativada.</p>}
       </Painel>
 
-      <Painel>
-        <Rotulo>Vista de frente · clique numa caixa</Rotulo>
-        <div className="rounded-xl border border-linha bg-white/40 px-2.5 pt-3.5 pb-2 dark:bg-white/[.02]">
-          <VistaFrente rua={rua.codigo} ruaId={rua.id} modulos={modulos} niveis={niveisDaRua} caixas={caixasPorNivel} selecionado={nivel?.id} />
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Painel>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Rotulo>Vista de frente · clique numa caixa</Rotulo>
+              <div role="group" aria-label="Vista" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-superficie p-[3px] text-[13px]">
+                <span aria-current="true" className="flex min-h-[34px] items-center rounded-[10px] border-2 border-[#0e7490] bg-[rgba(45,212,191,.18)] px-4 font-semibold dark:border-[#2dd4bf]">Frente</span>
+                <Link href={`/mapa?galpao=${galpaoId}&vista=planta`} className="flex min-h-[34px] items-center rounded-[10px] border-2 border-transparent px-4 hover:bg-superficie-2">Planta</Link>
+                <Link href={`/mapa?galpao=${galpaoId}&vista=3d`} className="flex min-h-[34px] items-center rounded-[10px] border-2 border-transparent px-4 hover:bg-superficie-2">3D</Link>
+              </div>
+            </div>
+            <div className="rounded-xl border border-linha bg-white/40 px-2.5 pt-3.5 pb-2 dark:bg-white/[.02]">
+              <VistaFrente rua={rua.codigo} ruaId={rua.id} modulos={modulos} niveis={niveisDaRua} caixas={caixasPorNivel} selecionado={nivel?.id} caixaSelecionada={detalhe ? numeroCaixa : undefined} />
+            </div>
+            <LegendaFrente />
+          </Painel>
+
+          <Painel>
+            <Rotulo>Ocupação por módulo</Rotulo>
+            <ul className="flex flex-col">
+              {ocupacaoModulos.map((m, i) => (
+                <li key={m.id} className={`grid grid-cols-[2.5rem_minmax(0,1fr)_7rem] items-center gap-3 px-1 py-2 text-[13px] ${i % 2 === 0 ? "" : "bg-[rgba(14,116,144,.035)]"}`}>
+                  <span className="font-mono">M{m.numero}</span>
+                  <BarraOcupacao percentual={m.percentual} />
+                  <span className="text-right text-texto-suave">{m.caixas} caixas</span>
+                </li>
+              ))}
+            </ul>
+          </Painel>
         </div>
-        <LegendaFrente />
-      </Painel>
+
+        <aside aria-label="Caixa selecionada" id="caixa" className="min-w-0">
+          <Painel>
+            <div className="flex items-center justify-between gap-2">
+              <Rotulo>Caixa selecionada</Rotulo>
+              {detalhe && <Pilula tom="aviso">Selecionada</Pilula>}
+            </div>
+            {!detalhe ? (
+              <p className="text-sm text-texto-suave">Clique numa caixa na vista de frente para ver os documentos dela.</p>
+            ) : (
+              <>
+                <p className="font-mono text-base leading-6 font-medium">
+                  Rua {detalhe.rua} · Módulo {detalhe.modulo} · Nível {detalhe.nivel} · Caixa {String(detalhe.caixa).padStart(2, "0")}
+                </p>
+                <p className="text-[13px]">
+                  <b className="font-semibold">{detalhe.total}</b> {detalhe.total === 1 ? "documento nesta caixa" : "documentos nesta caixa"}
+                </p>
+                {detalhe.documentos.length === 0 ? (
+                  <p className="text-sm text-texto-suave">{detalhe.total === 0 ? "Caixa vazia." : "Nenhum documento desta caixa é da sua secretaria."}</p>
+                ) : (
+                  <ul className="sc flex max-h-[320px] flex-col gap-1.5 overflow-y-auto pr-1" aria-label="Documentos da caixa">
+                    {detalhe.documentos.map((d) => (
+                      <li key={d.id}>
+                        <Link href={`/documentos/${d.id}`} className="flex items-center gap-2 rounded-[10px] border border-linha bg-superficie-2 px-2.5 py-2 hover:border-destaque focus-visible:outline-2 focus-visible:outline-foco">
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-titulo text-[13px] font-semibold">{d.titulo}</span>
+                            <span className="block truncate text-[11px] text-texto-suave">{[d.empresa, d.secretaria, d.ano].filter(Boolean).join(" · ")}</span>
+                          </span>
+                          <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <Link href={`/mapa?galpao=${galpaoId}&caixa=${detalhe.id}`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#0e7490,#0f766e)] px-5 text-sm font-semibold text-white dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]">
+                  Ver no mapa 3D
+                </Link>
+                <button type="button" disabled title="Imprimir etiqueta · em breve" className="min-h-11 cursor-not-allowed rounded-lg border border-linha px-5 text-sm font-medium opacity-50">
+                  Imprimir etiqueta
+                </button>
+              </>
+            )}
+          </Painel>
+        </aside>
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1.5fr_1fr]">
         <Painel>

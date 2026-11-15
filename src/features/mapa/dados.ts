@@ -210,6 +210,15 @@ export async function ocupacaoDoGalpao(galpaoId: string, grande = false): Promis
   }));
 }
 
+// Id da caixa pela posição (nível + número), para a vista de frente da rua.
+export async function idDaCaixaPorPosicao(nivelId: string, numero: number): Promise<string | null> {
+  if (emDemo()) return idCaixaDemo(nivelId, numero);
+  const sb = await clienteSessao();
+  if (!sb) return null;
+  const { data } = await sb.from("caixas").select("id").eq("nivel_id", nivelId).eq("numero", numero).eq("ativo", true).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
 // Galpão de uma caixa (para abrir o mapa pelo link ?caixa=). Caixa de outra
 // prefeitura e caixa que não existe dão o mesmo resultado: null.
 export async function galpaoDaCaixa(caixaId: string): Promise<string | null> {
