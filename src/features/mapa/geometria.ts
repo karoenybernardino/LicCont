@@ -352,3 +352,8 @@ export function vizinha(l: Leiaute, i: number, direcao: "esq" | "dir" | "cima" |
       return procurar((j) => igualRua(j) && m[j * 4 + 1] < mod, (j) => -m[j * 4 + 1] * 1e6 + Math.abs(m[j * 4 + 2] - niv) * 1000 + Math.abs(m[j * 4 + 3] - cai));
   }
 }
+
+/** Zoom de destino: o atual vezes o fator, preso entre o mínimo e o máximo. */
+export function zoomAlvo(atual: number, fator: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, atual * fator));
+}

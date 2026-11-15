@@ -98,3 +98,21 @@ test("3D: o galpão grande abre, aceita giro e mantém a taxa de quadros", async
   await page.screenshot({ path: "test-results/mapa-grande.png" });
   expect(t.length).toBeGreaterThan(10);
 });
+
+test("3D: botões e teclas + e − mudam o zoom", async ({ page }) => {
+  await page.goto("/mapa");
+  const palco = page.getByRole("group", { name: "Mapa 3D do galpão" });
+  await expect(palco).toHaveAttribute("data-3d-pronto", "sim", { timeout: 60_000 });
+  const zoom = async () => Number(await palco.getAttribute("data-zoom"));
+  const base = await zoom();
+  expect(base).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Aproximar" }).click();
+  await expect.poll(zoom).toBeGreaterThan(base);
+  await page.getByRole("button", { name: "Afastar" }).click();
+  await expect.poll(zoom).toBeCloseTo(base, 0);
+  await palco.focus();
+  await page.keyboard.press("+");
+  await expect.poll(zoom).toBeGreaterThan(base);
+  await page.keyboard.press("-");
+  await expect.poll(zoom).toBeCloseTo(base, 0);
+});

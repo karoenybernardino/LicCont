@@ -70,6 +70,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
   const [webgl, setWebgl] = useState<"ok" | "sem" | "erro">("ok");
   const [pronto, setPronto] = useState(false);
   const [angulo, setAngulo] = useState(0);
+  const [zoom, setZoom] = useState(0);
   const [listaAberta, setListaAberta] = useState(false);
   const [ocupacao, setOcupacao] = useState<Map<string, { documentos: number; capacidade: number }> | null>(null);
   const [ocupacaoLigada, setOcupacaoLigada] = useState(false);
@@ -423,6 +424,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
                 aria-describedby="teclado-3d"
                 onKeyDown={aoTeclar}
                 data-3d-pronto={pronto ? "sim" : "nao"}
+                data-zoom={zoom}
                 className={`relative h-[560px] overflow-hidden rounded-[14px] border border-linha max-md:h-[60vh] lg:h-auto lg:min-h-[320px] lg:flex-1 ${estilos.foco}`}
                 style={fundo}
               >
@@ -434,6 +436,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
                   faixas={faixas}
                   onSelecionar={(i) => escolher(leiaute.caixas.ids[i])}
                   onAngulo={setAngulo}
+                  onZoom={setZoom}
                   onPronto={() => setPronto(true)}
                   onErro={() => setWebgl("erro")}
                   comandos={comandos}
@@ -506,7 +509,7 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
           </ul>
           {vista === "3d" && webgl === "ok" && (
             <p className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-texto-suave">
-              <span>Arraste para andar · botão direito ou dois dedos para girar · roda do mouse para zoom</span>
+              <span>Arraste para andar · botão direito ou dois dedos para girar · roda do mouse, botões + e − ou as teclas + e − para zoom</span>
               <span className="font-mono text-xs">Ângulo {angulo}°</span>
             </p>
           )}

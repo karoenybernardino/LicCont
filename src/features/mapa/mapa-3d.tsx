@@ -10,7 +10,7 @@ import { CameraControls } from "@react-three/drei";
 import CameraControlsImpl from "camera-controls";
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type RefObject, type Ref } from "react";
 import { BoxGeometry, Color, EdgesGeometry, Float32BufferAttribute, InstancedMesh, Matrix4, Quaternion, Vector3, type OrthographicCamera } from "three";
-import { ALTURA_NIVEL, CELULA, centroDaCaixa, enderecoDaInstancia, type Instancias, type Leiaute } from "./geometria";
+import { ALTURA_NIVEL, CELULA, centroDaCaixa, enderecoDaInstancia, zoomAlvo, type Instancias, type Leiaute } from "./geometria";
 import { CORES, type PaletaMapa, type Tema, type Trio } from "./cores";
 
 export type ComandosCamera = {
@@ -30,6 +30,7 @@ type Props = {
   /** Modo de mover: o clique escolhe o destino, não a caixa a abrir. */
   onSelecionar(instancia: number): void;
   onAngulo(graus: number): void;
+  onZoom(zoom: number): void;
   onPronto(): void;
   onErro(): void;
   comandos: Ref<ComandosCamera>;
@@ -102,8 +103,9 @@ function Camera({
   comandos,
   reduzir,
   onAngulo,
+  onZoom,
   onPronto,
-}: Pick<Props, "leiaute" | "onAngulo" | "onPronto"> & { comandos: Ref<ComandosCamera>; reduzir: boolean }) {
+}: Pick<Props, "leiaute" | "onAngulo" | "onZoom" | "onPronto"> & { comandos: Ref<ComandosCamera>; reduzir: boolean }) {
   const controles = useRef<CameraControls>(null);
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const ultimo = useRef<number | null>(null);
@@ -152,7 +154,7 @@ function Camera({
       },
       aproximar(fator) {
         const c = controles.current;
-        if (c) void c.zoomTo(Math.min(c.maxZoom, Math.max(c.minZoom, camera.zoom * fator)), !reduzir);
+        if (c) void c.zoomTo(zoomAlvo(camera.zoom, fator, c.minZoom, c.maxZoom), !reduzir);
       },
       centralizar() {
         centralizar(!reduzir);
@@ -188,6 +190,7 @@ function Camera({
       onUpdate={() => {
         const c = controles.current;
         if (!c) return;
+        onZoom(Math.round(camera.zoom * 10) / 10);
         const graus = Math.round((((c.azimuthAngle - AZIMUTE) * 180) / Math.PI + 360 * 4) % 360);
         if (graus !== ultimo.current) {
           ultimo.current = graus;
@@ -262,7 +265,7 @@ function Paredes({ leiaute, paleta }: { leiaute: Leiaute; paleta: PaletaMapa }) 
   );
 }
 
-function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onAngulo, onPronto, comandos, reduzirMovimento, camada }: Props & { camada: RefObject<HTMLDivElement | null> }) {
+function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onAngulo, onZoom, onPronto, comandos, reduzirMovimento, camada }: Props & { camada: RefObject<HTMLDivElement | null> }) {
   const paleta = CORES[tema];
   const deslocamento: [number, number, number] = [-(leiaute.largura * CELULA) / 2, 0, -(leiaute.profundidade * CELULA) / 2];
   const conjuntoDestaque = useMemo(() => new Set(destaques), [destaques]);
@@ -291,7 +294,7 @@ function Cena({ leiaute, tema, selecionada, destaques, faixas, onSelecionar, onA
   return (
     <>
       <Projetar camada={camada} />
-      <Camera leiaute={leiaute} comandos={comandos} reduzir={reduzirMovimento} onAngulo={onAngulo} onPronto={onPronto} />
+      <Camera leiaute={leiaute} comandos={comandos} reduzir={reduzirMovimento} onAngulo={onAngulo} onZoom={onZoom} onPronto={onPronto} />
       <group position={deslocamento}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[piso[0] / 2, -0.02, piso[1] / 2]}>
           <planeGeometry args={piso} />
