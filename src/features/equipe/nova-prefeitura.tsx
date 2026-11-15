@@ -126,10 +126,12 @@ export function NovaPrefeitura({ nomeInicial }: { nomeInicial?: string }) {
           <div className="flex flex-wrap gap-2.5">
             <Link href="/equipe/prefeituras" className={botaoContornoGrande}>Cancelar</Link>
             {passo > 1 && <button type="button" onClick={() => ir(passo - 1)} className={botaoContornoGrande}>Voltar</button>}
+            {/* key: sem ela o React reaproveita o botão e o clique de Continuar vira envio do formulário. */}
+            {/* key: sem ela o React reaproveita o botão e o clique de Continuar vira envio do formulário. */}
             {passo < 4 ? (
-              <button type="button" onClick={() => ir(passo + 1)} className={botaoPrimario}>Continuar</button>
+              <button key="continuar" type="button" onClick={() => ir(passo + 1)} className={botaoPrimario}>Continuar</button>
             ) : (
-              <button type="submit" disabled={pendente} className={`${botaoPrimario} disabled:opacity-50`}>
+              <button key="salvar" type="submit" disabled={pendente} className={`${botaoPrimario} disabled:opacity-50`}>
                 {pendente ? <span className="inline-flex items-center gap-2"><Girando />Criando…</span> : "Salvar e criar base"}
               </button>
             )}
