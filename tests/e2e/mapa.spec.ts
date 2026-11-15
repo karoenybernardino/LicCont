@@ -79,6 +79,6 @@ test("consulta não vê as caixas de marcar documentos", async ({ page }) => {
   await entrar(page, { email: USUARIOS.consultaDocs.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa?vista=planta");
-  await expect(page.getByRole("heading", { level: 1, name: "Mapa 3D" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Mapa — planta baixa" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Marcar todos" })).toHaveCount(0);
 });
