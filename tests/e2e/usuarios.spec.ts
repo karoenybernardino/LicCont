@@ -92,6 +92,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await expect(page).toHaveURL(/\/equipe$/);
   await semFalhasDeAcessibilidade(page);
 
+  await page.goto("/equipe/prefeituras");
   await page.getByRole("link", { name: "+ Nova prefeitura" }).click();
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
