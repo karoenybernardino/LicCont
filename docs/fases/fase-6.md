@@ -1,7 +1,7 @@
 # Fase 6 — Empréstimos e devoluções
 
-Status: **tarefas 1 a 4 e 8 feitas neste PR** (2026-11-15); 5, 6 e 7 ficam de fora
-(ver abaixo). O PR #51 (Fase 5) já foi mesclado. Plano geral: `docs/plano-de-desenvolvimento.md`, linha "6 · Empréstimos":
+Status: **núcleo na `main`** (PR #52: tarefas 1 a 4 e 8, atualizado em 2026-11-15);
+5 (aprovação), 6 (termo em PDF e Word) e 7 (e-mail) ainda não foram feitas (ver abaixo). O PR #51 (Fase 5) já foi mesclado. Plano geral: `docs/plano-de-desenvolvimento.md`, linha "6 · Empréstimos":
 retirada, devolução, prazo, alerta de atraso, termo em PDF e Word. Pronta
 quando **documento emprestado aparece como tal no mapa e na pesquisa**.
 Fidelidade ao canvas: `docs/telas/` (quadros `EmprestimosEscuro` e

@@ -2,7 +2,8 @@
 
 Arquivo morto de licitações e contratos para prefeituras. Produto próprio,
 separado do Prummo. Plano completo: `docs/plano-de-desenvolvimento.md`.
-Fase atual: `docs/fases/fase-0.md`.
+Fase atual: Fase 8, Prontidão (plano em `docs/fases/fase-8.md` quando o PR #54 entrar).
+Estado de cada fase: tabela "Fases de construção" do plano geral.
 
 ## Regras fixas (não negociáveis)
 
