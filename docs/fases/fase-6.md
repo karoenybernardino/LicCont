@@ -197,7 +197,11 @@ SMS e WhatsApp (seriam outro serviço externo).
 - **Aviso de atraso: só na tela.** O e-mail de atraso fica fora (a infraestrutura de e-mail existe, desligada: decisão 0010).
 - Aprovação do empréstimo e termo de empréstimo: o responsável pediu **recomendação** (abaixo). Nada disso foi implementado.
 
-## Recomendações (aguardam o "sim" do responsável)
+## Aprovação e termo de empréstimo: feitos (2026-11-15)
+
+O responsável mandou fazer as duas recomendações abaixo. **Aprovação:** migração `20261126120000_emprestimo_aprovacao.sql` (tabela `pedidos_emprestimo`, funções `pedir_`, `aprovar_` e `recusar_pedido_emprestimo`, pgTAP `pedidos_emprestimo.test.sql`); em `/emprestimos`, aba "Pendentes" com Aprovar e Recusar. **Termo:** botões PDF e Word em cada linha de `/emprestimos`, texto editável em `/temporalidade/modelo?tipo=emprestimo`. Sem quadro no canvas para a aba e os botões: usam os componentes existentes, a confirmar com o responsável.
+
+## Recomendações (já implementadas)
 
 **1. Aprovação do empréstimo (quem aprova).** Recomendo: quando a secretaria
 marca "exige aprovação" (campo da Fase 5), o pedido fica **pendente** e quem
