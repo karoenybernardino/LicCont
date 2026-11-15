@@ -142,6 +142,43 @@ test("editor: administrador arrasta a ponta da rua e a demonstração avisa que 
   await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
 });
 
+test("editor: puxar a lateral abre módulos com prévia ao vivo, nas duas orientações e com teclado", async ({ page, context }) => {
+  await context.addCookies([{ name: "liccont_demo_perfil", value: "administrador", url: "http://localhost:3200" }]);
+  await page.goto("/mapa/editar");
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(800);
+  const rua = page.locator('g[data-rua="A"]');
+  const puxar = async (dx: number, dy: number) => {
+    const p = (await page.locator('g[data-ponta-rua="A"]').boundingBox())!;
+    const [x, y] = [p.x + p.width / 2, p.y + p.height / 2];
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + dx, y + dy, { steps: 8 });
+  };
+  const caixa = (await rua.boundingBox())!;
+  const modulo = caixa.width / 5; // 5 módulos na demonstração
+  await rua.click({ position: { x: 20, y: caixa.height / 2 } });
+  await puxar(modulo * 3.1, 0);
+  await expect(page.locator("[data-previa-modulos]")).toContainText("+3 módulos · 8 no total");
+  await page.mouse.up();
+  await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+  await expect(page.locator("[data-previa-modulos]")).toHaveCount(0);
+  // para dentro: tira módulos, nunca deixa menos de 1
+  await puxar(-modulo * 9, 0);
+  await expect(page.locator("[data-previa-modulos]")).toContainText("−4 módulos · 1 no total");
+  await page.mouse.up();
+  // rua girada: a ponta fica embaixo e o arrasto é vertical
+  await page.getByRole("button", { name: "Girar 90°" }).click();
+  await page.waitForTimeout(200);
+  await puxar(0, modulo * 2.1);
+  await expect(page.locator("[data-previa-modulos]")).toContainText("+2 módulos · 7 no total");
+  await page.mouse.up();
+  // teclado: + soma um módulo e avisa
+  await page.getByRole("group", { name: "Planta do galpão (editor)" }).focus();
+  await page.keyboard.press("+");
+  await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+});
+
 test("3D: botões e teclas + e − mudam o zoom", async ({ page }) => {
   await page.goto("/mapa");
   const palco = page.getByRole("group", { name: "Mapa 3D do galpão" });

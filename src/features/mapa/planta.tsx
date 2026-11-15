@@ -44,7 +44,7 @@ type Props = {
     /** Arrastar a ponta da rua (só administrador): mais ou menos módulos. */
     onPontaRua?(e: PointerEvent, id: string): void;
     /** Parede em desenho (prévia), em células. */
-    previa?: { x: number; y: number; largura: number; profundidade: number } | null;
+    previa?: { x: number; y: number; largura: number; profundidade: number; n?: number; vertical?: boolean; tira?: boolean; rotulo?: string } | null;
     svgRef: Ref<SVGSVGElement>;
   };
 };
@@ -313,21 +313,21 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
               </g>
             )}
 
-            {/* Ponta da rua: ao passar o mouse aparece a faixa; arrastar muda os módulos. */}
+            {/* Ponta da rua: faixa laranja larga (sempre à vista na rua escolhida); puxar abre ou fecha módulos. */}
             {editor?.onPontaRua && (() => {
               const v = r.giro === 90 || r.giro === 270;
-              const fx = v ? rx : rx + rw - 10;
-              const fy = v ? ry + rh - 10 : ry;
+              const fx = v ? rx : rx + rw - 8;
+              const fy = v ? ry + rh - 8 : ry;
               return (
                 <g
                   role="presentation"
                   data-ponta-rua={r.codigo}
                   className="group/ponta"
-                  style={{ cursor: v ? "ns-resize" : "ew-resize" }}
+                  style={{ cursor: v ? "ns-resize" : "ew-resize", touchAction: "none" }}
                   onPointerDown={(ev) => editor.onPontaRua?.(ev, r.id)}
                 >
-                  <rect x={fx - (v ? 0 : 6)} y={fy - (v ? 6 : 0)} width={v ? rw : 22} height={v ? 22 : rh} fill="transparent" />
-                  <rect x={fx} y={fy} width={v ? rw : 10} height={v ? 10 : rh} rx="3" fill={LARANJA} className="opacity-0 transition-opacity group-hover/ponta:opacity-90" pointerEvents="none" />
+                  <rect x={fx - (v ? 0 : 12)} y={fy - (v ? 12 : 0)} width={v ? rw : 32} height={v ? 32 : rh} fill="transparent" />
+                  <rect x={fx} y={fy} width={v ? rw : 8} height={v ? 8 : rh} rx="3" fill={LARANJA} className={`transition-opacity group-hover/ponta:opacity-100 ${escolhida ? "opacity-90" : "opacity-0"}`} pointerEvents="none" />
                 </g>
               );
             })()}
@@ -410,9 +410,34 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
       </g>
 
       {/* Prévia da parede que está sendo desenhada. */}
-      {editor?.previa && (
-        <rect x={x(editor.previa.x)} y={x(editor.previa.y)} width={editor.previa.largura * PX} height={editor.previa.profundidade * PX} fill={LARANJA} opacity=".35" stroke={LARANJA} strokeDasharray="5 4" pointerEvents="none" />
-      )}
+      {editor?.previa && (() => {
+        const pv = editor.previa;
+        const cor = pv.tira ? ERRO : LARANJA;
+        const n = pv.n ?? 1;
+        const px = x(pv.x);
+        const py = x(pv.y);
+        const w = pv.largura * PX;
+        const h = pv.profundidade * PX;
+        return (
+          <g pointerEvents="none" data-previa-modulos={pv.n}>
+            <rect x={px} y={py} width={w} height={h} fill={cor} opacity=".3" stroke={cor} strokeWidth="2" strokeDasharray="5 4" />
+            {pv.n !== undefined &&
+              Array.from({ length: n - 1 }, (_, i) =>
+                pv.vertical ? (
+                  <line key={i} x1={px} x2={px + w} y1={py + (h * (i + 1)) / n} y2={py + (h * (i + 1)) / n} stroke={cor} strokeDasharray="3 3" />
+                ) : (
+                  <line key={i} y1={py} y2={py + h} x1={px + (w * (i + 1)) / n} x2={px + (w * (i + 1)) / n} stroke={cor} strokeDasharray="3 3" />
+                ),
+              )}
+            {pv.rotulo && (
+              <g transform={`translate(${px + w / 2} ${py + h + 22})`}>
+                <rect x="-85" y="-16" width="170" height="26" rx="13" fill="#0b2e3a" />
+                <text textAnchor="middle" y="2" fontSize="14" fontWeight="600" fill="#fff">{pv.rotulo}</text>
+              </g>
+            )}
+          </g>
+        );
+      })()}
     </svg>
   );
 }

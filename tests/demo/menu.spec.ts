@@ -30,4 +30,27 @@ for (const tema of ["light", "dark"] as const) {
     await expect(dica).toContainText("Mapa 3D");
     expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
   });
+
+  test(`Configurações agrupa os ajustes no tema ${tema}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: tema });
+    await page.goto("/inicio");
+    // fora de Configurações, o menu não traz os itens soltos
+    for (const nome of ["Usuários e perfis", "Secretarias", "Acesso de suporte", "Exportar dados"]) {
+      await expect(page.locator("aside").getByRole("link", { name: nome, exact: true })).toHaveCount(0);
+    }
+    const botao = page.getByRole("button", { name: "Configurações" });
+    await expect(botao).toHaveAttribute("aria-expanded", "false");
+    await botao.click();
+    await expect(botao).toHaveAttribute("aria-expanded", "true");
+    for (const nome of ["Usuários e perfis", "Secretarias", "Importação do TCE", "Acesso de suporte", "Exportar dados"]) {
+      await expect(page.locator("aside").getByRole("link", { name: nome, exact: true })).toBeVisible();
+    }
+    expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(botao).toHaveAttribute("aria-expanded", "false");
+    await expect(botao).toBeFocused();
+    await botao.click();
+    await page.locator("aside").getByRole("link", { name: "Secretarias", exact: true }).click();
+    await expect(page).toHaveURL(/\/secretarias$/);
+  });
 }
