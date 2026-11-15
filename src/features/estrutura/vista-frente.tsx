@@ -16,6 +16,7 @@ export function VistaFrente({
   niveis,
   caixas,
   selecionado,
+  caixaSelecionada,
 }: {
   rua: string;
   ruaId: string;
@@ -24,6 +25,8 @@ export function VistaFrente({
   /** Números das caixas ativas de cada nível. */
   caixas: Map<string, number[]>;
   selecionado?: string;
+  /** Número da caixa escolhida no nível `selecionado`; sem ele, o nível inteiro fica em destaque. */
+  caixaSelecionada?: number;
 }) {
   const ativos = modulos.filter((m) => m.ativo);
   const nNiveis = Math.max(1, ...ativos.map((m) => niveis.filter((n) => n.moduloId === m.id && n.ativo).length));
@@ -73,7 +76,7 @@ export function VistaFrente({
             <rect x={x0 + larg - 4} y={30} width={4} height={base + 10 - 30} className="fill-[#7fa6ae] dark:fill-[#3b5d66]" />
             {lista.map((n, i) => {
               const ys = base - PASSO_NIVEL * i;
-              const ativo = n.id === selecionado;
+              const nivelAtivo = n.id === selecionado;
               const existentes = caixas.get(n.id) ?? [];
               return (
                 <g key={n.id}>
@@ -101,7 +104,7 @@ export function VistaFrente({
                     return (
                       <Link
                         key={c}
-                        href={`/estrutura/rua/${ruaId}?nivel=${n.id}#nivel`}
+                        href={`/estrutura/rua/${ruaId}?nivel=${n.id}&caixa=${numero}#caixa`}
                         aria-label={codigo}
                       >
                         <rect
@@ -111,7 +114,7 @@ export function VistaFrente({
                           height={ALT_CAIXA}
                           rx={3}
                           className={
-                            ativo
+                            nivelAtivo && (caixaSelecionada === undefined || caixaSelecionada === numero)
                               ? "fill-[url(#gsel)] stroke-[#f59e0b]"
                               : "fill-[url(#gbox-c)] stroke-[#0f766e] dark:fill-[url(#gbox-e)] dark:stroke-[#14b8a6]"
                           }
@@ -152,7 +155,7 @@ export function LegendaFrente() {
       </span>
       <span className={item}>
         <span className="h-4 w-3 rounded-sm bg-[linear-gradient(#ffd27a,#ff9f1c)]" />
-        Nível selecionado
+        Selecionada
       </span>
     </div>
   );
