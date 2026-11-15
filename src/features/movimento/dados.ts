@@ -10,11 +10,13 @@ import { tituloDocumento } from "@/features/documentos/titulo";
 import { posicaoLegivel } from "@/features/inicio/resumo";
 import { quando } from "@/features/estrutura/alteracoes";
 import type { ItemPesquisa } from "@/features/documentos/tipos";
+import { CLASSES } from "@/features/temporalidade/regras";
+import { lerRegras, lerTemporalidadeReal } from "@/features/temporalidade/dados";
 import { situacaoEmprestimo } from "./situacao";
 import type { Emprestimo, Movimentacao, PrazoAVencer, ProntoEliminacao, RegistroAuditoria, RegraPrazo, ResumoTemporalidade } from "./tipos";
 
 // Empréstimos (Fase 6): leitura pela sessão da pessoa (o RLS limita à prefeitura
-// e às secretarias dela). Temporalidade (Fase 7) ainda sem tabela.
+// e às secretarias dela). Temporalidade (Fase 7): lê o banco.
 const FALHA_EMPRESTIMOS = "Não foi possível ler os empréstimos.";
 
 const codigoDaCaixa = (rua: string, modulo: number, nivel: number, caixa: number) => `${rua}-M${modulo}-N${nivel}-C${String(caixa).padStart(2, "0")}`;
@@ -95,7 +97,14 @@ export type Temporalidade = { resumo: ResumoTemporalidade; regras: RegraPrazo[];
 
 export async function lerTemporalidade(): Promise<Temporalidade> {
   if (emDemo()) return { resumo: RESUMO_TEMPORALIDADE_DEMO, regras: REGRAS_DEMO, prontos: PRONTOS_DEMO, aVencer: PRAZOS_DEMO };
-  return { resumo: { vencem90: 0, prontos: 0, permanentes: 0 }, regras: [], prontos: [], aVencer: [] };
+  const [regras, real] = await Promise.all([lerRegras(), lerTemporalidadeReal()]);
+  const anos = (n: number) => `${n} ${n === 1 ? "ano" : "anos"}`;
+  return {
+    resumo: real.resumo,
+    regras: regras.map((r) => ({ tipo: CLASSES[r.classe], corrente: anos(r.corrente), intermediaria: anos(r.intermediaria), permanente: r.destinacao === "guarda_permanente" })),
+    prontos: real.prontos.slice(0, 200).map((p) => ({ id: p.id, titulo: p.titulo, caixa: p.caixa, venceu: `${p.vencimento.slice(5, 7)}/${p.vencimento.slice(0, 4)}`, marcado: false, secretariaId: p.secretariaId })),
+    aVencer: real.aVencer.slice(0, 4).map((p) => ({ titulo: p.titulo, posicao: posicaoLegivel(p.posicao), emDias: p.emDias })),
+  };
 }
 
 // Últimas movimentações do Início: cadastros mais recentes do acervo.

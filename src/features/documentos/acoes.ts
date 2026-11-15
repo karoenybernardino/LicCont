@@ -53,6 +53,7 @@ export async function salvarDocumento(formData: FormData): Promise<Retorno> {
     situacao: d.situacao,
     vigencia_inicio: d.vigencia_inicio,
     vigencia_fim: d.vigencia_fim,
+    encerrado_em: d.encerrado_em,
   };
   if (editar) {
     const { data, error } = await sb.from("documentos").update(campos).eq("id", idEdicao as string).select("id");

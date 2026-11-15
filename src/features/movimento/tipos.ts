@@ -1,9 +1,9 @@
-// Empréstimos (Fase 6) têm tabela; a temporalidade (Fase 7) ainda não:
-// a demonstração mostra dados fictícios.
+// Empréstimos (Fase 6) e temporalidade (Fase 7) têm tabela; a demonstração
+// mostra dados fictícios.
 
 export type Emprestimo = { id: string; documentoId: string; titulo: string; objeto: string; caixa: string; quem: string; setor: string; prazo: string; devolvido: boolean };
 export type RegraPrazo = { tipo: string; corrente: string; intermediaria: string; permanente: boolean };
-export type ProntoEliminacao = { id: string; titulo: string; caixa: string; venceu: string; marcado: boolean };
+export type ProntoEliminacao = { id: string; titulo: string; caixa: string; venceu: string; marcado: boolean; secretariaId?: string };
 export type PrazoAVencer = { titulo: string; posicao: string; emDias: number };
 export type Movimentacao = { titulo: string; detalhe: string; tag: string };
 export type ResumoTemporalidade = { vencem90: number; prontos: number; permanentes: number };

@@ -40,8 +40,8 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Início — claro](png/InicioClaro.png) | claro | 1280×940 | /inicio |
 | [Empréstimos — escuro](png/EmprestimosEscuro.png) | escuro | 1280×720 | /emprestimos |
 | [Empréstimos — claro](png/EmprestimosClaro.png) | claro | 1280×720 | /emprestimos |
-| [Temporalidade e descarte — escuro](png/TemporalidadeEscuro.png) | escuro | 1280×740 | (ainda sem rota) |
-| [Temporalidade e descarte — claro](png/TemporalidadeClaro.png) | claro | 1280×740 | (ainda sem rota) |
+| [Temporalidade e descarte — escuro](png/TemporalidadeEscuro.png) | escuro | 1280×740 | /temporalidade |
+| [Temporalidade e descarte — claro](png/TemporalidadeClaro.png) | claro | 1280×740 | /temporalidade |
 | [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | (ainda sem rota) |
 | [Auditoria — claro](png/AuditoriaClaro.png) | claro | 1280×800 | (ainda sem rota) |
 | [Usuários e perfis — escuro](png/UsuariosEscuro.png) | escuro | 1280×1000 | /usuarios |
@@ -90,3 +90,21 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Fase 4 · Dentro da caixa: mover documentos — claro](png/MapaMoverClaro.png) | claro | 1280×880 | /mapa (dentro da caixa → mover) |
 | [Fase 4 · Editor da planta — escuro](png/EditorPlantaEscuro.png) | escuro | 1280×880 | /mapa/editar |
 | [Fase 4 · Editor da planta — claro](png/EditorPlantaClaro.png) | claro | 1280×880 | /mapa/editar |
+| [Fase 7 · Temporalidade com termos de eliminação — escuro](png/TemporalidadeTermosEscuro.png) | escuro | 1280×1083 | /temporalidade (painel Termos de eliminação) |
+| [Fase 7 · Temporalidade com termos de eliminação — claro](png/TemporalidadeTermosClaro.png) | claro | 1280×1083 | /temporalidade (painel Termos de eliminação) |
+| [Fase 7 · Temporalidade: janela da regra de prazo — escuro](png/TemporalidadeRegraEscuro.png) | escuro | 1280×740 | /temporalidade (janela Nova regra / Editar tabela) |
+| [Fase 7 · Temporalidade: janela da regra de prazo — claro](png/TemporalidadeRegraClaro.png) | claro | 1280×740 | /temporalidade (janela Nova regra / Editar tabela) |
+| [Fase 7 · Termo de eliminação (em ciência) — escuro](png/TermoCienciaEscuro.png) | escuro | 1280×700 | /temporalidade/termo/[id] (em ciência) |
+| [Fase 7 · Termo de eliminação (em ciência) — claro](png/TermoCienciaClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (em ciência) |
+| [Fase 7 · Termo de eliminação (rascunho) — escuro](png/TermoRascunhoEscuro.png) | escuro | 1280×700 | /temporalidade/termo/[id] (rascunho) |
+| [Fase 7 · Termo de eliminação (rascunho) — claro](png/TermoRascunhoClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (rascunho) |
+| [Fase 7 · Cadastro: encerramento do processo — escuro](png/CadastroEncerramentoEscuro.png) | escuro | 1280×740 | /documentos/novo e /documentos/[id]/editar (licitação) |
+| [Fase 7 · Cadastro: encerramento do processo — claro](png/CadastroEncerramentoClaro.png) | claro | 1280×740 | /documentos/novo e /documentos/[id]/editar (licitação) |
+| [Fase 7 · Termo de eliminação (prazo de ciência em andamento) — escuro](png/TermoAndamentoEscuro.png) | escuro | 1280×700 | /temporalidade/termo/[id] (em ciência, prazo correndo) |
+| [Fase 7 · Termo de eliminação (prazo de ciência em andamento) — claro](png/TermoAndamentoClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (em ciência, prazo correndo) |
+| [Fase 7 · Termo de eliminação (aprovado) — escuro](png/TermoAprovadoEscuro.png) | escuro | 1280×700 | /temporalidade/termo/[id] (aprovado) |
+| [Fase 7 · Termo de eliminação (aprovado) — claro](png/TermoAprovadoClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (aprovado) |
+| [Fase 7 · Termo de eliminação (cancelado) — escuro](png/TermoCanceladoEscuro.png) | escuro | 1280×700 | /temporalidade/termo/[id] (cancelado) |
+| [Fase 7 · Termo de eliminação (cancelado) — claro](png/TermoCanceladoClaro.png) | claro | 1280×700 | /temporalidade/termo/[id] (cancelado) |
+| [Fase 7 · Janela da regra: guarda permanente — escuro](png/TemporalidadeRegraPermanenteEscuro.png) | escuro | 1280×740 | /temporalidade (janela da regra, guarda permanente) |
+| [Fase 7 · Janela da regra: guarda permanente — claro](png/TemporalidadeRegraPermanenteClaro.png) | claro | 1280×740 | /temporalidade (janela da regra, guarda permanente) |

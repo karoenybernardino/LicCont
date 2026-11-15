@@ -1,5 +1,7 @@
 "use client";
 
+import { PrazoDeGuarda } from "@/features/temporalidade/prazo-guarda";
+import type { Regra } from "@/features/temporalidade/regras";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -18,7 +20,7 @@ import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
-import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Tipo } from "./tipos";
+import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Modalidade, type Tipo } from "./tipos";
 
 export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
@@ -38,6 +40,7 @@ export type Inicial = {
   situacao: string;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
+  encerrado_em: string | null;
   secretariaId: string;
   caixaId: string;
   ruaId: string;
@@ -88,6 +91,7 @@ export function FormularioDocumento({
   prefeitura,
   limiteMb,
   inicial,
+  regras = [],
 }: {
   secretarias: { id: string; nome: string }[];
   secretariaPadrao: string;
@@ -95,10 +99,13 @@ export function FormularioDocumento({
   prefeitura: string;
   limiteMb: number;
   inicial?: Inicial;
+  regras?: Regra[];
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [tipo, setTipo] = useState<Tipo>(inicial?.tipo ?? "licitacao");
+  const [modalidade, setModalidade] = useState(inicial?.modalidade ?? "");
+  const [encerrado, setEncerrado] = useState(inicial?.encerrado_em ?? "");
   const [rua, setRua] = useState(inicial?.ruaId ?? "");
   const [modulo, setModulo] = useState(inicial?.moduloId ?? "");
   const [nivel, setNivel] = useState(inicial?.nivelId ?? "");
@@ -263,7 +270,7 @@ export function FormularioDocumento({
             </div>
             <Campo rotulo={tipo === "licitacao" ? "Modalidade" : "Modalidade (opcional)"} className="min-w-48 flex-1">
               {(id) => (
-                <select id={id} name="modalidade" defaultValue={inicial?.modalidade ?? ""} className={caixaCampo}>
+                <select id={id} name="modalidade" value={modalidade} onChange={(e) => setModalidade(e.target.value)} className={caixaCampo}>
                   <option value="">{tipo === "licitacao" ? "Escolha…" : "Sem modalidade"}</option>
                   {Object.entries(MODALIDADES).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
@@ -335,6 +342,19 @@ export function FormularioDocumento({
               </>
             )}
           </div>
+          {tipo === "licitacao" && (
+            <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,2fr)]">
+              <Campo rotulo="Encerramento do processo">
+                {(id) => (
+                  <>
+                    <input id={id} name="encerrado_em" type="date" value={encerrado} onChange={(e) => setEncerrado(e.target.value)} className={`${caixaCampo} font-mono font-medium`} aria-describedby={`${id}-nota`} />
+                    <span id={`${id}-nota`} className="text-xs text-texto-suave">Data da homologação ou do último ato do processo.</span>
+                  </>
+                )}
+              </Campo>
+              <PrazoDeGuarda regras={regras} tipo={tipo} modalidade={(modalidade || null) as Modalidade | null} encerrado={encerrado} />
+            </div>
+          )}
         </section>
 
         <section className={secao} aria-labelledby="t2">

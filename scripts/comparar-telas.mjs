@@ -2,7 +2,7 @@
 // Uso: com a prévia de demonstração ligada (porta 3200),
 //   node scripts/comparar-telas.mjs EditorPlantaEscuro EditorPlantaClaro
 //   node scripts/comparar-telas.mjs --todos
-// Opções: --base http://localhost:3200   --rota /mapa/editar (força a rota)
+// Opções: --base http://localhost:3200   --rota /mapa/editar (força a rota)   --clicar "Nova regra de prazo,Guarda permanente" (vários, separados por vírgula)
 // Saída: test-results/comparacao/<Quadro>.png  (canvas à esquerda, sistema à direita)
 import { chromium } from "@playwright/test";
 import { readFileSync, mkdirSync } from "node:fs";
@@ -12,6 +12,7 @@ const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args.splice(i, 2)[1] : d; };
 const base = opt("--base", "http://localhost:3200");
 const rotaForcada = opt("--rota", null);
+const clicar = opt("--clicar", null); // texto de um botão a clicar antes do print (ex.: abrir uma janela)
 const todos = args.includes("--todos");
 const telas = JSON.parse(readFileSync("docs/telas/telas.json", "utf8"));
 const alvo = todos ? telas.filter((t) => t.rota.startsWith("/")) : telas.filter((t) => args.includes(t.quadro));
@@ -32,6 +33,10 @@ for (const t of alvo) {
   await ctx.addInitScript((v) => { try { localStorage.setItem("tema", v); } catch {} document.documentElement?.setAttribute("data-theme", v); }, tema);
   const app = await ctx.newPage();
   await app.goto(base + rota, { waitUntil: "networkidle" });
+  for (const alvoClique of (clicar ?? "").split(",").filter(Boolean)) {
+    const botao = app.getByRole("button", { name: alvoClique.trim(), exact: true });
+    await (await botao.count() ? botao.first() : app.getByText(alvoClique.trim(), { exact: true }).first()).click();
+  }
   await app.waitForTimeout(800);
   const sistema = (await app.screenshot()).toString("base64");
   const canvas = readFileSync(resolve("docs/telas", t.png)).toString("base64");
