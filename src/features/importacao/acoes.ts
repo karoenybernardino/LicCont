@@ -151,7 +151,7 @@ export async function localizarDocumentos(entrada: { ids: string[]; caixa: strin
 }
 
 // Erros do banco -> texto fixo.
-export function mensagemImportacao(codigo: string | undefined) {
+function mensagemImportacao(codigo: string | undefined) {
   switch (codigo) {
     case "42501":
       return "Você não tem permissão para esta ação.";
