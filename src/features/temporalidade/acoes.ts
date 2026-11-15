@@ -6,7 +6,7 @@ import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
-import { esquemaEdital, esquemaId, esquemaTermo, lerRegra } from "./esquemas";
+import { esquemaEdital, esquemaId, esquemaModelo, esquemaTermo, lerRegra } from "./esquemas";
 import { mensagemDoBanco } from "./regras";
 
 // Mensagens fixas por código do banco: nada do documento nem de pessoa volta no erro.
@@ -33,6 +33,25 @@ export async function salvarRegra(_: EstadoAcao, formData: FormData): Promise<Es
   revalidatePath("/temporalidade");
   revalidatePath("/inicio");
   return { aviso: "Regra salva." };
+}
+
+// Salva o texto-base e as assinaturas do termo da prefeitura. Só administrador.
+export async function salvarModelo(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  const { usuario } = await exigirAdmin();
+  const dados = esquemaModelo.safeParse({ tipo: formData.get("tipo"), baseLegal: formData.get("baseLegal"), assinaturas: formData.get("assinaturas") });
+  if (!dados.success) return { erro: dados.error.issues[0].message };
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
+  const campos = { base_legal: dados.data.baseLegal, assinaturas: dados.data.assinaturas };
+  const alterou = await sb.from("modelos_termo").update(campos).eq("tipo", dados.data.tipo).select("id");
+  if (alterou.error) return { erro: mensagemDoBanco(alterou.error.code) };
+  if (!alterou.data?.length) {
+    const novo = await sb.from("modelos_termo").insert({ prefeitura_id: usuario.prefeituraId, tipo: dados.data.tipo, ...campos });
+    if (novo.error) return { erro: mensagemDoBanco(novo.error.code) };
+  }
+  revalidatePath("/temporalidade", "layout");
+  return { aviso: "Modelo salvo. Vale para os próximos PDFs e Words." };
 }
 
 // Gera o termo em rascunho com os documentos marcados (todos de uma secretaria).

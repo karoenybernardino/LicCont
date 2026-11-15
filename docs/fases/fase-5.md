@@ -42,3 +42,8 @@ abre a caixa só depois do login). Fidelidade ao canvas: `docs/telas/`.
   prazo, rua preferencial) são gravadas agora e usadas pelas Fases 5 a 6.
   A "Rua preferencial" será usada na sugestão de caixa do cadastro.
 - A coluna "Documentos" da lista passa a contar de verdade.
+
+## Pendências fechadas em 2026-11-15
+
+- As linhas Auditoria, Etiquetas e "Caixa lida pelo celular" de `docs/telas/README.md` e `telas.json` apontam para as rotas reais (`/auditoria`, `/etiquetas`, `/etiquetas/celular`).
+- Aviso por e-mail das secretarias: o envio está **pronto e desligado** (`src/lib/email/enviar.ts`, decisão 0010). Liga quando `EMAIL_API_KEY` e `EMAIL_REMETENTE` existirem na Vercel; até lá o aviso fica só na tela.

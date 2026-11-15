@@ -6,7 +6,7 @@ import { exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
-import { esquemaDevolucao, esquemaEmprestimo } from "./esquemas";
+import { esquemaDecisao, esquemaDevolucao, esquemaEmprestimo } from "./esquemas";
 
 // Registrar e devolver passam por funções do banco, que conferem prefeitura,
 // secretaria e papel de novo. Nome e setor de quem retirou nunca vão para log.
@@ -21,6 +21,7 @@ function atualizar() {
 // Erros do banco conhecidos -> texto da tela (sem repetir dado da pessoa).
 function mensagem(codigo: string | undefined): string {
   if (codigo === "42501") return SEM_PERMISSAO.erro as string;
+  if (codigo === "LE001") return "Esta secretaria exige aprovação: faça o pedido.";
   if (codigo === "23505") return "Este documento já está emprestado.";
   if (codigo === "23514") return "Confira o documento e as datas: ele precisa estar ativo e o prazo ter até 60 dias.";
   return "Não foi possível salvar. Tente de novo.";
@@ -36,6 +37,16 @@ export async function registrarEmprestimo(formData: FormData): Promise<Retorno> 
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
   const d = dados.data;
+  // Secretaria que exige aprovação: vira pedido; o prazo só conta da aprovação.
+  const { data: doc } = await sb.from("documentos").select("secretarias(exige_aprovacao_emprestimo)").eq("id", d.documento).maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((doc as any)?.secretarias?.exige_aprovacao_emprestimo) {
+    const dias = Math.round((Date.parse(`${d.prazo}T00:00:00Z`) - Date.parse(`${d.retirada}T00:00:00Z`)) / 86_400_000);
+    const { error: erroPedido } = await sb.rpc("pedir_emprestimo", { p_documento: d.documento, p_nome: d.nome, p_setor: d.setor, p_prazo_dias: Math.max(1, dias), p_observacao: d.observacao || null });
+    if (erroPedido) return { erro: mensagem(erroPedido.code) };
+    atualizar();
+    return { ok: true, aviso: "Pedido enviado para aprovação do coordenador da secretaria." };
+  }
   const { error } = await sb.rpc("registrar_emprestimo", {
     p_documento: d.documento, p_nome: d.nome, p_setor: d.setor, p_retirada: d.retirada, p_prazo: d.prazo, p_observacao: d.observacao || null,
   });
@@ -55,6 +66,22 @@ export async function devolverEmprestimo(entrada: unknown): Promise<Retorno> {
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
   const { error } = await sb.rpc("devolver_emprestimo", { p_emprestimo: dados.data.id });
   if (error) return { erro: error.code === "23514" ? "Este empréstimo já foi devolvido." : mensagem(error.code) };
+  atualizar();
+  return { ok: true };
+}
+
+// Aprovar ou recusar um pedido. O banco confere o papel e que quem aprova não é quem pediu.
+export async function decidirPedido(entrada: unknown): Promise<Retorno> {
+  await exigirSessao();
+  const dados = esquemaDecisao.safeParse(entrada);
+  if (!dados.success) return { erro: "Confira os dados e tente de novo." };
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
+  const { error } = dados.data.acao === "aprovar"
+    ? await sb.rpc("aprovar_pedido_emprestimo", { p_pedido: dados.data.id })
+    : await sb.rpc("recusar_pedido_emprestimo", { p_pedido: dados.data.id });
+  if (error) return { erro: error.code === "23514" ? "Este pedido já foi decidido ou venceu (3 dias)." : error.code === "23505" ? "Este documento já está emprestado." : mensagem(error.code) };
   atualizar();
   return { ok: true };
 }

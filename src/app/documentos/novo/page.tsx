@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { exigirSessao, nomePrefeitura } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
@@ -22,7 +23,7 @@ export default async function NovoDocumento({ searchParams }: { searchParams: Pr
   ]);
   const padrao = secretarias.find((s) => s.id === secretaria.id)?.id ?? secretarias[0].id;
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Cadastrar documento" trilha="Acervo · Novo">
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Cadastrar documento" trilha="Acervo · Novo" acoes={<Link href="/documentos/lote" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">Enviar vários PDFs</Link>}>
       {salvo && (
         <p role="status" className="rounded-lg border border-linha bg-superficie-2 p-3 text-sm">
           Documento salvo. Cadastre o próximo.

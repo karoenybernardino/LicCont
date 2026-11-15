@@ -198,6 +198,14 @@ select results_eq($$select count(*)::int from public.limpar_envios('0b000000-000
 select is_empty($$select * from public.limpar_envios('0b000000-0000-0000-0000-000000000001')$$, 'e só uma vez');
 reset role;
 set local role authenticated;
+select throws_ok($$select * from public.limpar_envios_todos()$$, '42501', null, 'o operador não roda a limpeza geral');
+reset role;
+update public.arquivos set situacao = 'enviando', enviado_em = now() - interval '2 hours' where id = 'f0b10000-0000-0000-0000-000000000000';
+set local role service_role;
+select results_eq($$select count(*)::int from public.limpar_envios_todos()$$, array[1], 'a limpeza geral pega o envio parado');
+select is_empty($$select * from public.limpar_envios_todos()$$, 'e só uma vez');
+reset role;
+set local role authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Ocupação e "próxima livre": só números, contando todas as secretarias

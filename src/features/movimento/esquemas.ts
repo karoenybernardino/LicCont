@@ -26,4 +26,6 @@ export const esquemaEmprestimo = z
     else if (dias(v.prazo) - dias(v.retirada) > PRAZO_MAXIMO_DIAS) ctx.addIssue({ code: "custom", path: ["prazo"], message: `O prazo máximo é de ${PRAZO_MAXIMO_DIAS} dias.` });
   });
 
+export const esquemaDecisao = z.object({ id: z.guid(), acao: z.enum(["aprovar", "recusar"]) });
+
 export const esquemaDevolucao = z.object({ id: z.guid() });

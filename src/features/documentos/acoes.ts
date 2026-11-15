@@ -49,6 +49,7 @@ export async function salvarDocumento(formData: FormData): Promise<Retorno> {
     objeto: d.objeto,
     empresa: d.empresa,
     cnpj: d.cnpj,
+    cpf_credor: d.cpf_credor,
     valor: d.valor,
     situacao: d.situacao,
     vigencia_inicio: d.vigencia_inicio,
@@ -290,4 +291,28 @@ export async function caixaLivre(escopo: { nivel?: string; modulo?: string; rua?
 export async function posicaoDaCaixaAcao(caixaId: string) {
   await exigirSessao();
   return z.guid().safeParse(caixaId).success ? posicaoDaCaixa(caixaId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Texto do PDF lido por OCR no navegador (busca dentro do PDF). O texto vai
+// direto ao banco pela função, que confere papel, prazo e arquivo; nunca vai
+// para log nem para a auditoria.
+// ---------------------------------------------------------------------------
+const esquemaTexto = z.object({
+  arquivo: z.guid(),
+  texto: z.string().min(1).max(300_000),
+  paginas: z.number().int().min(1).max(100000),
+});
+
+export async function salvarTextoPdf(entrada: unknown): Promise<{ ok: boolean; erro?: string }> {
+  await exigirSessao();
+  const dados = esquemaTexto.safeParse(entrada);
+  if (!dados.success) return { ok: false, erro: "Texto inválido." };
+  if (emDemo()) return { ok: false, erro: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
+  const { error } = await sb.rpc("salvar_texto_pdf", { p_arquivo: dados.data.arquivo, p_texto: dados.data.texto, p_paginas: dados.data.paginas });
+  if (error) return { ok: false, erro: error.code === "42501" ? "Você não tem permissão para esta ação." : "Não foi possível salvar o texto." };
+  atualizar();
+  return { ok: true };
 }

@@ -276,6 +276,19 @@ select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-0000000
   'LD001', null, 'documento emprestado não entra em termo');
 
 -- ---------------------------------------------------------------------------
+-- Credor pessoa física: o CPF fica em coluna própria e não vai para a auditoria
+-- ---------------------------------------------------------------------------
+select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
+select lives_ok($$update public.documentos set cpf_credor = '12345678909' where id = 'd1000000-0000-0000-0000-000000000005'$$, 'coordenador grava o CPF do credor');
+select throws_ok($$update public.documentos set cpf_credor = '123' where id = 'd1000000-0000-0000-0000-000000000005'$$, '23514', null, 'CPF com formato errado é recusado');
+select throws_ok($$update public.documentos set cnpj = '11222333000181' where id = 'd1000000-0000-0000-0000-000000000005'$$, '23514', null, 'documento não leva CNPJ e CPF juntos');
+select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
+select is_empty($$select 1 from public.documentos where cpf_credor is not null$$, 'B não lê o CPF do credor de A');
+reset role;
+select is_empty($$select 1 from public.auditoria where depois::text like '%12345678909%' or antes::text like '%12345678909%'$$, 'o CPF do credor não aparece na auditoria');
+set local role authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Privilégios
 -- ---------------------------------------------------------------------------
 reset role;

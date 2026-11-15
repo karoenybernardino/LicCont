@@ -12,7 +12,8 @@ precisam ser validados com o advogado antes do piloto.
 
 Regras do sistema que protegem o titular:
 
-- O campo CNPJ recusa CPF. Objeto e empresa também recusam CPF (a busca e a auditoria os repetiriam).
+- Texto lido do PDF por OCR (decisão 0011): guardado só em `arquivo_textos`, isolado por prefeitura e secretaria, fora da auditoria e de log; usado apenas na pesquisa.
+- O campo "CNPJ ou CPF do credor" aceita CPF válido (credor pessoa física, decisão do responsável em 2026-11-15). O CPF vai para coluna própria (`cpf_credor`), fora da busca e fora da auditoria, não aparece em lista nem em log. Objeto e empresa continuam recusando CPF (a busca e a auditoria os repetiriam).
 - Pessoa física como credor não é aceita nesta fase (decisão 12 de `docs/fases/fase-3.md`).
 - Nenhum dado pessoal ou conteúdo de documento entra em log ou mensagem de erro.
 - Nenhuma tabela tem DELETE para o usuário; a eliminação é só pelo termo aprovado (Fase 7), que desativa o documento sem apagá-lo.

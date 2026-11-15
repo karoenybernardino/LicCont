@@ -42,18 +42,18 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Empréstimos — claro](png/EmprestimosClaro.png) | claro | 1280×720 | /emprestimos |
 | [Temporalidade e descarte — escuro](png/TemporalidadeEscuro.png) | escuro | 1280×740 | /temporalidade |
 | [Temporalidade e descarte — claro](png/TemporalidadeClaro.png) | claro | 1280×740 | /temporalidade |
-| [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | (ainda sem rota) |
-| [Auditoria — claro](png/AuditoriaClaro.png) | claro | 1280×800 | (ainda sem rota) |
+| [Auditoria — escuro](png/AuditoriaEscuro.png) | escuro | 1280×800 | /auditoria |
+| [Auditoria — claro](png/AuditoriaClaro.png) | claro | 1280×800 | /auditoria |
 | [Usuários e perfis — escuro](png/UsuariosEscuro.png) | escuro | 1280×1000 | /usuarios |
 | [Usuários e perfis — claro](png/UsuariosClaro.png) | claro | 1280×1000 | /usuarios |
-| [Etiquetas — escuro](png/EtiquetasEscuro.png) | escuro | 1280×900 | (ainda sem rota) |
-| [Etiquetas — claro](png/EtiquetasClaro.png) | claro | 1280×900 | (ainda sem rota) |
+| [Etiquetas — escuro](png/EtiquetasEscuro.png) | escuro | 1280×900 | /etiquetas |
+| [Etiquetas — claro](png/EtiquetasClaro.png) | claro | 1280×900 | /etiquetas |
 | [Estrutura física — escuro](png/EstruturaEscuro.png) | escuro | 1280×880 | /estrutura |
 | [Estrutura física — claro](png/EstruturaClaro.png) | claro | 1280×880 | /estrutura |
 | [Prefeituras (visão NOVVA) — escuro](png/PrefeiturasEscuro.png) | escuro | 1280×880 | /equipe (antiga, ver Equipe*) |
 | [Prefeituras (visão NOVVA) — claro](png/PrefeiturasClaro.png) | claro | 1280×880 | /equipe (antiga, ver Equipe*) |
-| [Caixa lida pelo celular — escuro](png/CelularEscuro.png) | escuro | 1280×880 | (ainda sem rota) |
-| [Caixa lida pelo celular — claro](png/CelularClaro.png) | claro | 1280×880 | (ainda sem rota) |
+| [Caixa lida pelo celular — escuro](png/CelularEscuro.png) | escuro | 1280×880 | /etiquetas/celular |
+| [Caixa lida pelo celular — claro](png/CelularClaro.png) | claro | 1280×880 | /etiquetas/celular |
 | [Mapa — planta baixa — escuro](png/PlantaEscuro.png) | escuro | 1280×880 | /mapa (modo planta) |
 | [Mapa — planta baixa — claro](png/PlantaClaro.png) | claro | 1280×880 | /mapa (modo planta) |
 | [Login 1 — escolher prefeitura (escuro)](png/LoginPrefeitura.png) | escuro | 1280×820 | /entrar |
