@@ -55,7 +55,7 @@ Painel e relatórios: Painel, Relatorios. Todos em escuro e claro.
 9.9 Rotina agendada (só registros novos desde a última importação), Importar agora, histórico e configuração da integração (anos e tipos escolhidos pelo administrador).
 9.10 Fila Importados do TCE a conferir, com aviso de duplicado e juntar.
 9.11 Selo e filtro Origem na pesquisa.
-9.12 Busca e ligação de PDFs no PNCP (registro em `docs/decisoes/` e na LGPD antes do código; os quadros ainda não mostram esta tela: pedir quadro).
+9.12 Busca e ligação de PDFs no PNCP (quadros `PncpBuscaEscuro` e `PncpBuscaClaro`; registro em `docs/decisoes/` e na LGPD antes do código).
 9.13 Visões agregadas do banco com teste de isolamento.
 9.14 Painel inicial com cartões clicáveis e gráficos nos dois temas.
 9.15 Relatórios: gerador de PDF no timbrado, registro dos baixados, cinco relatórios em PDF e planilha, prévia.
