@@ -1,98 +1,109 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Busca, CartaoResumo, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
+import { CartaoResumo, Pilula } from "@/ui/canvas";
 import { PaginaEquipe } from "@/features/equipe/pagina";
-import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
+import { Painel, TituloPainel } from "@/features/estrutura/componentes";
 import { Icone } from "@/features/sessao/barra-lateral";
-import { listarPrefeituras, usoPrefeituras } from "@/features/prefeituras/dados";
-import { filtrarPrefeituras, formatarCnpj, type StatusPrefeitura } from "@/features/prefeituras/lista";
-import { formatarData } from "@/features/documentos/formato";
+import { acoesEquipe, integracoes, listarPedidos } from "@/features/equipe/dados";
+import { SITUACOES_PEDIDO, haTempo, quando, textoAcao } from "@/features/equipe/textos";
+import { listarPrefeituras } from "@/features/prefeituras/dados";
 import { exigirEquipe } from "@/features/sessao/dal";
 
-export const metadata: Metadata = { title: "Prefeituras · LicCONT" };
+export const metadata: Metadata = { title: "Início da equipe · LicCONT" };
 
-const SITUACOES = { implantacao: "Em implantação", ativa: "Ativa", suspensa: "Suspensa" } as const;
-const TONS = { implantacao: "aviso", ativa: "ok", suspensa: "erro" } as const;
-const FILTROS = [
-  ["todas", "Todas"],
-  ["ativa", "Ativas"],
-  ["implantacao", "Implantação"],
-  ["suspensa", "Suspensas"],
-] as const;
+type Atencao = { id: string; titulo: string; texto: string; rotulo: string; tom: "erro" | "aviso"; href: string };
 
-// Painel da equipe LicCONT (quadro EquipePrefeituras).
-export default async function PainelEquipe({ searchParams }: { searchParams: Promise<{ q?: string; situacao?: string }> }) {
+// Início da equipe LicCONT (quadro EquipeInicio): o que pede atenção hoje.
+// Só números, datas e situações: nada do acervo.
+export default async function InicioEquipe() {
   await exigirEquipe();
-  const busca = await searchParams;
-  const q = (busca.q ?? "").trim().slice(0, 120);
-  const situacao = FILTROS.find(([v]) => v === busca.situacao)?.[0] ?? "todas";
-  const todas = await listarPrefeituras();
-  const n = (s: StatusPrefeitura) => todas.filter((p) => p.status === s).length;
-  const uso = await usoPrefeituras();
-  const docs = [...uso.values()].reduce((t, u) => t + u.documentos, 0);
-  const lista = filtrarPrefeituras(todas, q, situacao);
-  const admins = todas.reduce((t, p) => t + p.administradores, 0);
-  const semAdmin = todas.filter((p) => p.administradores === 0).length;
-  const href = (s: string) => `/equipe?${new URLSearchParams({ ...(q && { q }), ...(s !== "todas" && { situacao: s }) })}`;
+  const [prefeituras, integ, pedidos, acoes] = await Promise.all([
+    listarPrefeituras(), integracoes(), listarPedidos(100), acoesEquipe({ limite: 4 }),
+  ]);
+  const ativas = prefeituras.filter((p) => p.status === "ativa").length;
+  const comErro = prefeituras.filter((p) => integ.get(p.id)?.situacao === "erro");
+  const semAdmin = prefeituras.filter((p) => p.administradores === 0);
+  const novos = pedidos.filter((p) => p.situacao === "novo");
+  const antigo = novos.at(-1);
+
+  const atencao: Atencao[] = [
+    ...comErro.map((p) => ({
+      id: `tce-${p.id}`, titulo: `${p.nome} · TCE fora do ar`, rotulo: "Integração", tom: "erro" as const,
+      texto: `Última rodada falhou ${quando(integ.get(p.id)?.ultimaEm ?? null)}. Tenta de novo à noite.`, href: `/equipe/prefeituras?sel=${p.id}`,
+    })),
+    ...semAdmin.map((p) => ({
+      id: `adm-${p.id}`, titulo: p.nome, rotulo: "Pendência", tom: "aviso" as const,
+      texto: "Sem administrador ativo.", href: `/equipe/${p.id}`,
+    })),
+    ...(antigo && !["hoje", "ontem"].includes(haTempo(antigo.criadoEm))
+      ? [{ id: "pedido", titulo: "Pedido de demonstração sem resposta", rotulo: "Demonstração", tom: "aviso" as const,
+          texto: `Chegou ${haTempo(antigo.criadoEm)}. ${antigo.orgao}.`, href: "/equipe/prefeituras" }]
+      : []),
+  ];
 
   return (
-    <PaginaEquipe titulo="Prefeituras">
+    <PaginaEquipe titulo="Início">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <CartaoResumo rotulo="Prefeituras" valor={String(todas.length)} legenda={`${n("ativa")} ${n("ativa") === 1 ? "ativa" : "ativas"} · ${n("implantacao")} em implantação`} cor="teal" icone={<Icone nome="secretarias" />} />
-        <CartaoResumo rotulo="Administradores" valor={String(admins)} legenda="em todas as prefeituras" cor="aco" icone={<Icone nome="usuarios" />} />
-        <CartaoResumo rotulo="Documentos no ar" valor={docs.toLocaleString("pt-BR")} legenda="cadastrados em todas as prefeituras" cor="ambar" icone={<Icone nome="cadastro" />} />
-        <CartaoResumo rotulo="Pendências" valor={String(semAdmin)} legenda="prefeituras sem administrador ativo" cor="vermelho" icone={<Icone nome="auditoria" />} />
+        <CartaoResumo rotulo="Prefeituras ativas" valor={String(ativas)} legenda={`de ${prefeituras.length} cadastradas`} cor="teal" icone={<Icone nome="secretarias" />} />
+        <CartaoResumo rotulo="Pedidos novos" valor={String(novos.length)} legenda="do formulário do site" cor="ambar" icone={<Icone nome="usuarios" />} />
+        <CartaoResumo rotulo="Integrações com erro" valor={String(comErro.length)} legenda="TCE fora do ar na última rodada" cor="vermelho" icone={<Icone nome="importados" />} />
+        <CartaoResumo rotulo="Pendências" valor={String(semAdmin.length)} legenda="prefeituras sem administrador ativo" cor="aco" icone={<Icone nome="auditoria" />} />
       </div>
 
-      <Painel className="pb-1.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Busca acao="/equipe" valor={q} rotulo="Buscar por nome ou CNPJ" marcador="Buscar por nome ou CNPJ" extra={situacao === "todas" ? undefined : { situacao }} />
-          <div className="flex max-w-full flex-wrap items-center gap-2.5">
-            <Filtros
-              itens={FILTROS.map(([v, r]) => ({
-                href: href(v),
-                rotulo: `${r} · ${v === "todas" ? todas.length : n(v)}`,
-                ativo: situacao === v,
-              }))}
-            />
-            <Link href="/equipe/nova" className={botaoPrimario}>+ Nova prefeitura</Link>
-          </div>
-        </div>
-        <div className="-mx-5 -mb-1.5 overflow-x-auto">
-          <table className="w-full text-left">
-            <caption className="sr-only">Prefeituras cadastradas</caption>
-            <thead>
-              <tr className={linhaCabecalho}>
-                <th scope="col" className={th}>Prefeitura</th>
-                <th scope="col" className={th}>CNPJ</th>
-                <th scope="col" className={th}>Situação</th>
-                <th scope="col" className={th}>Administradores</th>
-                <th scope="col" className={th}>Cadastrada em</th>
-                <th scope="col" className={th}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((p, i) => (
-                <tr key={p.id} className={classeLinha(false, i % 2 === 1)}>
-                  <td className={`${td} w-full font-semibold`}>{p.nome}</td>
-                  <td className={`${td} font-mono text-[13px] font-medium`}>{formatarCnpj(p.cnpj)}</td>
-                  <td className={td}><Pilula tom={TONS[p.status]}>{SITUACOES[p.status]}</Pilula></td>
-                  <td className={`${td} font-mono text-[13px] font-medium`}>{p.administradores}</td>
-                  <td className={`${td} font-mono text-[13px] font-medium`}>{formatarData(p.criadoEm)}</td>
-                  <td className={`${td} text-right`}>
-                    <Link href={`/equipe/${p.id}`} aria-label={`Abrir ${p.nome}`} className={botaoContorno}>Abrir</Link>
-                  </td>
-                </tr>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <Painel>
+          <TituloPainel>Precisa de atenção</TituloPainel>
+          {atencao.length === 0 && <p className="text-sm text-texto-suave">Nada pendente agora.</p>}
+          <ul className="flex flex-col gap-2.5">
+            {atencao.map((a) => (
+              <li key={a.id}>
+                <Link href={a.href} className={`flex items-center justify-between gap-3 rounded-lg border-l-[3px] px-3 py-2.5 hover:bg-[#edf5f7] dark:hover:bg-[#0a181c] ${a.tom === "erro" ? "border-[#ef4444] bg-[#ef4444]/10" : "border-[#f59e0b] bg-[#f59e0b]/10"}`}>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{a.titulo}</span>
+                    <span className="block text-[12.5px] text-texto-suave">{a.texto}</span>
+                  </span>
+                  <Pilula tom={a.tom}>{a.rotulo}</Pilula>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Painel>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          <Painel>
+            <div className="flex items-center justify-between gap-3">
+              <TituloPainel>Pedidos de demonstração</TituloPainel>
+              <span className="text-[12.5px] text-texto-suave">Ver todos em Demonstrações</span>
+            </div>
+            <ul className="flex flex-col divide-y divide-linha">
+              {pedidos.slice(0, 4).map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">{p.orgao}</span>
+                    <span className="block truncate text-[12.5px] text-texto-suave">{p.cargo ?? "—"} · {haTempo(p.criadoEm)}</span>
+                  </span>
+                  <Pilula tom={p.situacao === "novo" ? "aviso" : "ok"}>{SITUACOES_PEDIDO[p.situacao]}</Pilula>
+                </li>
               ))}
-              {lista.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-texto-suave">Nenhuma prefeitura encontrada.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              {pedidos.length === 0 && <li className="py-2.5 text-sm text-texto-suave">Nenhum pedido ainda.</li>}
+            </ul>
+          </Painel>
+
+          <Painel>
+            <TituloPainel>Últimas ações da equipe</TituloPainel>
+            <ul className="flex flex-col divide-y divide-linha">
+              {acoes.map((a) => (
+                <li key={a.id} className="py-2.5">
+                  <span className="block text-sm font-semibold">{textoAcao(a.acao, a.statusNovo)}{a.prefeitura ? ` · ${a.prefeitura}` : ""}</span>
+                  <span className="block text-[12.5px] text-texto-suave">{a.quem} · {quando(a.criadoEm)}</span>
+                </li>
+              ))}
+              {acoes.length === 0 && <li className="py-2.5 text-sm text-texto-suave">Nenhuma ação registrada.</li>}
+            </ul>
+          </Painel>
         </div>
-      </Painel>
+      </div>
+      <p className="text-[12.5px] text-texto-suave">A equipe LicCONT não vê o conteúdo do acervo: só quantidades, datas e situações.</p>
     </PaginaEquipe>
   );
 }

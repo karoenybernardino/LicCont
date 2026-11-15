@@ -60,3 +60,14 @@ Painel e relatórios: Painel, Relatorios. Todos em escuro e claro.
 9.14 Painel inicial com cartões clicáveis e gráficos nos dois temas.
 9.15 Relatórios: gerador de PDF no timbrado, registro dos baixados, cinco relatórios em PDF e planilha, prévia.
 9.16 Revisão de segurança e teste de carga do painel.
+
+## Sistema da equipe LicCONT (quadros `Equipe*`, ver `telas-novas.json`)
+Área só da equipe LicCONT, com menu próprio (Início, Prefeituras, Demonstrações, Integrações, Uso, Auditoria). A equipe nunca vê o conteúdo do acervo: só quantidades, datas e situações. Vem depois do painel (9.14 a 9.16). Já existiam antes: Uso do mês (`/equipe/uso`), pedidos gravados pelo site (`pedidos_demonstracao`), suporte autorizado e o cliente do TCE.
+
+Tarefas (um PR cada; cada uma parte da anterior):
+- **9.17 Início da equipe e Prefeituras reformulada.** Início (`/equipe`): cartões, "Precisa de atenção", pedidos recentes, últimas ações. Prefeituras (`/equipe/prefeituras`): lista com Situação, TCE-CE e Docs e painel lateral (plano, contrato, uso, alerta do TCE, Importar agora). Migração: contrato em `prefeituras` (plano, início, valores), andamento do pedido (situação, data, responsável), `equipe_integracoes()` e `equipe_auditoria()`.
+- **9.18 Nova prefeitura em passos e Prefeitura com abas.** Passos Órgão, Contrato e TCE-CE, Administrador, Conferir. Prefeitura com abas Resumo, Administradores, Integração TCE-CE, Uso, Auditoria; editar dados e contrato.
+- **9.19 Integrações e Auditoria da equipe.** Integrações: TCE-CE por prefeitura e lotes de importação (só números e datas; CSV do histórico). Auditoria da equipe: filtros por período, quem, prefeitura e ação; exportar em PDF.
+- **9.20 Demonstrações no menu da equipe.** Lista e detalhe dos pedidos do site (situação, data, responsável, descartar) e "Criar prefeitura a partir do pedido". Contato é dado pessoal: mínimo necessário, RLS só da equipe, nada em log. Registrar o pedido recebido na auditoria.
+
+Tabelas e funções novas seguem a regra: RLS, GRANT explícito e pgTAP de isolamento. Quadros: EquipeInicio, EquipePrefeituras, EquipeNovaPrefeitura, EquipePrefeituraDetalhe, EquipeIntegracoes, EquipeAuditoria, EquipeDemos, EquipeUso (todos em escuro e claro).
