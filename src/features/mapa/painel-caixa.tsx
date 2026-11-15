@@ -188,3 +188,44 @@ export function NiveisDoModulo({
     </section>
   );
 }
+
+// Painel da direita na planta baixa (quadro "Mapa — planta baixa"): etiqueta "Selecionada",
+// endereço, quantos documentos e a lista.
+export function PainelPlanta({ d, carregando }: { d: DetalheCaixa | null; carregando: boolean }) {
+  return (
+    <section aria-label="Caixa selecionada" className={cartao}>
+      <span className="w-fit rounded-xl bg-[#ccfbf1] px-2.5 py-1 text-xs font-semibold text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]">Selecionada</span>
+      <h2 className="text-[11px] font-semibold tracking-[.06em] text-texto-suave uppercase">Caixa</h2>
+      {!d ? (
+        <p role="status" className="text-sm text-texto-suave">
+          {carregando ? "Carregando a caixa…" : "Escolha um módulo na planta."}
+        </p>
+      ) : (
+        <>
+          <p className="font-mono text-base leading-6 font-medium">
+            Rua {d.rua} · Módulo {d.modulo}
+            <br />
+            Nível {d.nivel} · Caixa {String(d.caixa).padStart(2, "0")}
+          </p>
+          <span className="sr-only">{d.codigo}</span>
+          <p className="text-[13px]">
+            <b className="font-semibold">{d.total}</b> {d.total === 1 ? "documento guardado nesta caixa" : "documentos guardados nesta caixa"}
+          </p>
+          <ul className="sc flex max-h-[420px] flex-col gap-1.5 overflow-y-auto pr-1" aria-label="Documentos da caixa">
+            {d.documentos.map((x) => (
+              <li key={x.id}>
+                <Link href={`/documentos/${x.id}`} className={`flex items-center gap-2 rounded-[10px] border border-linha bg-superficie-2 px-2.5 py-2 ${foco}`}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-titulo text-[13px] font-semibold">{x.titulo}</span>
+                    <span className="block truncate text-[11px] text-texto-suave">{[x.empresa, x.secretaria, x.ano].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
