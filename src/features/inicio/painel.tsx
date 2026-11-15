@@ -59,7 +59,7 @@ export function InicioCompleto(d: DadosInicio) {
 
   return (
     <>
-      <section className="relative flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-[22px] bg-[radial-gradient(520px_260px_at_92%_10%,rgba(45,212,191,.55),rgba(45,212,191,0)_70%),radial-gradient(420px_240px_at_0%_120%,rgba(94,234,212,.28),rgba(94,234,212,0)_70%),linear-gradient(120deg,#0b2e3a_0%,#0e4a5c_60%,#0f766e_120%)] px-[30px] py-[26px] text-white shadow-[0_18px_40px_rgba(11,46,58,.22)]">
+      <section className="relative flex shrink-0 flex-wrap items-center justify-between gap-6 overflow-hidden rounded-[22px] bg-[radial-gradient(520px_260px_at_92%_10%,rgba(45,212,191,.55),rgba(45,212,191,0)_70%),radial-gradient(420px_240px_at_0%_120%,rgba(94,234,212,.28),rgba(94,234,212,0)_70%),linear-gradient(120deg,#0b2e3a_0%,#0e4a5c_60%,#0f766e_120%)] px-[30px] py-[26px] text-white shadow-[0_18px_40px_rgba(11,46,58,.22)]">
         <div className="relative flex max-w-[560px] flex-col gap-2.5">
           <p className="text-[13px] tracking-[.06em] text-[#99f6e4] uppercase">
             {d.saudacao} · {d.prefeitura}
