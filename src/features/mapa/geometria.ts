@@ -3,7 +3,7 @@
 // mesma validação para recusar planta inválida e os testes medem o tempo com
 // o galpão grande.
 import type { Estrutura } from "@/features/estrutura/ocupacao";
-import type { CaixaCompacta, Giro, LadoEntrada, Planta } from "./tipos";
+import type { CaixaCompacta, Giro, LadoEntrada, Lados, Planta } from "./tipos";
 
 export const CELULA = 2; // unidades do mundo 3D por célula de módulo
 export const ALTURA_NIVEL = 1; // distância entre prateleiras
@@ -20,6 +20,7 @@ export type RuaLeiaute = Retangulo & {
   codigo: string;
   modulos: number;
   giro: Giro;
+  lados: Lados;
   estado: EstadoRua;
   problema: ProblemaRua;
   sobrepoeCom: string | null;
@@ -51,12 +52,12 @@ export type Leiaute = {
 };
 
 // Ponto local da rua (u ao longo, v através) -> célula da planta.
-function projetar(giro: Giro, n: number, x0: number, y0: number, u: number, v: number): [number, number] {
+function projetar(giro: Giro, n: number, d: number, x0: number, y0: number, u: number, v: number): [number, number] {
   switch (giro) {
     case 90:
-      return [x0 + 2 - v, y0 + u];
+      return [x0 + d - v, y0 + u];
     case 180:
-      return [x0 + n - u, y0 + 2 - v];
+      return [x0 + n - u, y0 + d - v];
     case 270:
       return [x0 + v, y0 + n - u];
     default:
@@ -64,9 +65,9 @@ function projetar(giro: Giro, n: number, x0: number, y0: number, u: number, v: n
   }
 }
 
-export function tamanhoRua(modulos: number, giro: Giro): { w: number; h: number } {
+export function tamanhoRua(modulos: number, giro: Giro, lados: Lados = 2): { w: number; h: number } {
   const lado = giro === 90 || giro === 270;
-  return { w: lado ? 2 : modulos, h: lado ? modulos : 2 };
+  return { w: lado ? lados : modulos, h: lado ? modulos : lados };
 }
 
 const cruza = (a: Retangulo, b: Retangulo) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -74,7 +75,7 @@ const cruza = (a: Retangulo, b: Retangulo) => a.x < b.x + b.w && b.x < a.x + a.w
 export type EntradaValidacao = {
   largura: number;
   profundidade: number;
-  ruas: { id: string; codigo: string; modulos: number; x: number | null; y: number | null; giro: Giro }[];
+  ruas: { id: string; codigo: string; modulos: number; x: number | null; y: number | null; giro: Giro; lados?: Lados }[];
 };
 export type Problema = { ruaId: string; tipo: "fora" | "sobreposta"; com: string | null };
 
@@ -82,7 +83,7 @@ export type Problema = { ruaId: string; tipo: "fora" | "sobreposta"; com: string
 export function validarPlanta(e: EntradaValidacao): Problema[] {
   const retas = e.ruas
     .filter((r) => r.x !== null && r.y !== null)
-    .map((r) => ({ r, ret: { x: r.x as number, y: r.y as number, ...tamanhoRua(r.modulos, r.giro) } }));
+    .map((r) => ({ r, ret: { x: r.x as number, y: r.y as number, ...tamanhoRua(r.modulos, r.giro, r.lados) } }));
   const problemas: Problema[] = [];
   for (const { r, ret } of retas) {
     if (ret.x < 0 || ret.y < 0 || ret.x + ret.w > e.largura || ret.y + ret.h > e.profundidade) {
@@ -115,16 +116,16 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   for (const c of caixas) (caixasPorNivel.get(c.nivelId) ?? caixasPorNivel.set(c.nivelId, []).get(c.nivelId)!).push(c);
 
   // 1) Posição de cada rua: a salva, ou o desenho automático (abaixo das salvas).
-  type Base = { id: string; codigo: string; mods: typeof estrutura.modulos; giro: Giro; x: number | null; y: number | null };
+  type Base = { id: string; codigo: string; mods: typeof estrutura.modulos; giro: Giro; lados: Lados; x: number | null; y: number | null };
   const bases: Base[] = ruasAtivas.map((r) => {
     const mods = (modulosPorRua.get(r.id) ?? []).sort((a, b) => a.numero - b.numero);
     const p = planta.ruas[r.id];
     const salva = p && p.x !== null && p.y !== null;
-    return { id: r.id, codigo: r.codigo, mods, giro: salva ? p.giro : 0, x: salva ? p.x : null, y: salva ? p.y : null };
+    return { id: r.id, codigo: r.codigo, mods, giro: salva ? p.giro : 0, lados: p?.lados === 1 ? 1 : 2, x: salva ? p.x : null, y: salva ? p.y : null };
   });
   let baixo = 0;
   for (const b of bases) {
-    if (b.x !== null && b.y !== null) baixo = Math.max(baixo, b.y + tamanhoRua(b.mods.length, b.giro).h);
+    if (b.x !== null && b.y !== null) baixo = Math.max(baixo, b.y + tamanhoRua(b.mods.length, b.giro, b.lados).h);
   }
   let proximaLinha = baixo + 1;
   for (const b of bases) {
@@ -139,7 +140,7 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   let direita = 0;
   let fundo = 0;
   for (const b of bases) {
-    const { w, h } = tamanhoRua(b.mods.length, b.giro);
+    const { w, h } = tamanhoRua(b.mods.length, b.giro, b.lados);
     direita = Math.max(direita, (b.x as number) + w);
     fundo = Math.max(fundo, (b.y as number) + h);
   }
@@ -149,16 +150,17 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   const valid = validarPlanta({
     largura,
     profundidade,
-    ruas: bases.map((b) => ({ id: b.id, codigo: b.codigo, modulos: b.mods.length, x: b.x, y: b.y, giro: b.giro })),
+    ruas: bases.map((b) => ({ id: b.id, codigo: b.codigo, modulos: b.mods.length, x: b.x, y: b.y, giro: b.giro, lados: b.lados })),
   });
   const ruas: RuaLeiaute[] = bases.map((b) => {
-    const t = tamanhoRua(b.mods.length, b.giro);
+    const t = tamanhoRua(b.mods.length, b.giro, b.lados);
     const p = valid.find((v) => v.ruaId === b.id);
     return {
       id: b.id,
       codigo: b.codigo,
       modulos: b.mods.length,
       giro: b.giro,
+      lados: b.lados,
       x: b.x as number,
       y: b.y as number,
       ...t,
@@ -197,8 +199,8 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   };
   // Retângulo local (u0..u1, v0..v1) da rua -> retângulo na planta.
   const retLocal = (b: Base, u0: number, v0: number, u1: number, v1: number): Retangulo => {
-    const [ax, ay] = projetar(b.giro, b.mods.length, b.x as number, b.y as number, u0, v0);
-    const [bx, by] = projetar(b.giro, b.mods.length, b.x as number, b.y as number, u1, v1);
+    const [ax, ay] = projetar(b.giro, b.mods.length, b.lados, b.x as number, b.y as number, u0, v0);
+    const [bx, by] = projetar(b.giro, b.mods.length, b.lados, b.x as number, b.y as number, u1, v1);
     return { x: Math.min(ax, bx), y: Math.min(ay, by), w: Math.abs(bx - ax), h: Math.abs(by - ay) };
   };
 
@@ -209,16 +211,16 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
     const nMods = b.mods.length;
     b.mods.forEach((m, mi) => {
       const ns = (niveisPorModulo.get(m.id) ?? []).sort((a, c) => a.numero - c.numero);
-      const modulo: ModuloLeiaute = { id: m.id, ruaId: b.id, numero: m.numero, niveis: ns.length, caixas: 0, primeira: -1, ...retLocal(b, mi, 0, mi + 1, 2) };
+      const modulo: ModuloLeiaute = { id: m.id, ruaId: b.id, numero: m.numero, niveis: ns.length, caixas: 0, primeira: -1, ...retLocal(b, mi, 0, mi + 1, b.lados) };
       modulosLeiaute.push(modulo);
       porModulo.set(`${b.id}:${m.numero}`, modulo);
       const inicio = ic;
       // Prateleiras (uma tábua por nível).
       for (const n of ns) {
-        colocar(prat, ip++, retLocal(b, mi, 0, mi + 1, 2), (n.numero - 1) * ALTURA_NIVEL, 0.06);
+        colocar(prat, ip++, retLocal(b, mi, 0, mi + 1, b.lados), (n.numero - 1) * ALTURA_NIVEL, 0.06);
       }
       // Montantes nos quatro cantos.
-      for (const [u, v] of [[0.02, 0.02], [0.98, 0.02], [0.02, 1.98], [0.98, 1.98]] as const) {
+      for (const [u, v] of [[0.02, 0.02], [0.98, 0.02], [0.02, b.lados - 0.02], [0.98, b.lados - 0.02]] as const) {
         colocar(mont, im++, retLocal(b, mi + u - 0.015, v - 0.015, mi + u + 0.015, v + 0.015), 0, Math.max(ns.length, 1) * ALTURA_NIVEL);
       }
       // Caixas de cada nível, em grade de duas fileiras (frente e fundo).
@@ -227,14 +229,15 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
         const maior = lista.length ? lista[lista.length - 1].numero : 0;
         const cap = Math.max(n.capacidade, maior, 1);
         const colunas = Math.ceil(cap / 2);
-        const fileiras = Math.ceil(cap / colunas);
-        const bu = (1 - 2 * MARGEM) / colunas;
-        const bv = (2 - 2 * MARGEM) / fileiras;
+        const colunas1 = b.lados === 1 ? cap : colunas;
+        const fileiras = b.lados === 1 ? 1 : Math.ceil(cap / colunas);
+        const bu = (1 - 2 * MARGEM) / colunas1;
+        const bv = (b.lados - 2 * MARGEM) / fileiras;
         const alturaCaixa = ALTURA_NIVEL * 0.7;
         for (const c of lista) {
           const slot = c.numero - 1;
-          const col = slot % colunas;
-          const fil = Math.floor(slot / colunas);
+          const col = slot % colunas1;
+          const fil = Math.floor(slot / colunas1);
           const u0 = mi + MARGEM + col * bu + bu * 0.06;
           const v0 = MARGEM + fil * bv + bv * 0.06;
           colocar(cx, ic, retLocal(b, u0, v0, u0 + bu * 0.88, v0 + bv * 0.88), (n.numero - 1) * ALTURA_NIVEL + 0.08, alturaCaixa);
@@ -251,7 +254,7 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
       modulo.primeira = ic > inicio ? inicio : -1;
     });
     // Faixa de segurança no chão, ao longo da frente da rua.
-    colocar(faixas, ri, retLocal(b, 0, 2.02, nMods, 2.14), 0, 0.02);
+    colocar(faixas, ri, retLocal(b, 0, b.lados + 0.02, nMods, b.lados + 0.14), 0, 0.02);
   });
 
   return {

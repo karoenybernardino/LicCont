@@ -140,6 +140,30 @@ describe("planta salva", () => {
     ]);
     expect(tamanhoRua(7, 90)).toEqual({ w: 2, h: 7 });
   });
+  it("rua de um lado só tem 1 célula de fundo, em qualquer giro", () => {
+    expect(tamanhoRua(7, 0, 1)).toEqual({ w: 7, h: 1 });
+    expect(tamanhoRua(7, 90, 1)).toEqual({ w: 1, h: 7 });
+    expect(tamanhoRua(7, 180)).toEqual({ w: 7, h: 2 });
+  });
+  it("rua de um lado só põe as caixas numa fileira só, dentro do retângulo", () => {
+    for (const giro of [0, 90, 180, 270] as const) {
+      const l = calcularLeiaute(ESTRUTURA_DEMO, caixas, { ...base, ruas: { [a.id]: { x: 5, y: 4, giro, lados: 1 } } });
+      const r = l.ruas.find((x) => x.id === a.id)!;
+      expect(r.lados).toBe(1);
+      expect(Math.min(r.w, r.h)).toBe(1);
+      const mods = l.modulos.filter((m) => m.ruaId === a.id);
+      expect(mods.every((m) => Math.min(m.w, m.h) === 1)).toBe(true);
+      for (let i = 0; i < l.caixas.n; i++) {
+        if (l.caixas.meta[i * 4] !== l.ruas.findIndex((x) => x.id === a.id)) continue;
+        const cx = l.caixas.centro[i * 3] / 2;
+        const cz = l.caixas.centro[i * 3 + 2] / 2;
+        expect(cx).toBeGreaterThanOrEqual(r.x);
+        expect(cx).toBeLessThanOrEqual(r.x + r.w);
+        expect(cz).toBeGreaterThanOrEqual(r.y);
+        expect(cz).toBeLessThanOrEqual(r.y + r.h);
+      }
+    }
+  });
   it("a mesma caixa fica dentro do retângulo da rua em qualquer giro", () => {
     for (const giro of [0, 90, 180, 270] as const) {
       const l = calcularLeiaute(ESTRUTURA_DEMO, caixas, { ...base, ruas: { [a.id]: { x: 5, y: 4, giro } } });

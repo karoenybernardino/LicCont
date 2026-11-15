@@ -47,7 +47,7 @@ export async function plantaDoGalpao(galpaoId: string): Promise<Planta> {
   if (!sb) return PLANTA_VAZIA;
   const [g, r, e] = await Promise.all([
     sb.from("galpoes").select("planta_largura, planta_profundidade, entrada_lado, entrada_posicao, planta_metros_celula").eq("id", galpaoId).maybeSingle(),
-    sb.from("ruas").select("id, planta_x, planta_y, planta_giro").eq("galpao_id", galpaoId),
+    sb.from("ruas").select("id, planta_x, planta_y, planta_giro, planta_lados").eq("galpao_id", galpaoId),
     sb
       .from("planta_elementos")
       .select("id, tipo, rotulo, x, y, largura, profundidade, giro")
@@ -64,7 +64,7 @@ export async function plantaDoGalpao(galpaoId: string): Promise<Planta> {
     entradaPosicao: g.data?.entrada_posicao ?? null,
     metrosCelula: g.data?.planta_metros_celula != null ? Number(g.data.planta_metros_celula) : null,
     ruas: Object.fromEntries(
-      (r.data ?? []).map((x) => [x.id as string, { x: x.planta_x as number | null, y: x.planta_y as number | null, giro: ((x.planta_giro as Giro | null) ?? 0) as Giro }]),
+      (r.data ?? []).map((x) => [x.id as string, { x: x.planta_x as number | null, y: x.planta_y as number | null, giro: ((x.planta_giro as Giro | null) ?? 0) as Giro, lados: x.planta_lados === 1 ? (1 as const) : (2 as const) }]),
     ),
     elementos: (e.data ?? []).map((x) => ({
       id: x.id as string,

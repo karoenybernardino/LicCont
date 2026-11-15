@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { exigirSessao } from "@/features/sessao/dal";
+import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { pesquisar, proximaCaixaLivre, secretariasParaCadastro } from "@/features/documentos/dados";
@@ -10,8 +10,9 @@ import { lerFiltros } from "@/features/documentos/filtros";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { carregarEstrutura, podeCaixas } from "@/features/estrutura/dados";
 import { mensagemErro } from "@/features/estrutura/esquemas";
+import { proximaRua } from "@/features/estrutura/ocupacao";
 import { detalheDaCaixa, ocupacaoDoGalpao, type DetalheCaixa, type OcupacaoCaixa } from "./dados";
-import { esquemaBusca, esquemaCaixa, esquemaEscopo, esquemaMover, esquemaOcupacao, esquemaPlantaEntrada } from "./esquemas";
+import { esquemaAjusteModulos, esquemaBusca, esquemaCaixa, esquemaEscopo, esquemaMover, esquemaNovaRua, esquemaOcupacao, esquemaPlantaEntrada } from "./esquemas";
 import { validarPlanta } from "./geometria";
 import { GIROS } from "./tipos";
 
@@ -79,7 +80,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
   const problemas = validarPlanta({
     largura: p.largura,
     profundidade: p.profundidade,
-    ruas: p.ruas.map((r) => ({ id: r.id, codigo: nomeDa.get(r.id) as string, modulos: modulos(r.id), x: r.x, y: r.y, giro: r.giro })),
+    ruas: p.ruas.map((r) => ({ id: r.id, codigo: nomeDa.get(r.id) as string, modulos: modulos(r.id), x: r.x, y: r.y, giro: r.giro, lados: r.lados })),
   });
   if (problemas.length) {
     const t = problemas[0];
@@ -105,7 +106,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
     p_lado: p.entradaLado,
     p_posicao: p.entradaPosicao,
     p_metros: Math.round(p.metrosCelula * 100) / 100,
-    p_ruas: p.ruas.map((r) => ({ id: r.id, x: r.x, y: r.y, giro: (GIROS as readonly number[]).includes(r.giro) ? r.giro : 0 })),
+    p_ruas: p.ruas.map((r) => ({ id: r.id, x: r.x, y: r.y, giro: (GIROS as readonly number[]).includes(r.giro) ? r.giro : 0, lados: r.lados })),
     p_elementos: p.elementos.map((x) => ({ ...x, rotulo: x.rotulo || null })),
   });
   if (error) return { erro: error.code === "42501" ? SEM_PERMISSAO.erro : mensagemErro(error.code) };
@@ -138,4 +139,66 @@ export async function moverDocumentos(entrada: unknown): Promise<Retorno & { mov
   revalidatePath("/pesquisa");
   const n = Number(data);
   return { aviso: n === 1 ? "1 documento movido." : `${n} documentos movidos.`, movidos: n };
+}
+
+// ---------------------------------------------------------------------------
+// Estrutura pelo editor da planta (só administrador; o RLS confere de novo)
+// ---------------------------------------------------------------------------
+export async function criarRuaNaPlanta(entrada: unknown): Promise<Retorno> {
+  const { usuario } = await exigirAdmin();
+  const dados = esquemaNovaRua.safeParse(entrada);
+  if (!dados.success) return INVALIDO;
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
+  const { galpao, modulos, niveis, capacidade } = dados.data;
+  const { data: existentes, error: e0 } = await sb.from("ruas").select("codigo").eq("galpao_id", galpao);
+  if (e0) return { erro: mensagemErro(e0.code) };
+  const codigo = proximaRua((existentes ?? []).map((r) => r.codigo as string));
+  if (!codigo) return { erro: "Este galpão já tem o máximo de ruas." };
+  const { data: rua, error } = await sb.from("ruas").insert({ prefeitura_id: usuario.prefeituraId, galpao_id: galpao, codigo }).select("id").single();
+  if (error || !rua) return { erro: mensagemErro(error?.code) };
+  const { error: e2 } = await sb.rpc("adicionar_modulos", { p_rua: rua.id, p_modulos: modulos, p_niveis: niveis, p_capacidade: capacidade });
+  revalidatePath("/mapa", "layout");
+  revalidatePath("/estrutura", "layout");
+  if (e2) return { erro: `Rua ${codigo} criada, mas os módulos não entraram. Adicione-os em Estrutura física.` };
+  return { aviso: `Rua ${codigo} criada com ${modulos === 1 ? "1 módulo" : `${modulos} módulos`}.` };
+}
+
+// quantidade > 0 acrescenta módulos iguais ao último; < 0 desativa os últimos
+// (o banco recusa se algum tiver documento).
+export async function ajustarModulosDaRua(entrada: unknown): Promise<Retorno> {
+  await exigirAdmin();
+  const dados = esquemaAjusteModulos.safeParse(entrada);
+  if (!dados.success) return INVALIDO;
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
+  const { rua, quantidade } = dados.data;
+  const { data: mods, error } = await sb
+    .from("modulos")
+    .select("id, numero, niveis(numero, capacidade, ativo)")
+    .eq("rua_id", rua)
+    .eq("ativo", true)
+    .order("numero");
+  if (error) return { erro: mensagemErro(error.code) };
+  if (!mods?.length) return SEM_PERMISSAO;
+  if (quantidade > 0) {
+    const ultimo = mods[mods.length - 1];
+    const ativos = ((ultimo.niveis ?? []) as { numero: number; capacidade: number; ativo: boolean }[]).filter((n) => n.ativo);
+    const niveis = Math.min(10, Math.max(1, ativos.length));
+    const capacidade = Math.min(50, Math.max(1, ativos[0]?.capacidade ?? 20));
+    const { error: e1 } = await sb.rpc("adicionar_modulos", { p_rua: rua, p_modulos: quantidade, p_niveis: niveis, p_capacidade: capacidade });
+    if (e1) return { erro: mensagemErro(e1.code) };
+  } else {
+    const tirar = -quantidade;
+    if (tirar >= mods.length) return { erro: "A rua precisa de pelo menos 1 módulo." };
+    const ids = mods.slice(mods.length - tirar).map((m) => m.id as string);
+    const { error: e2, data } = await sb.from("modulos").update({ ativo: false }).in("id", ids).select("id");
+    if (e2) return { erro: mensagemErro(e2.code) };
+    if (data?.length !== ids.length) return SEM_PERMISSAO;
+  }
+  revalidatePath("/mapa", "layout");
+  revalidatePath("/estrutura", "layout");
+  return { aviso: quantidade > 0 ? "Módulos adicionados." : "Módulos removidos." };
 }

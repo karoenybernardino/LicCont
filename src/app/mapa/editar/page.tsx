@@ -34,7 +34,7 @@ export default async function EditarPlanta({ searchParams }: { searchParams: Pro
       }
       acoes={<div id="acoes-editor" className="flex items-center gap-3" />}
     >
-      <EditorPlanta key={JSON.stringify(planta)} estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} />
+      <EditorPlanta key={JSON.stringify(planta)} estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} ehAdmin={usuario.administrador} />
     </PaginaSistema>
   );
 }

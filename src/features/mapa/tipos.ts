@@ -21,7 +21,9 @@ export type ElementoPlanta = {
   giro: Giro;
 };
 
-export type PosicaoRua = { x: number | null; y: number | null; giro: Giro };
+/** Lados com estante: 2 = rua no meio do galpão; 1 = encostada na parede (uma fileira de caixas). */
+export type Lados = 1 | 2;
+export type PosicaoRua = { x: number | null; y: number | null; giro: Giro; lados?: Lados };
 
 // Planta salva do galpão. Tudo opcional: vazio = desenho automático.
 export type Planta = {
