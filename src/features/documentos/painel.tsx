@@ -13,6 +13,7 @@ import {
 import { descreverArquivo, formatarData, formatarValor } from "./formato";
 import { MODALIDADES, SITUACOES, TIPOS } from "./tipos";
 import { tituloDocumento } from "./titulo";
+import { documentosEmprestados } from "@/features/movimento/dados";
 
 export const tomSituacao = (s: string) =>
   [
@@ -224,7 +225,7 @@ export async function PainelDocumento({
   usuario: Usuario;
   inteiro?: boolean;
 }) {
-  const [cadastra, gere, miniatura] = await Promise.all([
+  const [cadastra, gere, miniatura, emprestados] = await Promise.all([
     secretariasParaCadastro(usuario).then((l) =>
       l.some((s) => s.id === doc.secretariaId),
     ),
@@ -232,7 +233,9 @@ export async function PainelDocumento({
     doc.arquivo?.situacao === "pronto" && doc.arquivo.miniatura
       ? linkDaMiniatura(doc.id)
       : Promise.resolve(null),
+    documentosEmprestados(),
   ]);
+  const emprestado = emprestados.has(doc.id);
   const a = doc.arquivo;
   const titulo = tituloDocumento(doc);
   const pos = doc.posicao;
@@ -253,6 +256,7 @@ export async function PainelDocumento({
             <p className="mt-1 text-sm text-texto-suave">{doc.objeto}</p>
           </div>
           <div className="flex flex-col items-end gap-1.5">
+            {emprestado && <Pilula tom="aviso">Emprestado</Pilula>}
             {doc.conferido && <Pilula tom="ok">Conferido</Pilula>}
             {!doc.ativo && <Pilula tom="erro">Desativado</Pilula>}
           </div>

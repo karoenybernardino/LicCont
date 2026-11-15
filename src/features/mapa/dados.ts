@@ -7,6 +7,7 @@ import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
 import type { Modalidade, Tipo } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
+import { documentosEmprestados } from "@/features/movimento/dados";
 import { todas } from "@/features/estrutura/dados";
 import { codigoPosicao } from "@/features/estrutura/ocupacao";
 import { galpaoGrande } from "./galpao-grande";
@@ -97,6 +98,7 @@ export type LinhaDocumento = {
   situacao: string;
   conferido: boolean;
   marcavel: boolean;
+  emprestado: boolean;
 };
 export type DetalheCaixa = {
   id: string;
@@ -140,12 +142,13 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
           situacao: d.situacao,
           conferido: d.conferido,
           marcavel: cadastra.has(d.secretaria_id),
+          emprestado: false,
         })),
     };
   }
   const sb = await clienteSessao();
   if (!sb) return null;
-  const [oc, cx, docs] = await Promise.all([
+  const [oc, cx, docs, emprestados] = await Promise.all([
     sb.rpc("ocupacao_caixas", { p_caixas: [caixaId] }),
     sb.from("caixas").select("id, numero, ativo, niveis(numero, modulos(numero, ruas(codigo)))").eq("id", caixaId).maybeSingle(),
     sb
@@ -155,6 +158,7 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
       .eq("ativo", true)
       .order("criado_em", { ascending: false })
       .limit(200),
+    documentosEmprestados(),
   ]);
   if (oc.error || cx.error || docs.error) throw new Error(FALHA);
   const total = (oc.data as { documentos: number; capacidade: number }[] | null)?.[0];
@@ -180,7 +184,8 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
       ano: d.ano,
       situacao: d.situacao,
       conferido: !!d.conferido_em,
-      marcavel: cadastra.has(d.secretaria_id),
+      marcavel: cadastra.has(d.secretaria_id) && !emprestados.has(d.id),
+      emprestado: emprestados.has(d.id),
     })),
   };
 }

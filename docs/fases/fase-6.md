@@ -1,8 +1,7 @@
 # Fase 6 — Empréstimos e devoluções
 
-Status: **só plano** (2026-11-15). Nenhum código, migração ou tela foi feito.
-Depende do merge do PR #51 (Fase 5), ainda aberto; ver "O que a Fase 5 deixou".
-Plano geral: `docs/plano-de-desenvolvimento.md`, linha "6 · Empréstimos":
+Status: **tarefas 1 a 4 e 8 feitas neste PR** (2026-11-15); 5, 6 e 7 ficam de fora
+(ver abaixo). O PR #51 (Fase 5) já foi mesclado. Plano geral: `docs/plano-de-desenvolvimento.md`, linha "6 · Empréstimos":
 retirada, devolução, prazo, alerta de atraso, termo em PDF e Word. Pronta
 quando **documento emprestado aparece como tal no mapa e na pesquisa**.
 Fidelidade ao canvas: `docs/telas/` (quadros `EmprestimosEscuro` e
@@ -44,14 +43,14 @@ Um PR por tarefa, teste antes do código, mesclado só com CI verde.
 
 | # | Tarefa | Prova | Estado |
 | --- | --- | --- | --- |
-| 1 | **Tabela `emprestimos`** (documento, caixa de origem, retirado por, setor, secretaria, retirada, prazo, devolução, observação, situação) com RLS, GRANT só para os papéis necessários, sem DELETE e sem `anon`; função de banco que registra retirada e devolução e grava na auditoria | pgTAP `emprestimos_isolamento.test.sql`: outra prefeitura não lê nem escreve; documento de outra prefeitura é recusado; só um empréstimo aberto por documento; consulta não registra; devolução não pode ser desfeita | a fazer |
-| 2 | **Registrar empréstimo e devolver** (Server Actions com Zod): painel "Registrar empréstimo" e botão "Devolver" do quadro; prazo padrão vem da secretaria; permissão checada no servidor; `AVISO_DEMO` em demonstração | Vitest dos esquemas (datas, prazo máximo, campos) e da regra de permissão; Playwright: registrar, ver na aba Em aberto, devolver, ver em Devolvidos | a fazer |
-| 3 | **Situação do documento**: "Emprestado" na pesquisa, no painel do documento, em `/documentos/[id]` e na caixa do mapa (marca no mapa 3D, na planta e em "Dentro da caixa") | Vitest da derivação; Playwright: emprestar e achar "Emprestado" na pesquisa e no mapa | a fazer |
-| 4 | **Atraso e alertas na tela**: abas Atrasados, contagem de dias, KPI do Início e "Vence em N dias" lidos do banco | Vitest de `situacaoEmprestimo` com datas de borda; comparação com o canvas | a fazer |
-| 5 | **Aprovação de empréstimo** quando a secretaria marca `exige_aprovacao_emprestimo`: pedido, aprovação por coordenador ou administrador, recusa com motivo | pgTAP (operador não aprova o próprio pedido); Vitest; Playwright | a fazer, depende da pergunta 3 |
-| 6 | **Termo de empréstimo em PDF e Word**: documento com dados da retirada e campo de assinatura; geração no servidor, sem gravar dado pessoal em log | Vitest do conteúdo gerado; teste de que erro não vaza dado pessoal | a fazer, depende da pergunta 4 |
-| 7 | **Aviso de atraso por e-mail** (ver seção própria): só depois do registro do serviço | Vitest do cálculo de quem avisar; teste do envio com serviço simulado; sem dado pessoal em log | **bloqueada** até o responsável decidir (pergunta 1) |
-| 8 | **Comparação final com o canvas** e fechamento: `npm run telas:comparar -- EmprestimosEscuro EmprestimosClaro`, imagens anexadas ao PR; atualizar `plano-de-desenvolvimento.md` e `telas/README.md` (rota de Empréstimos) | Comparação sem diferença que não seja dado | a fazer |
+| 1 | **Tabela `emprestimos`** (documento, caixa de origem, retirado por, setor, secretaria, retirada, prazo, devolução, observação, situação) com RLS, GRANT só para os papéis necessários, sem DELETE e sem `anon`; função de banco que registra retirada e devolução e grava na auditoria | pgTAP `emprestimos_isolamento.test.sql`: outra prefeitura não lê nem escreve; documento de outra prefeitura é recusado; só um empréstimo aberto por documento; consulta não registra; devolução não pode ser desfeita | feito neste PR |
+| 2 | **Registrar empréstimo e devolver** (Server Actions com Zod): painel "Registrar empréstimo" e botão "Devolver" do quadro; prazo padrão vem da secretaria; permissão checada no servidor; `AVISO_DEMO` em demonstração | Vitest dos esquemas (datas, prazo máximo, campos) e da regra de permissão; Playwright: registrar, ver na aba Em aberto, devolver, ver em Devolvidos | feito neste PR |
+| 3 | **Situação do documento**: "Emprestado" na pesquisa, no painel do documento, em `/documentos/[id]` e na caixa do mapa (marca no mapa 3D, na planta e em "Dentro da caixa") | Vitest da derivação; Playwright: emprestar e achar "Emprestado" na pesquisa e no mapa | feito neste PR |
+| 4 | **Atraso e alertas na tela**: abas Atrasados, contagem de dias, KPI do Início e "Vence em N dias" lidos do banco | Vitest de `situacaoEmprestimo` com datas de borda; comparação com o canvas | feito neste PR |
+| 5 | **Aprovação de empréstimo** quando a secretaria marca `exige_aprovacao_emprestimo`: pedido, aprovação por coordenador ou administrador, recusa com motivo | pgTAP (operador não aprova o próprio pedido); Vitest; Playwright | fora deste PR: ninguém definiu quem aprova |
+| 6 | **Termo de empréstimo em PDF e Word**: documento com dados da retirada e campo de assinatura; geração no servidor, sem gravar dado pessoal em log | Vitest do conteúdo gerado; teste de que erro não vaza dado pessoal | fora deste PR: não há quadro do termo no canvas |
+| 7 | **Aviso de atraso por e-mail** (ver seção própria): só depois do registro do serviço | Vitest do cálculo de quem avisar; teste do envio com serviço simulado; sem dado pessoal em log | **fora**: e-mail deixado de fora pelo responsável (2026-11-15) |
+| 8 | **Comparação final com o canvas** e fechamento: `npm run telas:comparar -- EmprestimosEscuro EmprestimosClaro`, imagens anexadas ao PR; atualizar `plano-de-desenvolvimento.md` e `telas/README.md` (rota de Empréstimos) | Comparação sem diferença que não seja dado | feito neste PR |
 
 Ordem sugerida: 1, 2, 3, 4 (núcleo; cumpre o critério da fase), depois 5 e 6,
 por fim 7. A tarefa 7 não segura o fechamento do núcleo.
@@ -131,6 +130,13 @@ Regras:
    confirmar o limite na hora de decidir (pergunta 1).
 6. Sem serviço aprovado, o sistema funciona assim mesmo: o atraso aparece
    na tela, no Início e na auditoria (tarefa 4). O e-mail é só um reforço.
+
+## Decisões do responsável (2026-11-15)
+
+- PR #51 já mesclado: a Fase 6 parte da `main`.
+- E-mail de aviso: **deixado de fora**. Nenhum serviço novo, nenhuma chave; o atraso aparece na tela, no Início e na auditoria.
+- Perguntas 2 a 9: a lei não responde (a Lei 8.159/1991 e a LAI não fixam prazo nem termo de empréstimo; isso fica no regulamento de cada arquivo). Valeram os padrões: prazo da secretaria com máximo de 60 dias e sem prorrogação; "retirado por" em texto livre (nome e setor, com sugestão das secretarias); só documentos ativos; documento emprestado não muda de caixa nem é desativado; sem fluxo de aprovação e sem termo PDF/Word até haver regra e quadro.
+- Desvios do quadro, a conferir: o campo Documento é uma lista (sem o cartão com "Disponível"), o Setor é texto com sugestões (o quadro mostra uma lista) e as datas usam o seletor nativo do navegador.
 
 ## Fora do escopo
 
