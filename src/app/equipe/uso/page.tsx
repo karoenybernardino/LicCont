@@ -29,7 +29,7 @@ export default async function UsoDoMes() {
       <Painel>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase">Por prefeitura (só números)</span>
-          <a href="/equipe/uso/baixar" className={botaoPrimario}>Baixar planilha</a>
+          <Link href="/equipe/uso/baixar" prefetch={false} className={botaoPrimario}>Baixar planilha</Link>
         </div>
         <div className="-mx-5 overflow-x-auto">
           <table className="w-full text-left">
