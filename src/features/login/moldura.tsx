@@ -10,7 +10,7 @@ export function MolduraLogin({ children }: { children: ReactNode }) {
         <SeletorTema />
       </div>
       <div className="flex flex-col items-center gap-3.5">
-        <Logo className="text-[34px]" />
+        <Logo empilhada className="text-[34px]" />
         <p className="text-sm text-texto-suave">Arquivo de licitações e contratos</p>
       </div>
       <div className="w-full max-w-[400px]">{children}</div>

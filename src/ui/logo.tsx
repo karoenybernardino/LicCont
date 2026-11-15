@@ -21,14 +21,14 @@ export function Marca({ largura = 30 }: { largura?: number }) {
   );
 }
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({ className = "", empilhada = false }: { className?: string; empilhada?: boolean }) {
   return (
     <span
       role="img"
       aria-label="LicCONT"
-      className={`inline-flex items-center gap-[0.4em] font-titulo uppercase leading-none tracking-[0.03em] ${className}`}
+      className={`inline-flex items-center font-titulo uppercase leading-none ${empilhada ? "flex-col gap-3.5 tracking-[1px]" : "gap-[0.4em] tracking-[0.03em]"} ${className}`}
     >
-      <svg aria-hidden viewBox="0 0 66 64" className="h-[1.3em] w-auto">
+      <svg aria-hidden viewBox="0 0 66 64" className={empilhada ? "h-[50px] w-[52px]" : "h-[1.3em] w-auto"}>
         <g fill="var(--logo-bloco)">
           {blocos.map(([x, y]) => (
             <rect key={`${x}-${y}`} x={x} y={y} width="15" height="15" rx="3" />
