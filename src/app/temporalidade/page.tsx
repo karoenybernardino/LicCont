@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Pilula } from "@/ui/canvas";
 import { CartaoNumero, Etiqueta, Painel, TituloPainel, classeLinha, linhaCabecalho, th } from "@/features/estrutura/componentes";
 import { numeroBR } from "@/features/estrutura/ocupacao";
@@ -10,6 +11,7 @@ import { lerRegras, listarTermos, podeGerarTermo } from "@/features/temporalidad
 import { DialogoRegra } from "@/features/temporalidade/dialogo-regra";
 import { FilaEliminacao } from "@/features/temporalidade/fila";
 import { PainelTermos } from "@/features/temporalidade/painel-termos";
+import { BOTAO_CONTORNO } from "@/features/temporalidade/ui";
 import { dataBR, hojeSaoPaulo, observacaoTermo } from "@/features/temporalidade/regras";
 
 export const metadata: Metadata = { title: "Temporalidade · LicCONT" };
@@ -26,7 +28,16 @@ export default async function Temporalidade() {
   const colunas = ["Tipo de documento", "Fase corrente", "Intermediária", "Destinação final"];
 
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Temporalidade e descarte" trilha="Acervo · Prazos de guarda" acoes={usuario.administrador ? <DialogoRegra rotulo="Nova regra de prazo" regras={regrasEditaveis} /> : undefined}>
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Temporalidade e descarte" trilha="Acervo · Prazos de guarda" acoes={
+        usuario.administrador ? (
+          <div className="flex items-center gap-2.5">
+            <Link href="/temporalidade/modelo" className={BOTAO_CONTORNO}>
+              Modelo do termo
+            </Link>
+            <DialogoRegra rotulo="Nova regra de prazo" regras={regrasEditaveis} />
+          </div>
+        ) : undefined
+      }>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <CartaoNumero rotulo="Vencem em 90 dias" valor={numeroBR(resumo.vencem90)} legenda="avisar o responsável do setor" cor="ambar" icone="sol" serie={[resumo.vencem90]} />
         <CartaoNumero rotulo="Prontos para eliminação" valor={numeroBR(resumo.prontos)} legenda="prazo de guarda já cumprido" cor="vermelho" icone="caixa" serie={[resumo.prontos]} />

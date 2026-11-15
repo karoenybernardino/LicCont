@@ -199,7 +199,7 @@ eliminados fora do sistema.
 | 2 | Tabela de prazos | O sistema **não traz prazos oficiais**: a comissão da prefeitura cadastra os seus. Referência de estrutura: Resolução CONARQ 14/2001 (tabela básica das atividades-meio) |
 | 3 | Quem aprova | **Administrador, diferente de quem gerou** (dois fatores). Coordenador gera, registra o edital e cancela |
 | 4 | Comissão | Usuários do sistema (futuro); por ora o termo traz linhas de assinatura em branco, sem nome de pessoa |
-| 5 | Modelo do termo | Não achei modelo oficial único para município. O termo segue a estrutura da Resolução CONARQ 40/2014 (listagem, edital, termo). **Pendente:** envio do modelo próprio da prefeitura (PDF) como alternativa |
+| 5 | Modelo do termo | Não achei modelo oficial único para município. O termo segue a estrutura da Resolução CONARQ 40/2014 (listagem, edital, termo). **Feito:** o texto do termo é editável pelo administrador (tela `/temporalidade/modelo`), com texto-padrão baseado na Resolução. Envio de PDF próprio fica fora |
 | 6 | Início da contagem | Contrato: **fim da vigência**. Licitação: **encerramento do processo** (campo novo `encerrado_em`) |
 | 7 | O que é eliminar | **Desativar** o documento; registro, PDF e auditoria permanecem |
 | 8 | Termo por secretaria | **Um termo por secretaria** (respeita o isolamento do acervo) |
@@ -211,7 +211,7 @@ Base legal (ver `docs/decisoes/0009-termo-de-eliminacao-pdf-word.md`): Lei
 8.159/1991 art. 9º e Resolução CONARQ 40/2014 com a 44/2020. O fluxo é:
 **rascunho (listagem) → edital de ciência (45 dias) → aprovação**. O prazo de
 45 dias, a autorização do arquivo público e a aprovação da listagem pela
-autoridade máxima ficam **a confirmar com o jurídico da prefeitura**.
+autoridade máxima ficam **a confirmar com o jurídico da prefeitura**; o responsável confirmou o prazo de **45 dias** em 2026-11-15.
 
 ## Entregue neste PR
 

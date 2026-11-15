@@ -29,3 +29,13 @@ export const esquemaEdital = z.object({
 });
 
 export const esquemaId = z.object({ id: z.uuid() });
+
+export const esquemaModelo = z.object({
+  baseLegal: z.string().trim().min(1, "Escreva o texto-base do termo.").max(1500, "O texto-base tem no máximo 1.500 caracteres."),
+  assinaturas: z
+    .string()
+    .trim()
+    .min(1, "Informe pelo menos uma linha de assinatura.")
+    .max(600, "As assinaturas têm no máximo 600 caracteres.")
+    .refine((t) => t.split("\n").filter((l) => l.trim()).length <= 6, "No máximo 6 linhas de assinatura."),
+});

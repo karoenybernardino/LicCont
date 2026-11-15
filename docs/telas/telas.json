@@ -145,7 +145,7 @@
   "tema": "escuro",
   "largura": 1280,
   "altura": 800,
-  "rota": "(ainda sem rota)",
+  "rota": "/auditoria",
   "html": "html/AuditoriaEscuro.html",
   "png": "png/AuditoriaEscuro.png"
  },
@@ -155,7 +155,7 @@
   "tema": "claro",
   "largura": 1280,
   "altura": 800,
-  "rota": "(ainda sem rota)",
+  "rota": "/auditoria",
   "html": "html/AuditoriaClaro.html",
   "png": "png/AuditoriaClaro.png"
  },
@@ -185,7 +185,7 @@
   "tema": "escuro",
   "largura": 1280,
   "altura": 900,
-  "rota": "(ainda sem rota)",
+  "rota": "/etiquetas",
   "html": "html/EtiquetasEscuro.html",
   "png": "png/EtiquetasEscuro.png"
  },
@@ -195,7 +195,7 @@
   "tema": "claro",
   "largura": 1280,
   "altura": 900,
-  "rota": "(ainda sem rota)",
+  "rota": "/etiquetas",
   "html": "html/EtiquetasClaro.html",
   "png": "png/EtiquetasClaro.png"
  },
@@ -245,7 +245,7 @@
   "tema": "escuro",
   "largura": 1280,
   "altura": 880,
-  "rota": "(ainda sem rota)",
+  "rota": "/etiquetas/celular",
   "html": "html/CelularEscuro.html",
   "png": "png/CelularEscuro.png"
  },
@@ -255,7 +255,7 @@
   "tema": "claro",
   "largura": 1280,
   "altura": 880,
-  "rota": "(ainda sem rota)",
+  "rota": "/etiquetas/celular",
   "html": "html/CelularClaro.html",
   "png": "png/CelularClaro.png"
  },

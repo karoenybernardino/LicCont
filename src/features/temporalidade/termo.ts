@@ -1,9 +1,10 @@
 // Conteúdo do termo (e da listagem) de eliminação, igual para PDF e Word.
 // Estrutura segue a Resolução CONARQ 40/2014 (nova redação da 44/2020): a
 // listagem de eliminação, o edital de ciência e o termo. Não há modelo oficial
-// único para município; o modelo da prefeitura pode substituir este texto
-// (decisão em aberto no plano). Sem CPF, sem nome de pessoa: as assinaturas
-// são linhas em branco para a comissão.
+// único para município: o administrador edita o texto-base e as assinaturas
+// (tabela modelos_termo); o texto abaixo é o padrão. As frases de situação
+// (edital, prazo, aprovação) não são editáveis, para o termo nunca dizer o que
+// não aconteceu. Sem CPF, sem nome de pessoa: assinaturas são linhas em branco.
 import type { TermoCompleto } from "./tipos";
 import { CLASSES, PRAZO_CIENCIA_DIAS, dataBR } from "./regras";
 
@@ -17,14 +18,22 @@ export type ConteudoTermo = {
   rodape: string;
 };
 
+export type ModeloTermo = { baseLegal: string; assinaturas: string };
+
+export const MODELO_PADRAO: ModeloTermo = {
+  baseLegal:
+    "Eliminação de documentos públicos conforme a Lei nº 8.159/1991 (art. 9º), a Resolução CONARQ nº 40/2014 (nova redação da Resolução nº 44/2020) e a tabela de temporalidade e destinação da prefeitura.",
+  assinaturas: "Responsável pelo arquivo\nComissão Permanente de Avaliação de Documentos\nAutoridade que aprova a eliminação",
+};
+
 const data = dataBR;
 const corta = (t: string, max: number) => (t.length > max ? `${t.slice(0, max - 1)}…` : t);
 
-export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situacao" | "prefeitura" | "secretaria" | "editalEm" | "aprovadoEm" | "geradoEm" | "observacao" | "documentos">): ConteudoTermo {
+export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situacao" | "prefeitura" | "secretaria" | "editalEm" | "aprovadoEm" | "geradoEm" | "observacao" | "documentos">, modelo: ModeloTermo = MODELO_PADRAO): ConteudoTermo {
   const aprovado = t.situacao === "aprovado";
   const numero = `${String(t.numero).padStart(3, "0")}/${t.ano}`;
   const paragrafos = [
-    "Eliminação de documentos públicos conforme a Lei nº 8.159/1991 (art. 9º), a Resolução CONARQ nº 40/2014 (nova redação da Resolução nº 44/2020) e a tabela de temporalidade e destinação da prefeitura.",
+    modelo.baseLegal,
     aprovado
       ? `Edital de ciência de eliminação publicado em ${data(t.editalEm)}, com prazo de ${PRAZO_CIENCIA_DIAS} dias para manifestação. Eliminação aprovada em ${data(t.aprovadoEm)} e registrada na auditoria do sistema. Os documentos listados foram desativados no acervo; o registro de cada um permanece.`
       : t.editalEm
@@ -45,7 +54,7 @@ export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situaca
         d.inicio ? `${data(d.inicio)} a ${data(d.fim)}` : `até ${data(d.fim)}`,
       ]),
     },
-    assinaturas: ["Responsável pelo arquivo", "Comissão Permanente de Avaliação de Documentos", "Autoridade que aprova a eliminação"],
+    assinaturas: modelo.assinaturas.split("\n").map((l) => l.trim()).filter(Boolean),
     rodape: `Total: ${t.documentos.length} ${t.documentos.length === 1 ? "documento" : "documentos"}.`,
   };
 }
