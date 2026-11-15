@@ -28,6 +28,8 @@ const EXTRAS: ItemMenu[] = [
 const ADMIN: ItemMenu[] = [
   { href: "/usuarios", rotulo: "Usuários e perfis", icone: "usuarios" },
   { href: "/secretarias", rotulo: "Secretarias", icone: "secretarias" },
+  { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", icone: "configuracoes" },
+  { href: "/configuracoes/exportar", rotulo: "Exportar dados", icone: "relatorios" },
 ];
 const CONFIG: ItemMenu = { rotulo: "Configurações", icone: "configuracoes" };
 

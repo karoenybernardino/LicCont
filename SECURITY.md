@@ -5,8 +5,8 @@
 Não abra issue pública. Escreva para o contato de segurança do LicCONT com:
 
 > **Pendência:** o endereço de contato ainda não existe (depende do domínio
-> próprio). Responsáveis: os encarregados de dados do LicCONT. Definir antes
-> do piloto.
+> próprio). Enquanto isso, use o contato mostrado no site público. Definir o
+> e-mail real antes do piloto.
 
 
 - o que você encontrou e onde;

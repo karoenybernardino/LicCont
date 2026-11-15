@@ -27,3 +27,12 @@ guarda contra o direito de eliminação (art. 16, I); valor legal da digitaliza�
 | Operação | Finalidade | Dados | Base legal (a validar) | Quem acessa | Guarda |
 | --- | --- | --- | --- | --- | --- |
 | Formulário "Pedir demonstração" | Responder ao interessado | Nome, cargo, órgão, e-mail, telefone, mensagem | Procedimentos preliminares a contrato, a pedido do titular (art. 7º, V) | Só a equipe LicCONT | A definir (proposta: 90 dias após a resposta), a validar com o advogado. Decisão 0013 |
+
+## Fase 8: novas operações
+
+| Operação | Finalidade | Dados | Base legal (a validar) | Quem acessa | Guarda |
+| --- | --- | --- | --- | --- | --- |
+| Aceite de política e termo | Prova do aceite | Id do usuário, prefeitura, documento, versão, data | Prestação de contas (art. 6º, X) | Próprio usuário; administrador da prefeitura | Enquanto a conta existir |
+| Autorização de suporte | Registrar quando a equipe pode ajudar | Prefeitura, quem autorizou, motivo (texto livre, sem dado pessoal), início e fim | Execução do contrato | Administrador da prefeitura; equipe vê só "valendo até" | Como a auditoria |
+| Exportação de dados | Devolução ao fim do contrato | CSVs e PDFs da própria prefeitura | Execução do contrato | Só o administrador que pediu | Arquivo gerado na hora, não fica guardado; auditoria guarda só contagens |
+| Números de uso | Operar o serviço | Contagens por prefeitura | Legítimo interesse (a validar) | Equipe com 2º fator | Calculado na hora |

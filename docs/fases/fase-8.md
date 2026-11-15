@@ -1,6 +1,6 @@
 # Fase 8 — Prontidão
 
-Status: **só plano** (2026-11-15). Nada foi construído. Plano geral:
+Status: **código entregue no PR da Fase 8+9+Site (2026-11-15)**; itens que dependem de advogado, domínio, ensaio de restauração e piloto seguem abertos (ver `docs/seguranca/checklist-fase-8.md`). Entregue: tarefas 1, 2 (mecanismo, sem política de leitura), 3 (exportação ZIP), 6, 8, 9 e 10 (procedimentos escritos, ensaios por executar), 7 (rascunhos em `docs/lgpd/pacote-lgpd.md`). Não entregue: relatório de uso mensal (5) e a leitura de auditoria pela equipe. Plano geral:
 `docs/plano-de-desenvolvimento.md`, linha "8 · Prontidão": painel da equipe
 LicCONT, relatórios, documentação de LGPD, revisão de segurança, pentest se
 aprovado. Pronta quando o **checklist de segurança está completo e o piloto

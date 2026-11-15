@@ -1,4 +1,5 @@
 import "server-only";
+import { aceiteEmDia } from "@/features/aceite/dados";
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -120,6 +121,7 @@ export async function exigirSessao() {
   // Administrador sem o segundo fator não usa o sistema (o banco também exige aal2).
   if (usuario.administrador && (await faltaSegundoFator())) redirect("/segundo-fator");
   if (usuario.trocaSenha) redirect("/nova-senha");
+  if (!(await aceiteEmDia())) redirect("/aceite");
   const secretaria = await secretariaAtual(usuario);
   if (!secretaria) redirect("/entrar/dados");
   return { usuario, secretaria };

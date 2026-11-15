@@ -10,7 +10,7 @@ import { PaginaEquipe } from "@/features/equipe/pagina";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { idSchema } from "@/features/login/esquemas";
 import { cadastrarPrimeiroAdmin, mudarStatus } from "@/features/prefeituras/acoes";
-import { listarAdministradores, obterPrefeitura } from "@/features/prefeituras/dados";
+import { listarAdministradores, obterPrefeitura, suporteAutorizadoAte, usoPrefeituras } from "@/features/prefeituras/dados";
 import { formatarCnpj } from "@/features/prefeituras/lista";
 import { exigirEquipe } from "@/features/sessao/dal";
 
@@ -28,6 +28,8 @@ export default async function DetalhePrefeitura({ params }: { params: Promise<{ 
   const p = await obterPrefeitura(id);
   if (!p) notFound();
   const admins = await listarAdministradores(id);
+  const uso = (await usoPrefeituras()).get(id);
+  const suporte = await suporteAutorizadoAte(id);
 
   return (
     <PaginaEquipe
@@ -58,6 +60,18 @@ export default async function DetalhePrefeitura({ params }: { params: Promise<{ 
         </div>
       </Painel>
 
+      {uso && (
+        <Painel>
+          <span className="text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase">Uso (só números)</span>
+          <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            {([["Secretarias", uso.secretarias], ["Usuários ativos", uso.usuarios], ["Documentos", uso.documentos], ["Caixas", uso.caixas], ["PDFs (GB)", (uso.bytesPdf / 1e9).toFixed(2)], ["Logins no mês", uso.loginsMes]] as const).map(([r, v]) => (
+              <div key={r}><dt className="text-texto-suave">{r}</dt><dd className="font-mono text-base font-semibold">{typeof v === "number" ? v.toLocaleString("pt-BR") : v}</dd></div>
+            ))}
+          </dl>
+          <p className="text-[12.5px] text-texto-suave">{suporte ? `Acesso de suporte autorizado pela prefeitura até ${new Date(suporte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` : "Sem autorização de suporte valendo."}</p>
+        </Painel>
+      )}
+
       <div className="grid items-start gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
         <Painel>
           <span className="text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase">Situação da prefeitura</span>
@@ -69,6 +83,7 @@ export default async function DetalhePrefeitura({ params }: { params: Promise<{ 
               ))}
             </Selecao>
           </Formulario>
+          <p className="text-[12.5px] text-texto-suave">Suspender bloqueia o acesso de todos, sem apagar nada. Reativar devolve o acesso. Os dados continuam podendo ser exportados pelo administrador.</p>
         </Painel>
 
         <Painel>

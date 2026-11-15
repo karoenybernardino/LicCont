@@ -5,7 +5,7 @@ import { SeletorTema } from "@/ui/seletor-tema";
 
 // Páginas públicas de texto jurídico. Os textos são rascunho técnico e mostram
 // o aviso até o advogado validar (docs/lgpd/).
-export const VERSAO_TEXTOS = "2026-11-rascunho-1";
+import { VERSAO_TEXTOS } from "./versao";
 
 export function PaginaLegal({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
