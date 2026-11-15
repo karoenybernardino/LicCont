@@ -71,7 +71,7 @@ export function Localizar({
         <p className="text-sm text-texto-suave">
           {documentos.length.toLocaleString("pt-BR")} sem endereço · {marcados.size} selecionados
         </p>
-        <div className="sc max-h-[460px] overflow-auto">
+        <div className="sc overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="text-left">

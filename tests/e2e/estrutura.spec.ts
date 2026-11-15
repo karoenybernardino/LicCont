@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { USUARIOS, temSupabase } from "./dados";
-import { cadastrarAutenticador, entrar, semFalhasDeAcessibilidade } from "./ajuda";
+import { cadastrarAutenticador, conferirMolduraFixa, entrar, semFalhasDeAcessibilidade } from "./ajuda";
 
 // Critério 7 de docs/fases/fase-2.md. Usa a estrutura do supabase/seed.sql
 // (Galpão Central: Rua A com 2 módulos × 3 níveis × 4 posições e 2 caixas
@@ -21,6 +21,7 @@ test("perfil Consulta vê a estrutura e a ocupação só para leitura", async ({
   await abrirEstrutura(page);
   await semFalhasDeAcessibilidade(page);
   await expect(linhaDaRua(page, "A")).toContainText("50%");
+  await conferirMolduraFixa(page);
   await expect(page.getByRole("button", { name: "Nova rua" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Adicionar módulos" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Últimas alterações" })).toHaveCount(0);

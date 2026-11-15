@@ -4,6 +4,7 @@ import {
   ERRO,
   cadastrarAutenticador,
   codigoNovo,
+  conferirMolduraFixa,
   entrar,
   secretariaEmUso,
   semFalhasDeAcessibilidade,
@@ -77,10 +78,10 @@ test("troca de secretaria dentro do sistema, só entre as vinculadas", async ({ 
   await entrar(page, { email: USUARIOS.duas.email, secretaria: "Saúde" });
   await expect(page).toHaveURL(/\/inicio$/);
   await expect(secretariaEmUso(page)).toHaveText("Saúde");
-  const opcoes = await page.getByLabel("Secretaria", { exact: true }).locator("option").allTextContents();
+  await page.locator("#secretaria-em-uso").click();
+  const opcoes = await page.getByRole("option").allTextContents();
   expect(opcoes.sort((a, b) => a.localeCompare(b, "pt-BR"))).toEqual(["Educação", "Saúde"]);
-  await page.getByLabel("Secretaria", { exact: true }).selectOption({ label: "Educação" });
-  await page.getByRole("button", { name: "Trocar", exact: true }).click();
+  await page.getByRole("option", { name: "Educação" }).click();
   await expect(secretariaEmUso(page)).toHaveText("Educação");
 });
 
@@ -170,4 +171,5 @@ test("equipe LicCONT entra pelo endereço próprio; usuário de prefeitura não"
   await cadastrarAutenticador(page);
   await expect(page).toHaveURL(/\/equipe$/);
   await expect(page.getByRole("heading", { level: 1, name: "Prefeituras" })).toBeVisible();
+  await conferirMolduraFixa(page);
 });

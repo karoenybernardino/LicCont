@@ -43,7 +43,7 @@ export function CabecalhoPainel({ icone, titulo, subtitulo }: { icone: ReactNode
 // Filtro em pílula (Todas · 7 | Ativas · 5 ...), feito de links.
 export function Filtros({ itens }: { itens: { href: string; rotulo: string; ativo: boolean }[] }) {
   return (
-    <nav aria-label="Filtro" className="inline-flex gap-[3px] rounded-[13px] border border-linha bg-campo p-[3px]">
+    <nav aria-label="Filtro" className="inline-flex max-w-full gap-[3px] overflow-x-auto rounded-[13px] border border-linha bg-campo p-[3px]">
       {itens.map((i) => (
         <Link
           key={i.rotulo}

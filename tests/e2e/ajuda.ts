@@ -20,7 +20,7 @@ export async function semFalhasDeAcessibilidade(page: Page) {
   expect(violations).toEqual([]);
 }
 
-export const secretariaEmUso = (page: Page) => page.getByLabel("Secretaria", { exact: true }).locator("option:checked");
+export const secretariaEmUso = (page: Page) => page.getByTestId("secretaria-em-uso");
 
 // Cadastra o autenticador na primeira vez e devolve o segredo TOTP.
 export async function cadastrarAutenticador(page: Page) {
@@ -57,4 +57,47 @@ export async function entrar(
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha", { exact: true }).fill(senha);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
+}
+
+// Moldura fixa: com conteúdo comprido, menu e cabeçalho não se mexem e só o miolo rola
+// (no computador); no celular a página não rola para o lado.
+export async function conferirMolduraFixa(page: Page) {
+  await esperarCarregar(page);
+  await page.waitForLoadState("networkidle"); // o React termina de montar a tela antes de medirmos
+  const original = page.viewportSize()!;
+  const caixa = (seletor: string) => page.locator(seletor).first().boundingBox();
+  const miolo = page.locator("[data-moldura] main");
+  // Põe um bloco alto no miolo (de novo, se a tela o refizer) e rola até o fim.
+  const rolar = () =>
+    miolo.evaluate((m) => {
+      if (!m.querySelector("[data-teste=alto]")) {
+        const bloco = document.createElement("div");
+        bloco.dataset.teste = "alto";
+        bloco.style.cssText = "height:3000px;flex:none";
+        m.append(bloco);
+      }
+      m.scrollTo({ top: m.scrollHeight, behavior: "instant" });
+      return m.scrollTop;
+    });
+  for (const [largura, altura] of [[1280, 720], [375, 812]] as const) {
+    await page.setViewportSize({ width: largura, height: altura });
+    if (largura >= 768) {
+      const antes = [await caixa("[data-moldura] > aside"), await caixa("[data-moldura] header")];
+      await expect.poll(rolar).toBeGreaterThan(0);
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+      expect([await caixa("[data-moldura] > aside"), await caixa("[data-moldura] header")]).toEqual(antes);
+    }
+    // Se estourar, a mensagem lista quem passa da borda (fora do menu, que rola por dentro).
+    const estouram = await page.evaluate(() =>
+      document.documentElement.scrollWidth <= window.innerWidth
+        ? []
+        : [...document.querySelectorAll("body *:not(aside *)")]
+            .filter((e) => !e.closest(".overflow-x-auto") && e.getBoundingClientRect().right > window.innerWidth + 1)
+            .slice(0, 5)
+            .map((e) => `${e.tagName}.${String(e.getAttribute("class")).slice(0, 50)}`),
+    );
+    expect(estouram).toEqual([]);
+    await page.evaluate(() => document.querySelector("[data-teste=alto]")?.remove());
+  }
+  await page.setViewportSize(original);
 }

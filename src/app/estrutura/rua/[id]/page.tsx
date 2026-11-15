@@ -171,7 +171,7 @@ export default async function RuaDoGalpao({
                 {detalhe.documentos.length === 0 ? (
                   <p className="text-sm text-texto-suave">{detalhe.total === 0 ? "Caixa vazia." : "Nenhum documento desta caixa é da sua secretaria."}</p>
                 ) : (
-                  <ul className="sc flex max-h-[320px] flex-col gap-1.5 overflow-y-auto pr-1" aria-label="Documentos da caixa">
+                  <ul className="flex flex-col gap-1.5" aria-label="Documentos da caixa">
                     {detalhe.documentos.map((d) => (
                       <li key={d.id}>
                         <Link href={`/documentos/${d.id}`} className="flex items-center gap-2 rounded-[10px] border border-linha bg-superficie-2 px-2.5 py-2 hover:border-destaque focus-visible:outline-2 focus-visible:outline-foco">
