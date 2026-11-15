@@ -13,8 +13,9 @@ import { configuracoes, importarPrefeitura } from "@/features/tce/rotina";
 export async function importarPelaEquipe(formData: FormData): Promise<void> {
   const membro = await exigirEquipe();
   const id = z.guid().safeParse(formData.get("id"));
-  const destino = String(formData.get("volta") ?? "") === "integracoes" ? "/equipe/integracoes" : "/equipe/prefeituras";
-  const volta = (r: string) => redirect(`${destino}?${new URLSearchParams({ ...(id.success && { sel: id.data }), importou: r })}`);
+  const de = String(formData.get("volta") ?? "");
+  const destino = de === "integracoes" ? "/equipe/integracoes" : de === "detalhe" && id.success ? `/equipe/${id.data}` : "/equipe/prefeituras";
+  const volta = (r: string) => redirect(`${destino}?${new URLSearchParams({ ...(id.success && de !== "detalhe" && { sel: id.data }), ...(de === "detalhe" && { aba: "tce" }), importou: r })}`);
   if (!id.success) return volta("erro");
   if (emDemo()) return volta("demo");
   const servico = clienteServico();
