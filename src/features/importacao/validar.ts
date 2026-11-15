@@ -65,6 +65,7 @@ export function validarLinhas(
   mapa: Mapa,
   secretarias: Secretaria[],
   existentes: ReadonlySet<string>,
+  padrao?: Secretaria,
 ): Conferencia {
   const porNome = new Map(secretarias.map((s) => [semAcento(s.nome), s.id]));
   const validas: LinhaValida[] = [];
@@ -81,7 +82,7 @@ export function validarLinhas(
 
     const tipo = TIPO_POR_TEXTO[semAcento(pega("tipo"))];
     if (!tipo) erro("tipo", "Use Licitação ou Contrato.");
-    const secretariaId = porNome.get(semAcento(pega("secretaria")));
+    const secretariaId = mapa.secretaria === undefined ? padrao?.id : porNome.get(semAcento(pega("secretaria")));
     if (!secretariaId) erro("secretaria", "Secretaria não cadastrada.");
 
     const modTexto = pega("modalidade");

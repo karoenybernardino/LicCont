@@ -10,6 +10,8 @@ const cabecalhosSeguranca = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // A planilha de importação (até 10 MB) viaja numa Server Action.
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
   // Sem cacheComponents: a CSP com nonce exige renderização por requisição
   // (o shell estático não teria o nonce). Ver docs/fases/fase-1.md.
   turbopack: {
