@@ -14,7 +14,7 @@ const base = opt("--base", "http://localhost:3200");
 const rotaForcada = opt("--rota", null);
 const clicar = opt("--clicar", null); // texto de um botão a clicar antes do print (ex.: abrir uma janela)
 const todos = args.includes("--todos");
-const telas = JSON.parse(readFileSync("docs/telas/telas.json", "utf8"));
+const telas = [...new Map(["telas.json", "telas-novas.json"].flatMap((a) => { try { return JSON.parse(readFileSync(`docs/telas/${a}`, "utf8")); } catch { return []; } }).map((t) => [t.quadro, t])).values()];
 const alvo = todos ? telas.filter((t) => t.rota.startsWith("/")) : telas.filter((t) => args.includes(t.quadro));
 if (!alvo.length) { console.log("Informe o nome do quadro (veja docs/telas/telas.json) ou --todos."); process.exit(1); }
 
