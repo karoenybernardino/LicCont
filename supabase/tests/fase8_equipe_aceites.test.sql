@@ -79,9 +79,9 @@ select is((select count(*) from public.aceites), 2::bigint, 'administrador vê o
 
 -- 3. exportação
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
-select lives_ok($select public.registrar_exportacao(10, 4, 0)$, 'administrador registra exportação');
+select lives_ok($$select public.registrar_exportacao(10, 4, 0)$$, 'administrador registra exportação');
 select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal2');
-select throws_ok($select public.registrar_exportacao(1, 1, 0)$, '42501', null, 'operador não registra exportação');
+select throws_ok($$select public.registrar_exportacao(1, 1, 0)$$, '42501', null, 'operador não registra exportação');
 
 reset role;
 set local role anon;
