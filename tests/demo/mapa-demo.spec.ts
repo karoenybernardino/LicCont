@@ -98,3 +98,46 @@ test("3D: o galpão grande abre, aceita giro e mantém a taxa de quadros", async
   await page.screenshot({ path: "test-results/mapa-grande.png" });
   expect(t.length).toBeGreaterThan(10);
 });
+
+test("editor: desenhar parede, colocar janela e porta, e arrastar a entrada", async ({ page }) => {
+  await page.goto("/mapa/editar");
+  const svg = page.getByRole("group", { name: /^Planta de/ });
+  const b = (await svg.boundingBox())!;
+  // Parede: pressionar, arrastar e soltar na planta.
+  await page.getByRole("button", { name: "Parede" }).click();
+  await page.mouse.move(b.x + b.width * 0.6, b.y + b.height * 0.62);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width * 0.85, b.y + b.height * 0.62, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Remover elemento" })).toBeVisible();
+  await page.getByRole("button", { name: "Remover elemento" }).click();
+  // Janela: clique perto da parede de cima encaixa nela.
+  await page.getByRole("button", { name: "Janela" }).click();
+  await page.mouse.click(b.x + b.width * 0.5, b.y + 58);
+  await expect(page.getByRole("heading", { name: "Selecionado" })).toBeVisible();
+  await expect(page.getByText("Janela", { exact: true }).first()).toBeVisible();
+  // Entrada: arrastar o traço laranja para a parede da esquerda.
+  const entrada = page.locator("g[data-entrada]");
+  await entrada.scrollIntoViewIfNeeded();
+  const e = (await entrada.boundingBox())!;
+  const b2 = (await svg.boundingBox())!;
+  await page.mouse.move(e.x + e.width / 2, e.y + e.height / 2 - 12);
+  await page.mouse.down();
+  await page.mouse.move(b2.x + 58, e.y - 160, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByLabel("Lado")).toHaveValue("esquerda");
+});
+
+test("editor: administrador arrasta a ponta da rua e a demonstração avisa que não gravou", async ({ page, context }) => {
+  await context.addCookies([{ name: "liccont_demo_perfil", value: "administrador", url: "http://localhost:3200" }]);
+  await page.goto("/mapa/editar");
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(800);
+  const ponta = page.locator('g[data-ponta-rua="A"]');
+  const p = (await ponta.boundingBox())!;
+  await page.mouse.move(p.x + p.width / 2, p.y + p.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(p.x + p.width / 2 + 130, p.y + p.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByText("Modo demonstração: nada foi salvo.")).toBeVisible();
+});

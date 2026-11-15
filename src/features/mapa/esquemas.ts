@@ -17,7 +17,7 @@ const rua = z
 
 const elemento = z.object({
   id: idSchema.nullable(),
-  tipo: z.enum(["porta", "pilar", "parede", "area"]),
+  tipo: z.enum(["porta", "janela", "pilar", "parede", "area"]),
   rotulo: z.string().trim().max(40, "Nome muito longo.").nullable(),
   x: celula,
   y: celula,

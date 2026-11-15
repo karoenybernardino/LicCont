@@ -7,8 +7,8 @@ export const GIROS: readonly Giro[] = [0, 90, 180, 270];
 export type LadoEntrada = "frente" | "fundo" | "esquerda" | "direita";
 export const LADOS: Record<LadoEntrada, string> = { frente: "Frente", fundo: "Fundo", esquerda: "Esquerda", direita: "Direita" };
 
-export type TipoElemento = "porta" | "pilar" | "parede" | "area";
-export const TIPOS_ELEMENTO: Record<TipoElemento, string> = { porta: "Porta", pilar: "Pilar", parede: "Parede", area: "Área com nome" };
+export type TipoElemento = "porta" | "janela" | "pilar" | "parede" | "area";
+export const TIPOS_ELEMENTO: Record<TipoElemento, string> = { porta: "Porta", janela: "Janela", pilar: "Pilar", parede: "Parede", area: "Área com nome" };
 
 // Planta e elementos guardam METROS (banco e editor); só o leiaute (geometria.ts)
 // trabalha em células de módulo: metros ÷ metrosCelula.
