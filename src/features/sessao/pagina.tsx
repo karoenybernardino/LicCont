@@ -23,13 +23,16 @@ const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar docume
 const PAINEL: ItemMenu = { href: "/painel", rotulo: "Painel", dica: "Números do acervo em gráficos.", icone: "painel" };
 const AUDITORIA: ItemMenu = { rotulo: "Auditoria", dica: "Histórico de quem fez o quê.", icone: "auditoria" };
 const ESTRUTURA: ItemMenu = { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" };
-const ADMIN: ItemMenu[] = [
+// Tudo que o administrador ajusta fica dentro de Configurações (submenu ao lado da barra).
+export const AJUSTES: ItemMenu[] = [
   { href: "/usuarios", rotulo: "Usuários e perfis", dica: "Quem acessa o sistema e com qual perfil.", icone: "usuarios" },
   { href: "/secretarias", rotulo: "Secretarias", dica: "Cadastro das secretarias da prefeitura.", icone: "secretarias" },
+  { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" },
+  { href: "/configuracoes/tce", rotulo: "Importação do TCE", dica: "Liga e acompanha a importação do TCE-CE.", icone: "importados" },
   { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", dica: "Libera ou encerra o acesso da equipe LicCONT.", icone: "configuracoes" },
   { href: "/configuracoes/exportar", rotulo: "Exportar dados", dica: "Baixa uma cópia dos dados da prefeitura.", icone: "relatorios" },
 ];
-const CONFIG: ItemMenu = { rotulo: "Configurações", dica: "Ajustes da conta.", icone: "configuracoes" };
+const CONFIG: ItemMenu = { rotulo: "Configurações", dica: "Usuários, secretarias, suporte e exportação.", icone: "configuracoes" };
 
 function iniciais(nome: string) {
   return nome
@@ -72,14 +75,15 @@ export async function PaginaSistema({
     ...(exporta ? [{ href: "/relatorios", rotulo: "Relatórios", dica: "Relatórios do acervo para imprimir ou baixar.", icone: "relatorios" as const }] : []),
     // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
     usuario.administrador ? { ...AUDITORIA, href: "/auditoria" } : AUDITORIA,
-    ESTRUTURA,
+    // Administrador acha a estrutura em Configurações; os demais seguem com o item solto.
+    ...(usuario.administrador ? [] : [ESTRUTURA]),
   ];
-  const grupos = [[INICIO], [...ACERVO.slice(0, 2), ...(cadastra ? [CADASTRO] : []), ...ACERVO.slice(2)], gestao, usuario.administrador ? ADMIN : []];
+  const grupos = [[INICIO], [...ACERVO.slice(0, 2), ...(cadastra ? [CADASTRO] : []), ...ACERVO.slice(2)], gestao];
   return (
     <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral
         grupos={grupos}
-        rodape={[CONFIG]}
+        rodape={[usuario.administrador ? { ...CONFIG, filhos: AJUSTES } : CONFIG]}
         sair={
           <form action={sair}>
             <BotaoEnviar

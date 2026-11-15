@@ -25,5 +25,10 @@ export async function GET(req: Request) {
     await servico.storage.from("acervo").remove(velhos.map((v) => v.caminho));
     await servico.storage.from("miniaturas").remove(velhos.map((v) => v.miniatura));
   }
-  return Response.json({ limpos: velhos.length });
+  // Guarda de 12 meses dos pedidos de demonstração e volumes de exportação vencidos.
+  const { data: pedidos } = await servico.rpc("limpar_pedidos_demonstracao");
+  const { data: vencidas } = await servico.rpc("exportacoes_vencidas");
+  const zips = ((vencidas ?? []) as { caminho: string }[]).map((v) => v.caminho);
+  if (zips.length) await servico.storage.from("exportacoes").remove(zips);
+  return Response.json({ limpos: velhos.length, pedidos: Number(pedidos ?? 0), exportacoes: zips.length });
 }

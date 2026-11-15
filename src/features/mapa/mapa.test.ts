@@ -5,7 +5,7 @@ import { lerCodigo, formatarCodigo } from "./codigo";
 import { CORES } from "./cores";
 import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha, zoomAlvo } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
-import { encaixarNaParede, entradaPorPonto, modulosDoArrasto, paredeDesenhada } from "./edicao";
+import { ajusteDoTeclado, encaixarNaParede, entradaPorPonto, fantasmaDaPonta, modulosDoArrasto, paredeDesenhada, rotuloDoArrasto } from "./edicao";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { PLANTA_VAZIA, type CaixaCompacta, type Planta } from "./tipos";
 import { caminhoDeVolta, lerParametros, urlMapa } from "./url";
@@ -274,7 +274,25 @@ describe("editor ao estilo Revit (edicao.ts)", () => {
     expect(modulosDoArrasto(-2.5, m, 5)).toBe(-2);
     expect(modulosDoArrasto(-99, m, 5)).toBe(-4);
     expect(modulosDoArrasto(0.3, m, 5)).toBe(0);
-
+  });
+  it("fantasma da ponta: novos módulos depois da ponta, os que saem por dentro, nas duas orientações", () => {
+    const h = { x: 2, y: 3, w: 5, h: 2 };
+    expect(fantasmaDaPonta(h, false, 0)).toBeNull();
+    expect(fantasmaDaPonta(h, false, 3)).toEqual({ x: 7, y: 3, largura: 3, profundidade: 2, n: 3, vertical: false, tira: false });
+    expect(fantasmaDaPonta(h, false, -2)).toEqual({ x: 5, y: 3, largura: 2, profundidade: 2, n: 2, vertical: false, tira: true });
+    const v = { x: 2, y: 3, w: 2, h: 5 };
+    expect(fantasmaDaPonta(v, true, 3)).toEqual({ x: 2, y: 8, largura: 2, profundidade: 3, n: 3, vertical: true, tira: false });
+    expect(fantasmaDaPonta(v, true, -1)).toMatchObject({ y: 7, profundidade: 1, tira: true });
+  });
+  it("rótulo ao vivo do arrasto e teclas de módulo", () => {
+    expect(rotuloDoArrasto(3, 5)).toBe("+3 módulos · 8 no total");
+    expect(rotuloDoArrasto(1, 5)).toBe("+1 módulo · 6 no total");
+    expect(rotuloDoArrasto(-2, 5)).toBe("−2 módulos · 3 no total");
+    expect(ajusteDoTeclado("+", false)).toBe(1);
+    expect(ajusteDoTeclado("-", false)).toBe(-1);
+    expect(ajusteDoTeclado("ArrowRight", true)).toBe(1);
+    expect(ajusteDoTeclado("ArrowUp", true)).toBe(-1);
+    expect(ajusteDoTeclado("ArrowRight", false)).toBe(0);
   });
 });
 describe("zoom do mapa 3D", () => {

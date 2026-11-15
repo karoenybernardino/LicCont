@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { LIMITE_PDFS_BYTES, montarPacote, type PdfPacote, type TabelaCsv } from "./pacote";
+import { LIMITE_PDFS_BYTES, LIMITE_VOLUME_BYTES, montarVolumes, type PdfPacote, type TabelaCsv } from "./pacote";
 
 // Leitura pela sessão do administrador: o RLS limita à prefeitura dele.
 const TABELAS = ["secretarias", "galpoes", "ruas", "modulos", "niveis", "caixas", "documentos", "arquivos", "emprestimos", "auditoria"] as const;
@@ -16,9 +16,14 @@ export async function gerarExportacao() {
   const tabelas: TabelaCsv[] = [];
   let documentos = 0;
   let arquivos: { id: string; documento_id: string; caminho: string; tamanho: number }[] = [];
+  const avisos: string[] = [];
   for (const nome of TABELAS) {
     const linhas: Record<string, unknown>[] = [];
-    for (let de = 0; linhas.length < TETO_LINHAS; de += PAGINA) {
+    for (let de = 0; ; de += PAGINA) {
+      if (linhas.length >= TETO_LINHAS) {
+        avisos.push(`A planilha ${nome}.csv foi cortada em ${TETO_LINHAS} linhas: há mais registros no sistema. Peça uma exportação em partes.`);
+        break;
+      }
       const { data, error } = await sb.from(nome).select("*").order("id").range(de, de + PAGINA - 1);
       if (error) throw new Error("falha na leitura");
       linhas.push(...((data ?? []) as Record<string, unknown>[]));
@@ -35,7 +40,8 @@ export async function gerarExportacao() {
   const fora: string[][] = [];
   let total = 0;
   for (const a of arquivos) {
-    if (total + Number(a.tamanho) > LIMITE_PDFS_BYTES) {
+    const previsto = Number(a.tamanho);
+    if (previsto > LIMITE_VOLUME_BYTES || total + previsto > LIMITE_PDFS_BYTES) {
       fora.push([a.documento_id, "acima do limite do pacote"]);
       continue;
     }
@@ -45,8 +51,13 @@ export async function gerarExportacao() {
       continue;
     }
     const bytes = new Uint8Array(await data.arrayBuffer());
+    // O tamanho do banco pode não bater com o objeto: vale o que foi baixado.
+    if (bytes.length > LIMITE_VOLUME_BYTES || total + bytes.length > LIMITE_PDFS_BYTES) {
+      fora.push([a.documento_id, "acima do limite do pacote"]);
+      continue;
+    }
     total += bytes.length;
     pdfs.push({ caminho: `${a.id}.pdf`, bytes, sha256: createHash("sha256").update(bytes).digest("hex") });
   }
-  return { zip: montarPacote(tabelas, pdfs, fora), documentos, pdfs: pdfs.length, fora: fora.length };
+  return { volumes: montarVolumes(tabelas, pdfs, fora, avisos), documentos, pdfs: pdfs.length, fora: fora.length };
 }
