@@ -208,6 +208,7 @@ export function PainelPlanta({ d, carregando }: { d: DetalheCaixa | null; carreg
             Nível {d.nivel} · Caixa {String(d.caixa).padStart(2, "0")}
           </p>
           <span className="sr-only">{d.codigo}</span>
+          <div role="region" aria-label="Dentro da caixa" className="flex flex-col gap-3">
           <p className="text-[13px]">
             <b className="font-semibold">{d.total}</b> {d.total === 1 ? "documento guardado nesta caixa" : "documentos guardados nesta caixa"}
           </p>
@@ -224,6 +225,7 @@ export function PainelPlanta({ d, carregando }: { d: DetalheCaixa | null; carreg
               </li>
             ))}
           </ul>
+          </div>
         </>
       )}
     </section>
