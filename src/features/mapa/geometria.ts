@@ -3,7 +3,7 @@
 // mesma validação para recusar planta inválida e os testes medem o tempo com
 // o galpão grande.
 import type { Estrutura } from "@/features/estrutura/ocupacao";
-import type { CaixaCompacta, Giro, LadoEntrada, Lados, Planta } from "./tipos";
+import { PADRAO_METROS_CELULA, type CaixaCompacta, type ElementoPlanta, type Giro, type LadoEntrada, type Lados, type Planta } from "./tipos";
 
 export const CELULA = 2; // unidades do mundo 3D por célula de módulo
 export const ALTURA_NIVEL = 1; // distância entre prateleiras
@@ -33,8 +33,13 @@ export type ModuloLeiaute = Retangulo & { id: string; ruaId: string; numero: num
 export type Instancias = { n: number; centro: Float32Array; tamanho: Float32Array };
 
 export type Leiaute = {
-  largura: number; // células
+  /** Células de módulo (a planta salva é em metros: ver paraCelulas). */
+  largura: number;
   profundidade: number;
+  /** Metros por célula usados na conversão. */
+  metros: number;
+  /** Elementos da planta, já em células. */
+  elementos: ElementoPlanta[];
   entrada: { lado: LadoEntrada; posicao: number; largura: number };
   ruas: RuaLeiaute[];
   modulos: ModuloLeiaute[];
@@ -70,23 +75,32 @@ export function tamanhoRua(modulos: number, giro: Giro, lados: Lados = 2): { w: 
   return { w: lado ? lados : modulos, h: lado ? modulos : lados };
 }
 
-const cruza = (a: Retangulo, b: Retangulo) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+// Folga para a soma de decimais (7,2 = 6 + 1,2) não virar "passa da parede".
+const EPS = 1e-6;
+const cruza = (a: Retangulo, b: Retangulo) => a.x < b.x + b.w - EPS && b.x < a.x + a.w - EPS && a.y < b.y + b.h - EPS && b.y < a.y + a.h - EPS;
 
+// Posições e tamanho do galpão na mesma unidade; `metros` (padrão 1) é o quanto
+// uma célula de módulo mede nela (o tamanho da rua é módulos x metros).
 export type EntradaValidacao = {
   largura: number;
   profundidade: number;
+  metros?: number;
   ruas: { id: string; codigo: string; modulos: number; x: number | null; y: number | null; giro: Giro; lados?: Lados }[];
 };
 export type Problema = { ruaId: string; tipo: "fora" | "sobreposta"; com: string | null };
 
 // A mesma conferência no editor, no mapa e na Server Action.
 export function validarPlanta(e: EntradaValidacao): Problema[] {
+  const k = e.metros ?? 1;
   const retas = e.ruas
     .filter((r) => r.x !== null && r.y !== null)
-    .map((r) => ({ r, ret: { x: r.x as number, y: r.y as number, ...tamanhoRua(r.modulos, r.giro, r.lados) } }));
+    .map((r) => {
+      const t = tamanhoRua(r.modulos, r.giro, r.lados);
+      return { r, ret: { x: r.x as number, y: r.y as number, w: t.w * k, h: t.h * k } };
+    });
   const problemas: Problema[] = [];
   for (const { r, ret } of retas) {
-    if (ret.x < 0 || ret.y < 0 || ret.x + ret.w > e.largura || ret.y + ret.h > e.profundidade) {
+    if (ret.x < 0 || ret.y < 0 || ret.x + ret.w > e.largura + EPS || ret.y + ret.h > e.profundidade + EPS) {
       problemas.push({ ruaId: r.id, tipo: "fora", com: null });
       continue;
     }
@@ -100,7 +114,25 @@ function vazias(n: number): Instancias {
   return { n, centro: new Float32Array(n * 3), tamanho: new Float32Array(n * 3) };
 }
 
-export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], planta: Planta): Leiaute {
+/** Planta em metros -> mesma planta em células de módulo (metros ÷ metrosCelula). */
+export function paraCelulas(p: Planta): Planta & { metrosCelula: number } {
+  const m = p.metrosCelula ?? PADRAO_METROS_CELULA;
+  const c = (v: number) => Math.round((v / m) * 1e4) / 1e4;
+  const n = (v: number | null) => (v === null ? null : c(v));
+  return {
+    ...p,
+    metrosCelula: m,
+    largura: n(p.largura),
+    profundidade: n(p.profundidade),
+    entradaPosicao: n(p.entradaPosicao),
+    ruas: Object.fromEntries(Object.entries(p.ruas).map(([id, r]) => [id, { ...r, x: n(r.x), y: n(r.y) }])),
+    elementos: p.elementos.map((e) => ({ ...e, x: c(e.x), y: c(e.y), largura: c(e.largura), profundidade: c(e.profundidade) })),
+  };
+}
+
+/** A planta salva está em metros; o leiaute (e o 3D) trabalha em células de módulo. */
+export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], plantaMetros: Planta): Leiaute {
+  const planta = paraCelulas(plantaMetros);
   const ruasAtivas = estrutura.ruas.filter((r) => r.ativo).sort((a, b) => a.codigo.localeCompare(b.codigo));
   const modulosPorRua = new Map<string, typeof estrutura.modulos>();
   for (const m of estrutura.modulos) {
@@ -260,6 +292,8 @@ export function calcularLeiaute(estrutura: Estrutura, caixas: CaixaCompacta[], p
   return {
     largura,
     profundidade,
+    metros: planta.metrosCelula,
+    elementos: planta.elementos,
     entrada: { lado: planta.entradaLado ?? "frente", posicao: planta.entradaPosicao ?? 2, largura: LARGURA_ENTRADA },
     ruas,
     modulos: modulosLeiaute,

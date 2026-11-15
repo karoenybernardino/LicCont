@@ -25,6 +25,7 @@ export type ArquivoDoc = {
   avisos: string[];
   motivo: string | null;
   miniatura: boolean;
+  sha256: string | null;
 };
 export type DocumentoDetalhe = {
   id: string;
@@ -105,7 +106,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
       ...d, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
       posicao: cx ? posicaoDe(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero) : null,
       arquivo: d.arquivo
-        ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false }
+        ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null }
         : null,
     };
   }
@@ -114,7 +115,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em)",
+      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, valor, situacao, vigencia_inicio, vigencia_fim, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -136,7 +137,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
     arquivo: a
       ? {
           id: a.id, nome: a.nome_original, paginas: a.paginas, tamanho: Number(a.tamanho), situacao: a.situacao,
-          avisos: a.avisos ?? [], motivo: a.motivo_recusa, miniatura: !!a.miniatura_caminho,
+          avisos: a.avisos ?? [], motivo: a.motivo_recusa, miniatura: !!a.miniatura_caminho, sha256: a.sha256 ?? null,
         }
       : null,
   };

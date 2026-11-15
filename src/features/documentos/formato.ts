@@ -11,6 +11,10 @@ export function descreverArquivo(nome: string, paginas: number | null, bytes: nu
   return [nome, pags, formatarTamanho(bytes)].filter(Boolean).join(" · ");
 }
 
+export function abreviarSha(sha: string | null) {
+  return sha ? `${sha.slice(0, 4)}…${sha.slice(-4)}` : null;
+}
+
 export function formatarValor(valor: number | null) {
   return valor === null ? "—" : valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

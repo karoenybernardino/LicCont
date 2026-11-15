@@ -80,6 +80,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
   const problemas = validarPlanta({
     largura: p.largura,
     profundidade: p.profundidade,
+    metros: p.metrosCelula,
     ruas: p.ruas.map((r) => ({ id: r.id, codigo: nomeDa.get(r.id) as string, modulos: modulos(r.id), x: r.x, y: r.y, giro: r.giro, lados: r.lados })),
   });
   if (problemas.length) {
@@ -92,7 +93,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
           : `Rua ${cod} está sobre a Rua ${t.com}. Afaste uma delas para salvar.`,
     };
   }
-  if (!p.elementos.every((x) => x.x + x.largura <= p.largura && x.y + x.profundidade <= p.profundidade)) {
+  if (!p.elementos.every((x) => x.x + x.largura <= p.largura + 1e-6 && x.y + x.profundidade <= p.profundidade + 1e-6)) {
     return { erro: "Há elemento fora das paredes. Arraste para dentro do galpão para salvar." };
   }
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -105,7 +106,7 @@ export async function salvarPlanta(entrada: unknown): Promise<Retorno> {
     p_profundidade: p.profundidade,
     p_lado: p.entradaLado,
     p_posicao: p.entradaPosicao,
-    p_metros: Math.round(p.metrosCelula * 100) / 100,
+    p_metros: p.metrosCelula,
     p_ruas: p.ruas.map((r) => ({ id: r.id, x: r.x, y: r.y, giro: (GIROS as readonly number[]).includes(r.giro) ? r.giro : 0, lados: r.lados })),
     p_elementos: p.elementos.map((x) => ({ ...x, rotulo: x.rotulo || null })),
   });

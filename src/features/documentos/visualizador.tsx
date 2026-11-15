@@ -18,6 +18,9 @@ export type InfoPdf = {
   titulo: string;
   arquivo: string;
   tamanho: string;
+  formato: string;
+  /** SHA-256 abreviado; null se o banco não tem (demonstração). */
+  sha: string | null;
   campos: { rotulo: string; valor: string }[];
   situacao: { texto: string; tom: "ok" | "aviso" | "erro" };
   posicao: string | null;
@@ -215,7 +218,7 @@ export function VisualizadorPdf({ documentoId, voltar, info }: { documentoId: st
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <BotaoBaixar documentoId={documentoId} className={botao} />
-          <button type="button" disabled title="Imprimir · em breve" className={`${botao} cursor-not-allowed`}>
+          <button type="button" disabled title="Em breve" className={`${botao} cursor-not-allowed`}>
             Imprimir
           </button>
           <Link href={voltar} aria-label="Voltar" className={botao}>
@@ -258,9 +261,17 @@ export function VisualizadorPdf({ documentoId, voltar, info }: { documentoId: st
           </section>
           <section className={cartao} aria-label="Arquivo">
             <span className={rotulo}>Arquivo</span>
-            <Linha rotulo="Formato">PDF</Linha>
+            <Linha rotulo="Formato">{info.formato}</Linha>
             <Linha rotulo="Tamanho original">{info.tamanho}</Linha>
             {total > 0 && <Linha rotulo="Páginas">{total}</Linha>}
+            {info.sha && (
+              <>
+                <Linha rotulo="Integridade">
+                  <span className="text-[#0e7490] dark:text-[#7ff0df]">Verificada</span>
+                </Linha>
+                <div className="font-mono text-[10.5px] font-medium break-all text-texto-suave">SHA-256 {info.sha}</div>
+              </>
+            )}
           </section>
           {info.posicao && (
             <section className={cartao} aria-label="Onde está o papel">

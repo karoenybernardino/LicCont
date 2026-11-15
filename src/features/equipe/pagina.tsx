@@ -5,7 +5,7 @@ import { sair } from "@/features/sessao/acoes";
 import { BarraLateral } from "@/features/sessao/barra-lateral";
 
 // Moldura do painel da equipe LicCONT: a mesma do sistema, sem secretaria.
-export function PaginaEquipe({ titulo, children }: { titulo: string; children: ReactNode }) {
+export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; trilha?: ReactNode; children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">
       <BarraLateral
@@ -28,7 +28,7 @@ export function PaginaEquipe({ titulo, children }: { titulo: string; children: R
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 pr-4 pl-2">
           <div>
-            <div className="text-xs text-texto-suave">Equipe LicCONT</div>
+            <div className="text-xs text-texto-suave">{trilha ?? "Equipe LicCONT"}</div>
             <h1 className="font-titulo text-[21px] font-bold">{titulo}</h1>
           </div>
           <div className="flex items-center gap-2.5">

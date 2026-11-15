@@ -13,8 +13,8 @@ import { SeletorSecretaria } from "./seletor-secretaria";
 const PRINCIPAIS: ItemMenu[] = [
   { href: "/pesquisa", rotulo: "Pesquisa", icone: "pesquisa", prefixos: ["/documentos/"] },
   { href: "/mapa", rotulo: "Mapa 3D", icone: "mapa" },
-  { rotulo: "Empréstimos", icone: "emprestimos" },
-  { rotulo: "Temporalidade", icone: "temporalidade" },
+  { href: "/emprestimos", rotulo: "Empréstimos", icone: "emprestimos" },
+  { href: "/temporalidade", rotulo: "Temporalidade", icone: "temporalidade" },
   { rotulo: "Auditoria", icone: "auditoria" },
 ];
 const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", icone: "cadastro" };
@@ -61,11 +61,13 @@ export async function PaginaSistema({
   const principais = (await podeCadastrar(usuario))
     ? [...PRINCIPAIS.slice(0, 2), CADASTRO, ...PRINCIPAIS.slice(2)]
     : PRINCIPAIS;
+  // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
+  const menu = principais.map((i) => (i.icone === "auditoria" && usuario.administrador ? { ...i, href: "/auditoria" } : i));
   const admin = [...EXTRAS, ...(usuario.administrador ? ADMIN : []), CONFIG];
   return (
     <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral
-        principais={principais}
+        principais={menu}
         admin={admin}
         sair={
           <form action={sair}>

@@ -23,6 +23,11 @@ for (const t of alvo) {
   const rota = rotaForcada ?? t.rota.split(" ")[0];
   if (!rota.startsWith("/") || rota.includes("[")) { console.log(`${t.quadro}: informe --rota (rota "${t.rota}")`); continue; }
   const ctx = await browser.newContext({ viewport: { width: t.largura, height: t.altura } });
+  // Demonstração: perfil (PERFIL=administrador|coordenador|operador|consulta|equipe) e secretaria de Saúde.
+  await ctx.addCookies([
+    { name: "liccont_demo_perfil", value: process.env.PERFIL ?? "administrador", url: base },
+    { name: "liccont_secretaria", value: "de100000-0000-0000-0000-000000000004", url: base },
+  ]);
   const tema = t.tema === "claro" ? "light" : "dark";
   await ctx.addInitScript((v) => { try { localStorage.setItem("tema", v); } catch {} document.documentElement?.setAttribute("data-theme", v); }, tema);
   const app = await ctx.newPage();

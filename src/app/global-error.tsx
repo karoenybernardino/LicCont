@@ -31,7 +31,7 @@ export default function ErroGlobal({ error, reset }: { error: Error & { digest?:
           <p style={{ fontFamily: "monospace", fontSize: 12, letterSpacing: "0.1em", color: "#9bb8bf" }}>ERRO DO SISTEMA</p>
           <h1 style={{ fontSize: 24, margin: "8px 0" }}>Algo deu errado do nosso lado</h1>
           <p style={{ fontSize: 14.5, lineHeight: "22px", color: "#9bb8bf" }}>
-            Nada do que você salvou foi perdido. Tente de novo em alguns instantes. Se continuar, avise o suporte.
+            Nada do que você salvou foi perdido. Tente de novo em alguns instantes. Se continuar, avise o suporte com o código abaixo.
           </p>
           {error.digest && <p style={{ fontSize: 13, color: "#9bb8bf" }}>Código {error.digest}</p>}
           <button

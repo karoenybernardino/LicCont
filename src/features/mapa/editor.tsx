@@ -1,8 +1,9 @@
 "use client";
 
 // Editor da planta (quadro "Fase 4 · Editor da planta"): tamanho do galpão,
-// entrada, ruas arrastáveis, portas, pilares, paredes e áreas. Tudo em células
-// de módulo. Desfazer e refazer guardam fotografias do estado.
+// entrada, ruas arrastáveis, portas, pilares, paredes e áreas. Tudo em METROS
+// (o que vai ao banco); a grade e o arrasto andam de célula em célula (uma
+// célula = metros por célula). Desfazer e refazer guardam fotografias do estado.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -14,7 +15,7 @@ import { calcularLeiaute } from "./geometria";
 import { MARGEM, PX, PlantaSvg } from "./planta";
 import { estilos } from "./painel-caixa";
 import { useTema } from "./usar-tema";
-import { GIROS, LADOS, LIMITES_METROS_CELULA, PADRAO_METROS_CELULA, TIPOS_ELEMENTO, formatarMetros, type ElementoPlanta, type Giro, type LadoEntrada, type Lados, type Planta, type PosicaoRua, type TipoElemento } from "./tipos";
+import { GIROS, LADOS, LIMITES_METROS_CELULA, LIMITES_PLANTA, PADRAO_METROS_CELULA, TIPOS_ELEMENTO, arredondar, formatarMetros, type ElementoPlanta, type Giro, type LadoEntrada, type Lados, type Planta, type PosicaoRua, type TipoElemento } from "./tipos";
 
 type Estado = { largura: number; profundidade: number; lado: LadoEntrada; posicao: number; metros: number; ruas: Record<string, PosicaoRua>; elementos: ElementoPlanta[] };
 type Ferramenta = "selecionar" | TipoElemento;
@@ -23,23 +24,23 @@ const campo =
   "h-10 w-full rounded-lg border border-borda-campo bg-campo px-2.5 text-[13px] font-medium text-texto focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foco";
 const rotulo = "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
 const novoId = () => `novo-${Math.random().toString(36).slice(2, 10)}`;
-const padrao: Record<TipoElemento, Pick<ElementoPlanta, "largura" | "profundidade" | "rotulo">> = {
-  porta: { largura: 1, profundidade: 2, rotulo: "Porta" },
-  pilar: { largura: 1, profundidade: 1, rotulo: null },
-  parede: { largura: 4, profundidade: 1, rotulo: null },
-  area: { largura: 3, profundidade: 2, rotulo: "Área" },
+// Tamanho de um elemento novo: células de módulo x metros por célula.
+const padrao: Record<TipoElemento, { l: number; p: number; rotulo: string | null }> = {
+  porta: { l: 1, p: 2, rotulo: "Porta" },
+  pilar: { l: 1, p: 1, rotulo: null },
+  parede: { l: 4, p: 1, rotulo: null },
+  area: { l: 3, p: 2, rotulo: "Área" },
 };
 
 // Campo numérico: guarda o texto enquanto a pessoa digita e só confirma ao sair
-// ou no Enter. Com `escala` (metros por célula) mostra e recebe metros e
-// guarda células inteiras; sem ela (`inteiro` falso) guarda o número como está.
-function Num({ valor, min, max, onValor, escala = 1, inteiro = true, passo }: { valor: number; min: number; max: number; onValor(v: number): void; escala?: number; inteiro?: boolean; passo?: number }) {
+// ou no Enter. Mostra e recebe metros, com no máximo duas casas.
+function Num({ valor, min, max, onValor, passo = 0.1 }: { valor: number; min: number; max: number; onValor(v: number): void; passo?: number }) {
   const [texto, setTexto] = useState<string | null>(null);
-  const mostra = inteiro ? Math.round(valor * escala * 100) / 100 : valor;
+  const mostra = arredondar(valor);
   const fechar = () => {
     if (texto === null) return;
     const n = Number(texto.replace(",", "."));
-    const v = Number.isFinite(n) && texto.trim() !== "" ? (inteiro ? Math.round(n / escala) : Math.round(n * 100) / 100) : valor;
+    const v = Number.isFinite(n) && texto.trim() !== "" ? arredondar(n) : valor;
     const preso = Math.max(min, Math.min(max, v));
     setTexto(null);
     if (preso !== valor) onValor(preso);
@@ -47,9 +48,9 @@ function Num({ valor, min, max, onValor, escala = 1, inteiro = true, passo }: { 
   return (
     <input
       type="number"
-      step={passo ?? (inteiro ? escala : 0.05)}
-      min={inteiro ? Math.round(min * escala * 100) / 100 : min}
-      max={inteiro ? Math.round(max * escala * 100) / 100 : max}
+      step={passo}
+      min={min}
+      max={max}
       className={campo}
       value={texto ?? mostra}
       onChange={(e) => setTexto(e.target.value)}
@@ -65,12 +66,13 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   const svgRef = useRef<SVGSVGElement>(null);
   const inicial = useMemo<Estado>(() => {
     const base = calcularLeiaute(estrutura, [], planta);
+    const m = planta.metrosCelula ?? PADRAO_METROS_CELULA;
     return {
-      largura: base.largura,
-      profundidade: base.profundidade,
+      largura: planta.largura ?? arredondar(base.largura * m),
+      profundidade: planta.profundidade ?? arredondar(base.profundidade * m),
       lado: base.entrada.lado,
-      posicao: base.entrada.posicao,
-      metros: planta.metrosCelula ?? PADRAO_METROS_CELULA,
+      posicao: planta.entradaPosicao ?? arredondar(base.entrada.posicao * m),
+      metros: m,
       ruas: planta.ruas,
       elementos: planta.elementos,
     };
@@ -106,7 +108,8 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   const plantaAtual: Planta = { largura: atual.largura, profundidade: atual.profundidade, entradaLado: atual.lado, entradaPosicao: atual.posicao, metrosCelula: atual.metros, ruas: atual.ruas, elementos: atual.elementos };
   const leiaute = useMemo(() => calcularLeiaute(estrutura, [], plantaAtual), [estrutura, atual]); // eslint-disable-line react-hooks/exhaustive-deps
   const problemas = leiaute.ruas.filter((r) => r.problema);
-  const foraElemento = atual.elementos.some((e) => e.x + e.largura > atual.largura || e.y + e.profundidade > atual.profundidade);
+  const foraElemento = atual.elementos.some((e) => e.x + e.largura > atual.largura + 1e-6 || e.y + e.profundidade > atual.profundidade + 1e-6);
+  const m = atual.metros;
 
   const confirmar = (e: Estado) => {
     setEstados((l) => [...l.slice(0, indice + 1), e]);
@@ -115,7 +118,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   };
   const posicaoDe = (id: string): { x: number; y: number; giro: Giro; lados: Lados } => {
     const r = leiaute.ruas.find((x) => x.id === id)!;
-    return { x: r.x, y: r.y, giro: r.giro, lados: r.lados };
+    return { x: arredondar(r.x * m), y: arredondar(r.y * m), giro: r.giro, lados: r.lados };
   };
   const moverRua = (id: string, p: Partial<{ x: number; y: number; giro: Giro; lados: Lados }>, base: Estado = atual) => ({
     ...base,
@@ -149,21 +152,21 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     window.addEventListener("pointerup", soltar);
     window.addEventListener("pointercancel", soltar);
   }
-  const limitar = (v: number) => Math.max(0, Math.min(199, v));
+  const limitar = (v: number) => Math.max(0, Math.min(LIMITES_PLANTA.maxPosicao, arredondar(v)));
 
   function aoRua(e: PointerEvent, id: string) {
     setRuaSel(id);
     setElSel(null);
     const p = posicaoDe(id);
     const base = atual;
-    arrastar(e, (dx, dy) => moverRua(id, { x: limitar(p.x + dx), y: limitar(p.y + dy) }, base));
+    arrastar(e, (dx, dy) => moverRua(id, { x: limitar(p.x + dx * m), y: limitar(p.y + dy * m) }, base));
   }
   function aoElemento(e: PointerEvent, id: string) {
     setElSel(id);
     setRuaSel(null);
     const el = atual.elementos.find((x) => x.id === id)!;
     const base = atual;
-    arrastar(e, (dx, dy) => ({ ...base, elementos: base.elementos.map((x) => (x.id === id ? { ...x, x: limitar(el.x + dx), y: limitar(el.y + dy) } : x)) }));
+    arrastar(e, (dx, dy) => ({ ...base, elementos: base.elementos.map((x) => (x.id === id ? { ...x, x: limitar(el.x + dx * m), y: limitar(el.y + dy * m) } : x)) }));
   }
   function aoFundo(e: PointerEvent) {
     if (ferramenta === "selecionar") {
@@ -175,10 +178,11 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     if (!svg) return;
     const r = svg.getBoundingClientRect();
     const escala = r.width / svg.viewBox.baseVal.width;
-    const x = limitar(Math.floor(((e.clientX - r.left) / escala - MARGEM) / PX));
-    const y = limitar(Math.floor(((e.clientY - r.top) / escala - MARGEM) / PX));
+    const x = limitar(Math.floor(((e.clientX - r.left) / escala - MARGEM) / PX) * m);
+    const y = limitar(Math.floor(((e.clientY - r.top) / escala - MARGEM) / PX) * m);
     const id = novoId();
-    confirmar({ ...atual, elementos: [...atual.elementos, { id, tipo: ferramenta, x, y, giro: 0, ...padrao[ferramenta] }] });
+    const t = padrao[ferramenta];
+    confirmar({ ...atual, elementos: [...atual.elementos, { id, tipo: ferramenta, x, y, giro: 0, largura: arredondar(t.l * m), profundidade: arredondar(t.p * m), rotulo: t.rotulo }] });
     setElSel(id);
     setFerramenta("selecionar");
   }
@@ -193,7 +197,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "SELECT") return;
     const passo: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (passo[e.key]) {
-      const [dx, dy] = passo[e.key];
+      const [dx, dy] = passo[e.key].map((v) => v * m);
       if (ruaSel) {
         const p = posicaoDe(ruaSel);
         confirmar(moverRua(ruaSel, { x: limitar(p.x + dx), y: limitar(p.y + dy) }));
@@ -259,16 +263,16 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             <div className="grid grid-cols-2 gap-2">
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Largura (m)
-                <Num escala={atual.metros} valor={atual.largura} min={4} max={200} onValor={(v) => confirmar({ ...atual, largura: v })} />
+                <Num valor={atual.largura} min={LIMITES_PLANTA.minGalpao} max={LIMITES_PLANTA.maxGalpao} onValor={(v) => confirmar({ ...atual, largura: v })} />
               </label>
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Profundidade (m)
-                <Num escala={atual.metros} valor={atual.profundidade} min={4} max={200} onValor={(v) => confirmar({ ...atual, profundidade: v })} />
+                <Num valor={atual.profundidade} min={LIMITES_PLANTA.minGalpao} max={LIMITES_PLANTA.maxGalpao} onValor={(v) => confirmar({ ...atual, profundidade: v })} />
               </label>
             </div>
             <label className="flex flex-col gap-1 text-xs text-texto-suave">
               Metros por célula
-              <Num inteiro={false} passo={0.05} valor={atual.metros} min={LIMITES_METROS_CELULA.min} max={LIMITES_METROS_CELULA.max} onValor={(v) => confirmar({ ...atual, metros: v })} />
+              <Num passo={0.05} valor={atual.metros} min={LIMITES_METROS_CELULA.min} max={LIMITES_METROS_CELULA.max} onValor={(v) => confirmar({ ...atual, metros: v })} />
             </label>
             <p className="text-xs text-texto-suave">Medidas em metros. Uma célula é a largura de um módulo de estante: {formatarMetros(atual.metros)}. Ajuste conforme o galpão real.</p>
             <h2 className={rotulo}>Entrada</h2>
@@ -281,7 +285,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
               </label>
               <label className="flex flex-col gap-1 text-xs text-texto-suave">
                 Posição
-                <Num escala={atual.metros} valor={atual.posicao} min={0} max={199} onValor={(v) => confirmar({ ...atual, posicao: v })} />
+                <Num valor={atual.posicao} min={0} max={LIMITES_PLANTA.maxPosicao} onValor={(v) => confirmar({ ...atual, posicao: v })} />
               </label>
             </div>
             <h2 className={rotulo}>Ferramentas</h2>
@@ -325,9 +329,9 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
               <PlantaSvg
                 metrosCelula={atual.metros}
                 leiaute={leiaute}
-                elementos={atual.elementos}
+                elementos={leiaute.elementos}
                 tema={tema}
-                resumo={`Planta de ${nomeGalpao}: ${leiaute.ruas.length} ruas, ${formatarMetros(atual.largura * atual.metros)} por ${formatarMetros(atual.profundidade * atual.metros)}`}
+                resumo={`Planta de ${nomeGalpao}: ${leiaute.ruas.length} ruas, ${formatarMetros(atual.largura)} por ${formatarMetros(atual.profundidade)}`}
                 editor={{ ruaSelecionada: ruaSel, elementoSelecionado: elSel, onRua: aoRua, onElemento: aoElemento, onFundo: aoFundo, onGirar: girarRua, svgRef }}
               />
             </div>
@@ -350,12 +354,12 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
               <>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
-                    Coluna x
-                    <Num escala={atual.metros} key={selRua.id + "x" + selRua.x} valor={selRua.x} min={0} max={199} onValor={(v) => confirmar(moverRua(selRua.id, { x: v }))} />
+                    Coluna x (m)
+                    <Num key={selRua.id + "x" + selRua.x} valor={arredondar(selRua.x * m)} min={0} max={LIMITES_PLANTA.maxPosicao} onValor={(v) => confirmar(moverRua(selRua.id, { x: v }))} />
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
-                    Linha y
-                    <Num escala={atual.metros} key={selRua.id + "y" + selRua.y} valor={selRua.y} min={0} max={199} onValor={(v) => confirmar(moverRua(selRua.id, { y: v }))} />
+                    Linha y (m)
+                    <Num key={selRua.id + "y" + selRua.y} valor={arredondar(selRua.y * m)} min={0} max={LIMITES_PLANTA.maxPosicao} onValor={(v) => confirmar(moverRua(selRua.id, { y: v }))} />
                   </label>
                 </div>
                 <div role="group" aria-label="Giro" className="flex gap-1">
@@ -374,11 +378,11 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1 text-xs text-texto-suave">{selRua.lados === 1 ? "Encostada na parede: uma fileira de caixas, 1 célula de fundo." : "No meio do galpão: duas fileiras de caixas, 2 células de fundo."}</p>
+                  <p className="mt-1 text-xs text-texto-suave">{selRua.lados === 1 ? `Encostada na parede: uma fileira de caixas, ${formatarMetros(m)} de fundo.` : `No meio do galpão: duas fileiras de caixas, ${formatarMetros(2 * m)} de fundo.`}</p>
                 </div>
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
-                  <dt className="text-texto-suave">Módulos</dt><dd>{selRua.modulos} (da estrutura)</dd>
-                  <dt className="text-texto-suave">Tamanho</dt><dd>{formatarMetros(selRua.w * atual.metros)} × {formatarMetros(selRua.h * atual.metros)}</dd>
+                  <dt className="text-texto-suave">Módulos</dt><dd>{selRua.modulos} (da estrutura), {formatarMetros(selRua.modulos * m)}</dd>
+                  <dt className="text-texto-suave">Tamanho</dt><dd>{formatarMetros(selRua.w * m)} × {formatarMetros(selRua.h * m)}</dd>
                   <dt className="text-texto-suave">Caixas</dt><dd>{resumir(estrutura, selRua.id).caixas}</dd>
                 </dl>
                 <button type="button" onClick={() => girarRua(selRua.id)} className={estilos.botaoBorda}>Girar 90°</button>
@@ -387,7 +391,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                     <h3 className={rotulo}>Comprimento</h3>
                     <div className="mt-1 flex items-center gap-2">
                       <button type="button" aria-label="Remover o último módulo" disabled={mexendo || selRua.modulos <= 1} onClick={() => estrutural(() => ajustarModulosDaRua({ rua: selRua.id, quantidade: -1 }))} className={`${estilos.botaoBorda} !w-10 !px-0`}>−</button>
-                      <span className="flex-1 text-center text-[13px]">{selRua.modulos} {selRua.modulos === 1 ? "módulo" : "módulos"}</span>
+                      <span className="flex-1 text-center text-[13px]">{selRua.modulos} {selRua.modulos === 1 ? "módulo" : "módulos"} · {formatarMetros(selRua.modulos * m)}</span>
                       <button type="button" aria-label="Adicionar um módulo" disabled={mexendo} onClick={() => estrutural(() => ajustarModulosDaRua({ rua: selRua.id, quantidade: 1 }))} className={`${estilos.botaoBorda} !w-10 !px-0`}>+</button>
                     </div>
                     <p className="mt-1 text-xs text-texto-suave">O módulo novo copia os níveis e a capacidade do último. Só sai módulo sem caixas ativas.</p>
@@ -407,7 +411,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                   {(["x", "y", "largura", "profundidade"] as const).map((k) => (
                     <label key={k} className="flex flex-col gap-1 text-xs text-texto-suave">
                       {k === "x" ? "Coluna x (m)" : k === "y" ? "Linha y (m)" : k === "largura" ? "Largura (m)" : "Profundidade (m)"}
-                      <Num escala={atual.metros} key={selEl.id + k + selEl[k]} valor={selEl[k]} min={k === "x" || k === "y" ? 0 : 1} max={k === "x" || k === "y" ? 199 : 200} onValor={(v) => confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === selEl.id ? { ...x, [k]: v } : x)) })} />
+                      <Num key={selEl.id + k + selEl[k]} valor={selEl[k]} min={k === "x" || k === "y" ? 0 : LIMITES_PLANTA.minElemento} max={k === "x" || k === "y" ? LIMITES_PLANTA.maxPosicao : LIMITES_PLANTA.maxGalpao} onValor={(v) => confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === selEl.id ? { ...x, [k]: v } : x)) })} />
                     </label>
                   ))}
                 </div>
