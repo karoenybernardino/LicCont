@@ -4,6 +4,7 @@ import {
   ERRO,
   cadastrarAutenticador,
   codigoNovo,
+  conferirMolduraFixa,
   entrar,
   secretariaEmUso,
   semFalhasDeAcessibilidade,
@@ -170,4 +171,5 @@ test("equipe LicCONT entra pelo endereço próprio; usuário de prefeitura não"
   await cadastrarAutenticador(page);
   await expect(page).toHaveURL(/\/equipe$/);
   await expect(page.getByRole("heading", { level: 1, name: "Prefeituras" })).toBeVisible();
+  await conferirMolduraFixa(page);
 });

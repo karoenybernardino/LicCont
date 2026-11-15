@@ -58,3 +58,37 @@ export async function entrar(
   await page.getByLabel("Senha", { exact: true }).fill(senha);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
 }
+
+// Moldura fixa: com conteúdo comprido, menu e cabeçalho não se mexem e só o miolo rola
+// (no computador); no celular a página não rola para o lado.
+export async function conferirMolduraFixa(page: Page) {
+  await esperarCarregar(page);
+  await page.waitForLoadState("networkidle"); // o React termina de montar a tela antes de medirmos
+  const original = page.viewportSize()!;
+  const caixa = (seletor: string) => page.locator(seletor).first().boundingBox();
+  const miolo = page.locator("[data-moldura] main");
+  // Põe um bloco alto no miolo (de novo, se a tela o refizer) e rola até o fim.
+  const rolar = () =>
+    miolo.evaluate((m) => {
+      if (!m.querySelector("[data-teste=alto]")) {
+        const bloco = document.createElement("div");
+        bloco.dataset.teste = "alto";
+        bloco.style.cssText = "height:3000px;flex:none";
+        m.append(bloco);
+      }
+      m.scrollTo({ top: m.scrollHeight, behavior: "instant" });
+      return m.scrollTop;
+    });
+  for (const [largura, altura] of [[1280, 720], [375, 812]] as const) {
+    await page.setViewportSize({ width: largura, height: altura });
+    if (largura >= 768) {
+      const antes = [await caixa("[data-moldura] > aside"), await caixa("[data-moldura] header")];
+      await expect.poll(rolar).toBeGreaterThan(0);
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+      expect([await caixa("[data-moldura] > aside"), await caixa("[data-moldura] header")]).toEqual(antes);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.evaluate(() => document.querySelector("[data-teste=alto]")?.remove());
+  }
+  await page.setViewportSize(original);
+}
