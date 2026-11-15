@@ -84,6 +84,7 @@ export async function PaginaSistema({
       <div className="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0">
         <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 pt-1 pr-4 pl-2">
           <div>
+            {trilha && <div className="text-xs text-texto-suave">{trilha}</div>}
             <h1 className="font-titulo text-[22px] font-bold">{titulo}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">

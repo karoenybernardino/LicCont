@@ -66,13 +66,23 @@ export function MoverDocumentos({
   };
 
   return (
-    <section aria-label="Mover documentos" className={`${estilos.cartao} border-[#ff9f1c]`}>
-      <h2 className="font-titulo text-[15px] font-bold">Mover documentos</h2>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
-        <dt className="text-texto-suave">De</dt>
-        <dd className="font-mono">{origem.codigo}</dd>
-        <dt className="text-texto-suave">Para</dt>
-        <dd className="font-mono">{destino ? destino.codigo : "—"}</dd>
+    <section aria-label="Mover documentos" className="flex flex-col gap-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="font-titulo text-[22px] font-bold">{n_ === 1 ? "Mover 1 documento" : `Mover ${n_} documentos`}</h2>
+        <button type="button" onClick={onCancelar} aria-label="Fechar" className="flex size-10 items-center justify-center rounded-[10px] border border-linha hover:border-destaque focus-visible:outline-2 focus-visible:outline-foco">
+          ×
+        </button>
+      </div>
+      <dl className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-[13px]">
+        <div className="rounded-xl border border-linha px-3 py-2.5">
+          <dt className="text-[10px] font-medium tracking-[.06em] text-texto-suave uppercase">De</dt>
+          <dd className="font-mono">{origem.codigo}</dd>
+        </div>
+        <span aria-hidden className="text-[#0e7490]">→</span>
+        <div className="rounded-xl border border-[#0e7490] bg-[#0e7490]/6 px-3 py-2.5">
+          <dt className="text-[10px] font-medium tracking-[.06em] text-texto-suave uppercase">Para</dt>
+          <dd className="font-mono">{destino ? destino.codigo : "—"}</dd>
+        </div>
       </dl>
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1 text-xs text-texto-suave">

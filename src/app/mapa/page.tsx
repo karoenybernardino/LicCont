@@ -35,7 +35,7 @@ export default async function Mapa({ searchParams }: { searchParams: Promise<Rec
     : [[], PLANTA_VAZIA, false, []];
 
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Mapa 3D" trilha="Acervo · Localização">
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Mapa 3D do galpão" trilha="Acervo · Localização" acoes={<div id="acoes-mapa" className="flex items-center gap-2.5" />}>
       {!galpao ? (
         <Painel>
           <p className="text-sm text-texto-suave">
