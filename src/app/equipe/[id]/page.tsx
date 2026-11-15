@@ -6,14 +6,14 @@ import { Campo } from "@/ui/campo";
 import { Selecao } from "@/ui/selecao";
 import { BotaoEnviar } from "@/ui/botao-enviar";
 import { CabecalhoPainel, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
-import { PrimeiroAdmin } from "@/features/equipe/primeiro-admin";
+import { BotaoConfirmar } from "@/features/equipe/botao-confirmar";
 import { PaginaEquipe } from "@/features/equipe/pagina";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { importarPelaEquipe } from "@/features/equipe/acoes";
 import { acoesEquipe, integracoes } from "@/features/equipe/dados";
 import { AVISOS_IMPORTAR, formatarGb, formatarReais, quando, textoAcao } from "@/features/equipe/textos";
 import { idSchema } from "@/features/login/esquemas";
-import { atualizarPrefeitura, cadastrarPrimeiroAdmin, mudarStatus } from "@/features/prefeituras/acoes";
+import { atualizarPrefeitura, convidarAdmin, mudarStatus, removerAdmin } from "@/features/prefeituras/acoes";
 import { listarAdministradores, obterPrefeitura, suporteAutorizadoAte, usoPrefeituras, type UsoPrefeitura } from "@/features/prefeituras/dados";
 import { formatarCnpj } from "@/features/prefeituras/lista";
 import { formatarData } from "@/features/documentos/formato";
@@ -152,6 +152,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                     <th scope="col" className={th}>Nome</th>
                     <th scope="col" className={th}>E-mail</th>
                     <th scope="col" className={th}>Situação</th>
+                    <th scope="col" className={th}><span className="sr-only">Ações</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,21 +161,31 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                       <td className={`${td} font-semibold`}>{a.nome}</td>
                       <td className={`${td} text-[13px] text-texto-suave`}>{a.email}</td>
                       <td className={td}><Pilula tom={a.ativo ? "ok" : "aviso"}>{a.ativo ? "Ativo" : "Inativo"}</Pilula></td>
+                      <td className={`${td} text-right`}>
+                        {a.ativo && (
+                          <form action={removerAdmin}>
+                            <input type="hidden" name="prefeitura" value={p.id} />
+                            <input type="hidden" name="usuario" value={a.id} />
+                            <BotaoConfirmar aviso="Remover este administrador? Ele perde o acesso." className={botaoContorno}>Remover</BotaoConfirmar>
+                          </form>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          <PrimeiroAdmin semAdmin={admins.length === 0}>
-            <Formulario acao={cadastrarPrimeiroAdmin} botao="Cadastrar administrador" enviando="Cadastrando…" className="gap-3.5">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold">Convidar administrador</h3>
+            <Formulario acao={convidarAdmin} botao="Cadastrar administrador" enviando="Cadastrando…" className="gap-3.5">
               <input type="hidden" name="id" value={p.id} />
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <Campo rotulo="Nome" name="nome" required maxLength={200} placeholder="Nome do servidor" className={entrada} />
                 <Campo rotulo="E-mail institucional" name="email" type="email" autoComplete="off" required placeholder="nome@prefeitura.gov.br" className={entrada} />
               </div>
             </Formulario>
-          </PrimeiroAdmin>
+          </div>
           <p className="text-[12.5px] text-texto-suave">Sem administrador, a prefeitura fica em Pendências até um novo ser cadastrado.</p>
         </Painel>
       )}
