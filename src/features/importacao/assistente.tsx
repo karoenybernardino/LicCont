@@ -127,7 +127,7 @@ export function Assistente({ secretarias, semEndereco }: { secretarias: { id: st
         <Painel>
           <TituloPainel>Casar as colunas da planilha</TituloPainel>
           <p className="text-sm text-texto-suave">O sistema sugeriu os campos pelo nome das colunas. Campos com * são obrigatórios.</p>
-          <div className="sc max-h-[420px] overflow-auto">
+          <div className="sc overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="text-left">

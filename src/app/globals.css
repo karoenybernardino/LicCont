@@ -92,17 +92,20 @@ h3 {
   font-weight: 600;
 }
 
-/* Rolagem interna dos quadros (lista de resultados, painéis): barra fina turquesa, como no canvas. */
+/* Rolagem dos quadros e da área de conteúdo: barra discreta, sem setas, com os tokens do tema. */
 .sc {
   scrollbar-width: thin;
-  scrollbar-color: #2dd4bf transparent;
+  scrollbar-color: var(--texto-suave) transparent;
 }
 .sc::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+}
+.sc::-webkit-scrollbar-button {
+  display: none;
 }
 .sc::-webkit-scrollbar-thumb {
-  background: #2dd4bf;
-  border-radius: 3px;
+  background: var(--texto-suave);
+  border-radius: 4px;
 }
 
 /* Telas do sistema: a página tem o tamanho da janela (faixa da demonstração incluída); só os quadros rolam. */
