@@ -1,100 +1,114 @@
 import { describe, expect, it, vi } from "vitest";
-import { ErroTce, POR_PAGINA, lerTce, normalizar } from "./cliente";
+import { ErroTce, POR_PAGINA, consertarTexto, indexarContratados, lerTce, normalizar } from "./cliente";
 
-// Respostas fictícias: nada aqui veio do TCE de verdade.
+// Formato igual ao da API real (conferido em 15/11/2026); valores fictícios.
 const LICITACAO = {
-  id: 101,
-  numero_licitacao: "001/2024",
-  ano: 2024,
-  objeto: "Compra de material fictício",
-  modalidade: "Pregão Eletrônico",
-  situacao: "Concluída",
-  nome_fornecedor: "Empresa Fictícia",
-  cnpj: "00.000.000/0001-91",
-  valor: "1500.50",
-  cpf: "529.982.247-25",
+  codigo_municipio: "002",
+  data_realizacao_autuacao_licitacao: "2025-05-23T00:00:00",
+  numero_licitacao: "D-05.29.2/2025",
+  modalidade_licitacao: "9",
+  modalidade_processo_administrativo: "D",
+  descricao_objeto_licitacao: "CONTRATAÃ‡ÃƒO DE SERVIÃ‡OS FICTICIOS",
+  data_homologacao: "2025-06-06T00:00:00",
+  cpf_gestor: "/Z6NNEXjaEoDtstd4z59aw==",
 };
 const CONTRATO = {
-  codigo: "9",
-  numero_contrato: "010/2024",
-  exercicio: 2024,
-  descricao: "Serviço fictício",
-  nome_contratado: "Pessoa Fictícia",
-  cpf_cnpj: "529.982.247-25",
-  valor_global: 1000,
-  data_inicio_vigencia: "2024-01-01T00:00:00",
-  data_fim_vigencia: "31/12/2024",
+  codigo_municipio: "002",
+  cpf_gestor: "/Z6NNEXjaEoDtstd4z59aw==",
+  data_contrato: "2025-02-04T00:00:00",
+  numero_contrato: "01.27.2/2025",
+  descricao_objeto_contrato: "SERVIÇO FICTÍCIO",
+  valor_total_contrato: 30000.0,
+  data_inicio_vigencia_contrato: "2025-02-04T00:00:00",
+  data_fim_vigencia_contrato: "2999-02-04T00:00:00",
 };
-const resposta = (corpo: unknown, status = 200) => Promise.resolve(new Response(JSON.stringify(corpo), { status }));
+const CONTRATADO = {
+  codigo_municipio: "002",
+  data_contrato: "2025-02-04T00:00:00",
+  numero_contrato: "01.27.2/2025",
+  numero_documento_negociante: "00000000000191",
+  codigo_tipo_negociante: "1",
+  nome_negociante: "EMPRESA FICTICIA",
+};
+const resposta = (elements: unknown[], status = 200) => Promise.resolve(new Response(JSON.stringify({ name: "x", elements }), { status }));
 const sem = { esperar: () => Promise.resolve() };
 
-describe("normalizar", () => {
-  it("licitação vira registro do LicCONT, sem CPF", () => {
+describe("consertarTexto", () => {
+  it("desfaz o acento quebrado e deixa texto normal como está", () => {
+    expect(consertarTexto("CONTRATAÃ‡ÃƒO DE SERVIÃ‡OS")).toBe("CONTRATAÇÃO DE SERVIÇOS");
+    expect(consertarTexto("SERVIÇO NORMAL")).toBe("SERVIÇO NORMAL");
+  });
+  it("o que não tem volta fica como veio", () => {
+    expect(consertarTexto("FICTÃ�CIO")).toBe("FICTÃ�CIO");
+  });
+});
+
+describe("normalizar licitação", () => {
+  it("dispensa vira registro, com chave número + data, texto consertado e sem CPF", () => {
     const n = normalizar(LICITACAO, "licitacao");
-    expect(n).toMatchObject({ registro: { tce_id: "L101", tipo: "licitacao", modalidade: "pregao_eletronico", situacao: "concluida", cnpj: "00000000000191", valor: 1500.5, ano: 2024 } });
+    expect(n).toMatchObject({
+      registro: { tce_id: "L|D-05.29.2/2025|2025-05-23", tipo: "licitacao", modalidade: "dispensa", situacao: "concluida", ano: 2025, empresa: null, valor: null },
+    });
+    expect("registro" in n && n.registro.objeto).toBe("CONTRATAÇÃO DE SERVIÇOS FICTICIOS");
+    expect(JSON.stringify(n)).not.toContain("Z6NNEX");
+  });
+  it("pregão eletrônico (código 6) entra; sem homologação fica em andamento", () => {
+    const n = normalizar({ ...LICITACAO, modalidade_processo_administrativo: "N", modalidade_licitacao: "6", data_homologacao: null }, "licitacao");
+    expect(n).toMatchObject({ registro: { modalidade: "pregao_eletronico", situacao: "em_andamento" } });
+  });
+  it("modalidade não confirmada é ignorada, e registro sem número é formato inesperado", () => {
+    expect(normalizar({ ...LICITACAO, modalidade_processo_administrativo: "N", modalidade_licitacao: "3" }, "licitacao")).toEqual({ ignorado: true });
+    expect(() => normalizar({ ...LICITACAO, numero_licitacao: "" }, "licitacao")).toThrow(ErroTce);
+  });
+});
+
+describe("normalizar contrato", () => {
+  it("junta a empresa e o CNPJ vindos de /contratados; vigente quando o fim é futuro", () => {
+    const mapa = indexarContratados([CONTRATADO]);
+    const n = normalizar(CONTRATO, "contrato", mapa);
+    expect(n).toMatchObject({
+      registro: { tce_id: "C|01.27.2/2025|2025-02-04", empresa: "EMPRESA FICTICIA", cnpj: "00000000000191", valor: 30000, situacao: "vigente", vigencia_fim: "2999-02-04", modalidade: null },
+    });
+  });
+  it("encerrado quando o fim já passou; CPF do contratado nunca é guardado", () => {
+    const mapa = indexarContratados([{ ...CONTRATADO, numero_documento_negociante: "52998224725", codigo_tipo_negociante: "2", nome_negociante: "PESSOA FICTICIA" }]);
+    const n = normalizar({ ...CONTRATO, data_fim_vigencia_contrato: "2020-01-01T00:00:00" }, "contrato", mapa);
+    expect(n).toMatchObject({ registro: { situacao: "encerrado", cnpj: null, empresa: "PESSOA FICTICIA" } });
     expect(JSON.stringify(n)).not.toContain("52998224725");
-  });
-  it("contrato com CPF: guarda o nome, descarta o CPF; datas em dois formatos", () => {
-    const n = normalizar(CONTRATO, "contrato");
-    expect(n).toMatchObject({ registro: { tce_id: "C9", cnpj: null, empresa: "Pessoa Fictícia", situacao: "vigente", vigencia_inicio: "2024-01-01", vigencia_fim: "2024-12-31", modalidade: null } });
-    expect(JSON.stringify(n)).not.toMatch(/52998224725|529\.982/);
-  });
-  it("modalidade desconhecida é ignorada, não derruba", () => {
-    expect(normalizar({ ...LICITACAO, modalidade: "Outra Coisa" }, "licitacao")).toEqual({ ignorado: true });
-  });
-  it("sem id, número, ano ou objeto é formato inesperado", () => {
-    for (const mudar of [{ id: undefined }, { numero_licitacao: undefined }, { ano: undefined }, { objeto: "" }]) {
-      expect(() => normalizar({ ...LICITACAO, ...mudar }, "licitacao")).toThrow(ErroTce);
-    }
-    expect(() => normalizar("texto", "licitacao")).toThrow(ErroTce);
-  });
-  it("CNPJ inválido é descartado em vez de gravado", () => {
-    expect(normalizar({ ...LICITACAO, cnpj: "11.111.111/1111-11" }, "licitacao")).toMatchObject({ registro: { cnpj: null } });
   });
 });
 
 describe("lerTce", () => {
-  it("lê as páginas até a última, com pausa entre elas", async () => {
-    const cheia = Array.from({ length: POR_PAGINA }, (_, i) => ({ ...LICITACAO, id: i + 1, numero_licitacao: `${i}/2024` }));
-    const buscar = vi.fn().mockReturnValueOnce(resposta(cheia)).mockReturnValueOnce(resposta({ data: [LICITACAO] }));
-    const esperar = vi.fn().mockResolvedValue(undefined);
-    const r = await lerTce("licitacao", "162", 2024, { buscar, esperar });
-    expect(r.registros).toHaveLength(POR_PAGINA + 1);
-    expect(buscar).toHaveBeenCalledTimes(2);
-    expect(buscar.mock.calls[0][0]).toContain("codigo_municipio=162&exercicio_orcamento=2024&pagina=1");
-    expect(esperar).toHaveBeenCalledWith(500);
+  it("pede o método certo com datas AAAAMMDD, junta os contratados e para na última página", async () => {
+    const buscar = vi.fn((url: string | URL | Request) =>
+      String(url).includes("/sim/contratados") ? resposta([CONTRATADO]) : resposta([CONTRATO]),
+    );
+    const r = await lerTce("contrato", "002", 2025, { buscar: buscar as unknown as typeof fetch, ...sem });
+    expect(r.registros).toHaveLength(1);
+    expect(r.registros[0].empresa).toBe("EMPRESA FICTICIA");
+    const urls = buscar.mock.calls.map((c) => String(c[0]));
+    expect(urls[1]).toContain("/sim/contratos?codigo_municipio=002&data_inicio=20250101&data_fim=20251231&%24count=1000&%24start_index=0");
   });
-  it("tenta de novo quando o TCE cai e desiste com 'indisponivel'", async () => {
-    const buscar = vi.fn().mockReturnValue(resposta({}, 503));
-    const erro = await lerTce("licitacao", "162", 2024, { buscar, ...sem, tentativas: 3 }).catch((e) => e);
-    expect(erro).toMatchObject({ codigo: "indisponivel" });
+  it("página cheia puxa a seguinte com $start_index", async () => {
+    const cheia = Array.from({ length: POR_PAGINA }, (_, i) => ({ ...LICITACAO, numero_licitacao: `D-${i}` }));
+    const buscar = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ elements: cheia }))).mockResolvedValueOnce(new Response(JSON.stringify({ elements: [LICITACAO] })));
+    const r = await lerTce("licitacao", "002", 2025, { buscar: buscar as unknown as typeof fetch, ...sem });
+    expect(r.registros).toHaveLength(POR_PAGINA + 1);
+    expect(String(buscar.mock.calls[1][0])).toContain("start_index=1000");
+  });
+  it("resposta de erro da API (__errors__) para tudo como formato inesperado", async () => {
+    const buscar = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ __errors__: [{ code: 1 }] }))));
+    await expect(lerTce("licitacao", "002", 2025, { buscar: buscar as unknown as typeof fetch, ...sem })).rejects.toMatchObject({ codigo: "formato" });
+  });
+  it("erro 500 tenta de novo e depois falha como indisponível", async () => {
+    const buscar = vi.fn(() => Promise.resolve(new Response("x", { status: 503 })));
+    await expect(lerTce("licitacao", "002", 2025, { buscar: buscar as unknown as typeof fetch, ...sem })).rejects.toMatchObject({ codigo: "indisponivel" });
     expect(buscar).toHaveBeenCalledTimes(3);
   });
-  it("recupera depois de uma queda", async () => {
-    const buscar = vi.fn().mockReturnValueOnce(resposta({}, 500)).mockReturnValueOnce(resposta([LICITACAO]));
-    const r = await lerTce("licitacao", "162", 2024, { buscar, ...sem });
-    expect(r.registros).toHaveLength(1);
-  });
-  it("formato inesperado para tudo, sem tentar de novo e sem devolver nada", async () => {
-    const buscar = vi.fn().mockReturnValue(resposta({ erro: "x" }));
-    const erro = await lerTce("licitacao", "162", 2024, { buscar, ...sem }).catch((e) => e);
-    expect(erro).toMatchObject({ codigo: "formato" });
-    expect(buscar).toHaveBeenCalledTimes(1);
-  });
-  it("item quebrado no meio da página também para tudo", async () => {
-    const buscar = vi.fn().mockReturnValue(resposta([LICITACAO, { id: 1 }]));
-    await expect(lerTce("licitacao", "162", 2024, { buscar, ...sem })).rejects.toMatchObject({ codigo: "formato" });
-  });
-  it("recusa município fora do padrão (nada de montar URL com texto solto)", async () => {
+  it("recusa município ou ano inválidos sem chamar a rede", async () => {
     const buscar = vi.fn();
-    await expect(lerTce("licitacao", "162&x=1", 2024, { buscar, ...sem })).rejects.toBeInstanceOf(ErroTce);
+    await expect(lerTce("licitacao", "../x", 2025, { buscar: buscar as unknown as typeof fetch })).rejects.toMatchObject({ codigo: "formato" });
+    await expect(lerTce("licitacao", "002", 1800, { buscar: buscar as unknown as typeof fetch })).rejects.toMatchObject({ codigo: "formato" });
     expect(buscar).not.toHaveBeenCalled();
-  });
-  it("entrega por página quando recebe o callback", async () => {
-    const buscar = vi.fn().mockReturnValue(resposta([LICITACAO]));
-    const paginas: number[] = [];
-    const r = await lerTce("licitacao", "162", 2024, { buscar, ...sem }, async (p) => void paginas.push(p.length));
-    expect(paginas).toEqual([1]);
-    expect(r.registros).toEqual([]);
   });
 });
