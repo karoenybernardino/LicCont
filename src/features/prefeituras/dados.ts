@@ -93,3 +93,12 @@ export async function suporteAutorizadoAte(prefeituraId: string): Promise<string
   const { data } = await supabase.rpc("suporte_autorizado", { p_prefeitura: prefeituraId });
   return (data as string | null) ?? null;
 }
+
+// Tentativas de login recusadas no mês, em todas as prefeituras (um número).
+export async function recusadosNoMes(): Promise<number> {
+  if (emDemo()) return 12;
+  const supabase = await clienteSessao();
+  if (!supabase) return 0;
+  const { data } = await supabase.rpc("equipe_recusados_mes");
+  return Number(data ?? 0);
+}

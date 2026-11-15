@@ -9,7 +9,7 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
   return (
     <div className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col dark:bg-black">
       <BarraLateral
-        principais={[{ href: "/equipe", rotulo: "Prefeituras", icone: "secretarias" }]}
+        principais={[{ href: "/equipe", rotulo: "Prefeituras", icone: "secretarias" }, { href: "/equipe/uso", rotulo: "Uso do mês", icone: "painel" }]}
         admin={[]}
         sair={
           <form action={sair}>
