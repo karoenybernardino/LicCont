@@ -49,6 +49,7 @@ export async function salvarDocumento(formData: FormData): Promise<Retorno> {
     objeto: d.objeto,
     empresa: d.empresa,
     cnpj: d.cnpj,
+    cpf_credor: d.cpf_credor,
     valor: d.valor,
     situacao: d.situacao,
     vigencia_inicio: d.vigencia_inicio,

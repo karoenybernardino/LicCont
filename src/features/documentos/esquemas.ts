@@ -6,7 +6,19 @@ import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO } from "./tipos";
 const uuid = z.guid("Escolha uma opção da lista.");
 const vazioParaNulo = (v: unknown) => (v === undefined || (typeof v === "string" && v.trim() === "") ? null : v);
 
-// CNPJ com dígito verificador. CPF (11 dígitos) é recusado de propósito.
+// CPF com dígito verificador (credor pessoa física). Vai para coluna própria.
+export function cpfValido(digitos: string) {
+  if (!/^\d{11}$/.test(digitos) || /^(\d)\1{10}$/.test(digitos)) return false;
+  const conta = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(digitos[i]) * (n + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return conta(9) === Number(digitos[9]) && conta(10) === Number(digitos[10]);
+}
+
+// CNPJ com dígito verificador.
 export function cnpjValido(digitos: string) {
   if (!/^\d{14}$/.test(digitos) || /^(\d)\1{13}$/.test(digitos)) return false;
   const conta = (n: number) => {
@@ -30,8 +42,7 @@ const cnpj = z.preprocess(
   z
     .string()
     .nullable()
-    .refine((v) => v === null || v.length !== 11, "Não informe CPF: o campo é só para CNPJ de empresa.")
-    .refine((v) => v === null || cnpjValido(v), "CNPJ inválido."),
+    .refine((v) => v === null || (v.length === 11 ? cpfValido(v) : cnpjValido(v)), "CNPJ ou CPF inválido."),
 );
 
 const data = z.preprocess(vazioParaNulo, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida.").nullable());
@@ -40,9 +51,9 @@ const valor = z.preprocess(
   z.number({ error: "Valor inválido." }).min(0, "Valor inválido.").max(9_999_999_999_999).nullable(),
 );
 
-// CPF nunca entra em texto livre (objeto, empresa): o campo só aceita dado de pessoa jurídica.
+// CPF nunca entra em texto livre (objeto, empresa): só no campo próprio de CNPJ ou CPF.
 const temCpf = (t: string | null) => !t || !/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/.test(t);
-const MSG_CPF = "Não informe CPF. Use só dados de pessoa jurídica.";
+const MSG_CPF = "Não escreva CPF aqui. Use o campo CNPJ ou CPF.";
 
 const anoMax = () => new Date().getFullYear() + 1;
 
@@ -79,7 +90,9 @@ export const esquemaDocumento = z
     if (d.vigencia_inicio && d.vigencia_fim && d.vigencia_fim < d.vigencia_inicio) {
       erro("vigencia_fim", "O fim da vigência não pode vir antes do início.");
     }
-  });
+  })
+  // 14 dígitos vão para cnpj; 11, para cpf_credor (coluna própria, fora da auditoria e da busca).
+  .transform((d) => ({ ...d, cnpj: d.cnpj?.length === 14 ? d.cnpj : null, cpf_credor: d.cnpj?.length === 11 ? d.cnpj : null }));
 export type DadosDocumento = z.infer<typeof esquemaDocumento>;
 
 export const esquemaId = z.object({ id: uuid });
