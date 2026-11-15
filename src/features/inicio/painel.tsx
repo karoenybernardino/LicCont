@@ -38,7 +38,8 @@ function Linha({ titulo, detalhe, fim }: { titulo: string; detalhe: string; fim:
   );
 }
 
-const Vazio = ({ children }: { children: React.ReactNode }) => <p className="py-2 text-sm text-texto-suave">{children}</p>;
+const Vazio = ({ children, item = true }: { children: React.ReactNode; item?: boolean }) =>
+  item ? <li className="py-2 text-sm text-texto-suave">{children}</li> : <p className="py-2 text-sm text-texto-suave">{children}</p>;
 
 function Anel({ percentual }: { percentual: number }) {
   return (
@@ -105,7 +106,7 @@ export function InicioCompleto(d: DadosInicio) {
         <Painel>
           <Rotulo>Ocupação por rua</Rotulo>
           <div className="flex flex-col gap-3.5">
-            {d.ruas.length === 0 && <Vazio>Nenhuma rua cadastrada.</Vazio>}
+            {d.ruas.length === 0 && <Vazio item={false}>Nenhuma rua cadastrada.</Vazio>}
             {d.ruas.map((r) => (
               <div key={r.codigo} className="flex items-center gap-3">
                 <span className="w-12 shrink-0 text-xs font-medium text-texto-suave uppercase">Rua {r.codigo}</span>

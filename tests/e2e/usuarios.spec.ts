@@ -19,14 +19,18 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await page.getByRole("link", { name: "Secretarias", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
+  await page.getByRole("link", { name: "+ Nova secretaria" }).click();
+  await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome da secretaria").fill("Obras");
-  await page.getByRole("button", { name: "Cadastrar" }).click();
-  await expect(page.getByRole("status")).toHaveText("Secretaria cadastrada.");
+  await page.getByRole("button", { name: "Salvar e cadastrar outra" }).click();
+  await expect(page.getByRole("status")).toContainText("Secretaria cadastrada");
   await page.getByLabel("Nome da secretaria").fill("Cultura");
-  await page.getByRole("button", { name: "Cadastrar" }).click();
-  await expect(page.getByRole("button", { name: "Desativar Cultura" })).toBeVisible();
-  await page.getByRole("button", { name: "Desativar Cultura" }).click();
-  await expect(page.getByRole("button", { name: "Reativar Cultura" })).toBeVisible();
+  await page.getByRole("button", { name: "Salvar secretaria", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Secretarias" })).toBeVisible();
+  await page.getByRole("link", { name: "Editar Cultura" }).click();
+  await page.getByLabel("Situação").selectOption({ label: "Desativada" });
+  await page.getByRole("button", { name: "Salvar secretaria", exact: true }).click();
+  await expect(page.getByRole("row", { name: /Cultura/ })).toContainText("Desativada");
 
   // Usuários: cadastrar operador só em Obras.
   await page.getByRole("link", { name: "Usuários e perfis", exact: true }).click();

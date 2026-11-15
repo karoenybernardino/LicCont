@@ -10,14 +10,14 @@ abre a caixa só depois do login). Fidelidade ao canvas: `docs/telas/`.
 
 | # | Tarefa | Prova | Estado |
 | --- | --- | --- | --- |
-| 1 | **Secretarias**: sigla, telefone, e-mail, responsável, cargo, regras do acervo (prazo de empréstimo, rua preferencial, 4 caixas), telas Secretarias, Nova secretaria e Editar | pgTAP `secretarias_campos.test.sql`, Vitest `esquemas.test.ts`, comparação com o canvas | PR desta branch |
-| 2 | **Cadastro**: rótulo "Título do processo", busca de rua, "Salvar e imprimir etiqueta" (depende da 4) | Playwright | pendente |
-| 3 | **Início**: KPIs de empréstimos, prazos de guarda, últimas movimentações, ocupação por rua (empréstimos e prazos dependem das Fases 6 e 7: mostram 0 até lá) | Vitest + comparação | pendente |
-| 4 | **Etiquetas e QR**: tabela `etiquetas` (código aleatório, RLS), geração e impressão em lote, "Imprimir etiqueta", tela Etiquetas, tela "Caixa lida pelo celular" (QR abre `/mapa?caixa=<id>` só depois do login) | pgTAP de isolamento, Vitest, Playwright | pendente |
-| 5 | **Telas sem rota**: Empréstimos, Temporalidade, Auditoria (leitura da auditoria que já existe); botões "em breve" de empréstimo ficam desabilitados até a Fase 6 | comparação | pendente |
-| 6 | **Visualizador de PDF**: resolução, cópia de leitura, SHA-256 se o dado existir; "Imprimir" | Vitest | pendente |
-| 7 | **Equipe** (`/equipe`, Nova prefeitura, Detalhe) e telas de **Erro** (sessão expirada, 404, 403, 500) | comparação | pendente |
-| 8 | **Mapa, decisões do responsável (2026-11-14)**: (a) na vista Planta do Mapa, paredes e metros aparecem só no Editor da planta; a Planta do Mapa fica sem eles; (b) o Editor da planta passa a trabalhar em metros (tamanho de rua, posições e comprimento), conforme `metrosCelula` em `src/features/mapa/` | Vitest da conversão, Playwright do editor, comparação | pendente |
+| 1 | **Secretarias**: sigla, telefone, e-mail, responsável, cargo, regras do acervo (prazo de empréstimo, rua preferencial, 4 caixas), telas Secretarias, Nova secretaria e Editar | pgTAP `secretarias_campos.test.sql`, Vitest `esquemas.test.ts`, comparação com o canvas | feito neste PR |
+| 2 | **Cadastro**: rótulo "Título do processo", busca de rua, "Salvar e imprimir etiqueta" (depende da 4) | Playwright | feito neste PR |
+| 3 | **Início**: KPIs de empréstimos, prazos de guarda, últimas movimentações, ocupação por rua (empréstimos e prazos dependem das Fases 6 e 7: mostram 0 até lá) | Vitest + comparação | feito neste PR |
+| 4 | **Etiquetas e QR**: tabela `etiquetas` (código aleatório, RLS), geração e impressão em lote, "Imprimir etiqueta", tela Etiquetas, tela "Caixa lida pelo celular" (QR abre `/mapa?caixa=<id>` só depois do login) | pgTAP de isolamento, Vitest, Playwright | feito neste PR |
+| 5 | **Telas sem rota**: Empréstimos, Temporalidade, Auditoria (leitura da auditoria que já existe); botões "em breve" de empréstimo ficam desabilitados até a Fase 6 | comparação | feito neste PR |
+| 6 | **Visualizador de PDF**: resolução, cópia de leitura, SHA-256 se o dado existir; "Imprimir" | Vitest | feito neste PR |
+| 7 | **Equipe** (`/equipe`, Nova prefeitura, Detalhe) e telas de **Erro** (sessão expirada, 404, 403, 500) | comparação | feito neste PR |
+| 8 | **Mapa, decisões do responsável (2026-11-14)**: (a) na vista Planta do Mapa, paredes e metros aparecem só no Editor da planta; a Planta do Mapa fica sem eles; (b) o Editor da planta passa a trabalhar em metros (tamanho de rua, posições e comprimento), conforme `metrosCelula` em `src/features/mapa/` | Vitest da conversão, Playwright do editor, comparação | feito neste PR |
 
 ## Tarefa 1 — decisões
 
