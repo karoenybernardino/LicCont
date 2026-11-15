@@ -194,6 +194,15 @@ select throws_ok($$delete from public.planta_elementos$$, '42501', null, 'coorde
 select throws_ok($$update public.ruas set planta_x = null$$, '23514', null, 'posição da rua precisa de coluna e linha juntas');
 select throws_ok($$update public.galpoes set planta_largura = 3$$, '23514', null, 'galpão menor que 4 células é recusado');
 select throws_ok($$update public.ruas set planta_giro = 45$$, '23514', null, 'giro só em 0, 90, 180 ou 270');
+select throws_ok($$update public.ruas set planta_lados = 3$$, '23514', null, 'rua tem um ou dois lados');
+select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,
+  '[{"id":"c1a00000-0000-0000-0000-000000000000","x":4,"y":2,"giro":0,"lados":1}]'::jsonb, '[]'::jsonb)$$,
+  'coordenador A marca a rua como de um lado só');
+select results_eq($$select planta_lados::int from public.ruas where id = 'c1a00000-0000-0000-0000-000000000000'$$,
+  $$values (1)$$, 'a rua ficou com um lado');
+select throws_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,
+  '[{"id":"c1a00000-0000-0000-0000-000000000000","x":4,"y":2,"giro":0,"lados":5}]'::jsonb, '[]'::jsonb)$$,
+  '23514', null, 'lados fora de 1 ou 2 é recusado');
 
 -- salvar_planta: tudo numa transação; galpão ou rua de fora dá o mesmo erro.
 select lives_ok($$select public.salvar_planta('c0a00000-0000-0000-0000-000000000000', 16, 10, 'frente', 2,

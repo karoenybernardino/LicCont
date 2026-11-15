@@ -9,12 +9,12 @@ import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type PointerEvent } from "react";
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { resumir } from "@/features/estrutura/ocupacao";
-import { salvarPlanta } from "./acoes";
+import { ajustarModulosDaRua, criarRuaNaPlanta, salvarPlanta } from "./acoes";
 import { calcularLeiaute } from "./geometria";
 import { MARGEM, PX, PlantaSvg } from "./planta";
 import { estilos } from "./painel-caixa";
 import { useTema } from "./usar-tema";
-import { GIROS, LADOS, LIMITES_METROS_CELULA, PADRAO_METROS_CELULA, TIPOS_ELEMENTO, formatarMetros, type ElementoPlanta, type Giro, type LadoEntrada, type Planta, type PosicaoRua, type TipoElemento } from "./tipos";
+import { GIROS, LADOS, LIMITES_METROS_CELULA, PADRAO_METROS_CELULA, TIPOS_ELEMENTO, formatarMetros, type ElementoPlanta, type Giro, type LadoEntrada, type Lados, type Planta, type PosicaoRua, type TipoElemento } from "./tipos";
 
 type Estado = { largura: number; profundidade: number; lado: LadoEntrada; posicao: number; metros: number; ruas: Record<string, PosicaoRua>; elementos: ElementoPlanta[] };
 type Ferramenta = "selecionar" | TipoElemento;
@@ -59,7 +59,7 @@ function Num({ valor, min, max, onValor, escala = 1, inteiro = true, passo }: { 
   );
 }
 
-export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estrutura: Estrutura; planta: Planta; galpaoId: string; nomeGalpao: string }) {
+export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin = false }: { estrutura: Estrutura; planta: Planta; galpaoId: string; nomeGalpao: string; ehAdmin?: boolean }) {
   const tema = useTema();
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -83,6 +83,18 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
   const [elSel, setElSel] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<{ erro: boolean; texto: string } | null>(null);
   const [salvando, salvar] = useTransition();
+  const [mexendo, mexer] = useTransition();
+  const [nova, setNova] = useState({ aberta: false, modulos: 5, niveis: 4, capacidade: 20 });
+
+  // Estrutura (rua nova, mais ou menos módulos): grava na hora, com auditoria, fora do "Salvar planta".
+  function estrutural(acao: () => Promise<{ erro?: string; aviso?: string }>) {
+    setMensagem(null);
+    mexer(async () => {
+      const r = await acao();
+      setMensagem({ erro: !!r.erro, texto: r.erro ?? r.aviso ?? "Feito." });
+      if (!r.erro) router.refresh();
+    });
+  }
   const [alvoAcoes, setAlvoAcoes] = useState<HTMLElement | null>(null);
   // Status, Descartar e Salvar ficam no cabeçalho da página, como no quadro.
   useEffect(() => {
@@ -101,13 +113,13 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
     setIndice((i) => i + 1);
     setMensagem(null);
   };
-  const posicaoDe = (id: string): { x: number; y: number; giro: Giro } => {
+  const posicaoDe = (id: string): { x: number; y: number; giro: Giro; lados: Lados } => {
     const r = leiaute.ruas.find((x) => x.id === id)!;
-    return { x: r.x, y: r.y, giro: r.giro };
+    return { x: r.x, y: r.y, giro: r.giro, lados: r.lados };
   };
-  const moverRua = (id: string, p: Partial<{ x: number; y: number; giro: Giro }>, base: Estado = atual) => ({
+  const moverRua = (id: string, p: Partial<{ x: number; y: number; giro: Giro; lados: Lados }>, base: Estado = atual) => ({
     ...base,
-    ruas: { ...base.ruas, [id]: { ...(base.ruas[id]?.x != null ? (base.ruas[id] as { x: number; y: number; giro: Giro }) : posicaoDe(id)), ...p } },
+    ruas: { ...base.ruas, [id]: { ...(base.ruas[id]?.x != null ? (base.ruas[id] as { x: number; y: number; giro: Giro }) : posicaoDe(id)), lados: base.ruas[id]?.lados ?? leiaute.ruas.find((x) => x.id === id)?.lados ?? 2, ...p } },
   });
   const girarRua = (id: string) => {
     const r = leiaute.ruas.find((x) => x.id === id)!;
@@ -206,7 +218,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
         metrosCelula: atual.metros,
         ruas: leiaute.ruas.map((x) => {
           const salvo = atual.ruas[x.id];
-          return salvo?.x != null ? { id: x.id, x: salvo.x, y: salvo.y, giro: salvo.giro } : { id: x.id, x: null, y: null, giro: 0 };
+          return salvo?.x != null ? { id: x.id, x: salvo.x, y: salvo.y, giro: salvo.giro, lados: salvo.lados ?? x.lados } : { id: x.id, x: null, y: null, giro: 0, lados: x.lados };
         }),
         elementos: atual.elementos.map((x) => ({ ...x, id: x.id.startsWith("novo-") ? null : x.id, ativo: true })),
       });
@@ -241,7 +253,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             </>,
             alvoAcoes,
           )}
-        <div className="grid grid-cols-[230px_minmax(0,1fr)_260px] items-start gap-4" onKeyDown={aoTeclar}>
+        <div className="grid grid-cols-[220px_minmax(0,1fr)_250px] items-start gap-3" onKeyDown={aoTeclar}>
           <aside className={estilos.cartao} aria-label="Ajustes do galpão">
             <h2 className={rotulo}>Tamanho do galpão</h2>
             <div className="grid grid-cols-2 gap-2">
@@ -309,7 +321,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                 {mensagem.texto}
               </p>
             )}
-            <div className="rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
+            <div className="sc max-h-[62vh] overflow-auto rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
               <PlantaSvg
                 metrosCelula={atual.metros}
                 leiaute={leiaute}
@@ -328,6 +340,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             </ul>
           </section>
 
+          <div className="flex min-w-0 flex-col gap-3">
           <aside className={estilos.cartao} aria-label="Selecionado">
             <div className="flex items-center justify-between gap-2">
               <h2 className={rotulo}>Selecionado</h2>
@@ -352,12 +365,34 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                     </button>
                   ))}
                 </div>
+                <div>
+                  <h3 className={rotulo}>Estante</h3>
+                  <div role="group" aria-label="Lados com estante" className="mt-1 flex gap-1">
+                    {([2, 1] as const).map((l) => (
+                      <button key={l} type="button" aria-pressed={selRua.lados === l} onClick={() => confirmar(moverRua(selRua.id, { lados: l }))} className={`${estilos.botaoBorda} flex-1 !px-1 text-xs ${selRua.lados === l ? "!border-[#ff9f1c] bg-[#fff3d1] text-[#0b2e3a]" : ""}`}>
+                        {l === 2 ? "Dois lados" : "Um lado"}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-texto-suave">{selRua.lados === 1 ? "Encostada na parede: uma fileira de caixas, 1 célula de fundo." : "No meio do galpão: duas fileiras de caixas, 2 células de fundo."}</p>
+                </div>
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
                   <dt className="text-texto-suave">Módulos</dt><dd>{selRua.modulos} (da estrutura)</dd>
                   <dt className="text-texto-suave">Tamanho</dt><dd>{formatarMetros(selRua.w * atual.metros)} × {formatarMetros(selRua.h * atual.metros)}</dd>
                   <dt className="text-texto-suave">Caixas</dt><dd>{resumir(estrutura, selRua.id).caixas}</dd>
                 </dl>
                 <button type="button" onClick={() => girarRua(selRua.id)} className={estilos.botaoBorda}>Girar 90°</button>
+                {ehAdmin && (
+                  <div>
+                    <h3 className={rotulo}>Comprimento</h3>
+                    <div className="mt-1 flex items-center gap-2">
+                      <button type="button" aria-label="Remover o último módulo" disabled={mexendo || selRua.modulos <= 1} onClick={() => estrutural(() => ajustarModulosDaRua({ rua: selRua.id, quantidade: -1 }))} className={`${estilos.botaoBorda} !w-10 !px-0`}>−</button>
+                      <span className="flex-1 text-center text-[13px]">{selRua.modulos} {selRua.modulos === 1 ? "módulo" : "módulos"}</span>
+                      <button type="button" aria-label="Adicionar um módulo" disabled={mexendo} onClick={() => estrutural(() => ajustarModulosDaRua({ rua: selRua.id, quantidade: 1 }))} className={`${estilos.botaoBorda} !w-10 !px-0`}>+</button>
+                    </div>
+                    <p className="mt-1 text-xs text-texto-suave">O módulo novo copia os níveis e a capacidade do último. Só sai módulo sem caixas ativas.</p>
+                  </div>
+                )}
               </>
             ) : selEl ? (
               <>
@@ -383,7 +418,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
             )}
           </aside>
 
-          <aside className={`${estilos.cartao} col-start-3`} aria-label="Ruas do galpão">
+          <aside className={estilos.cartao} aria-label="Ruas do galpão">
             <h2 className={rotulo}>Ruas</h2>
             <ul className="flex flex-col gap-1.5">
               {leiaute.ruas.map((r) => (
@@ -401,7 +436,40 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao }: { estr
                 </li>
               ))}
             </ul>
+            {ehAdmin && (
+              <div className="mt-1 border-t border-linha pt-3">
+                {!nova.aberta ? (
+                  <button type="button" onClick={() => setNova((n) => ({ ...n, aberta: true }))} className={`${estilos.botaoBorda} w-full`}>Nova rua</button>
+                ) : (
+                  <form
+                    aria-label="Nova rua"
+                    className="flex flex-col gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      estrutural(async () => {
+                        const r = await criarRuaNaPlanta({ galpao: galpaoId, modulos: nova.modulos, niveis: nova.niveis, capacidade: nova.capacidade });
+                        if (!r.erro) setNova((n) => ({ ...n, aberta: false }));
+                        return r;
+                      });
+                    }}
+                  >
+                    {([["modulos", "Módulos"], ["niveis", "Níveis por módulo"], ["capacidade", "Caixas por nível"]] as const).map(([k, nome]) => (
+                      <label key={k} className="flex items-center justify-between gap-2 text-xs text-texto-suave">
+                        {nome}
+                        <input type="number" min={1} className={`${campo} !w-20`} value={nova[k]} onChange={(e) => setNova((n) => ({ ...n, [k]: Number(e.target.value) }))} />
+                      </label>
+                    ))}
+                    <p className="text-xs text-texto-suave">A letra é a próxima livre. A rua entra embaixo das outras; arraste para o lugar certo e escolha se tem estante de um lado ou dos dois.</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setNova((n) => ({ ...n, aberta: false }))} className={`${estilos.botaoBorda} flex-1`}>Cancelar</button>
+                      <button type="submit" disabled={mexendo} className={`${estilos.botaoCheio} flex-1`}>{mexendo ? "Criando…" : "Criar rua"}</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </aside>
+          </div>
         </div>
       </div>
       <div className="rounded-2xl border border-linha p-5 text-sm lg:hidden">
