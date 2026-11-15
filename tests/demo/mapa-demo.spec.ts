@@ -9,7 +9,7 @@ test.beforeEach(async ({ context }) => {
 
 test("editor: arrastar uma rua muda a planta e salvar avisa que é demonstração", async ({ page }) => {
   await page.goto("/mapa/editar");
-  await expect(page.getByRole("heading", { level: 1, name: "Editar planta" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Editor da planta" })).toBeVisible();
   const rua = page.locator('g[data-rua="A"] g rect').first();
   const caixa = (await rua.boundingBox())!;
   await page.mouse.move(caixa.x + 6, caixa.y + 6);

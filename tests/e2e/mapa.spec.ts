@@ -63,7 +63,7 @@ test("o editor da planta abre para o coordenador e não para o operador", async 
   await entrar(page, { email: USUARIOS.coordEstrutura.email, secretaria: "Obras" });
   await expect(page).toHaveURL(/\/inicio$/);
   await page.goto("/mapa/editar");
-  await expect(page.getByRole("heading", { level: 1, name: "Editar planta" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Editor da planta" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Salvar planta" })).toBeDisabled();
   await semFalhasDeAcessibilidade(page);
 });
