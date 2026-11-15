@@ -45,3 +45,11 @@ export const USUARIOS_DEMO = [
   { id: "de200000-0000-0000-0000-000000000003", nome: "Paula Fictícia", email: "paula@exemplo.test", perfil: "operador", ativo: true, trocaSenha: true, secretarias: [SECRETARIAS_DEMO[3].id] },
   { id: "de200000-0000-0000-0000-000000000004", nome: "Ana Fictícia", email: "ana@exemplo.test", perfil: "consulta", ativo: false, trocaSenha: false, secretarias: [SECRETARIAS_DEMO[1].id] },
 ] as const;
+
+// Campos novos das secretarias (Fase 5), fictícios. Quem não aparece aqui usa os padrões.
+export const DETALHES_SECRETARIAS_DEMO: Record<string, { sigla: string; telefone: string; email: string; responsavelId: string | null; cargo: string; prazo: number; exigeAprovacao?: boolean }> = {
+  [SECRETARIAS_DEMO[0].id]: { sigla: "SEAD", telefone: "(88) 0000-0001", email: "adm@exemplo.test", responsavelId: USUARIOS_DEMO[0].id, cargo: "Secretária de Administração", prazo: 15 },
+  [SECRETARIAS_DEMO[1].id]: { sigla: "SEDUC", telefone: "(88) 0000-0002", email: "educacao@exemplo.test", responsavelId: USUARIOS_DEMO[3].id, cargo: "Secretária de Educação", prazo: 30 },
+  [SECRETARIAS_DEMO[2].id]: { sigla: "SEINFRA", telefone: "(88) 0000-0003", email: "obras@exemplo.test", responsavelId: USUARIOS_DEMO[1].id, cargo: "Secretário de Obras", prazo: 15, exigeAprovacao: true },
+  [SECRETARIAS_DEMO[3].id]: { sigla: "SESAU", telefone: "(88) 0000-0004", email: "saude@exemplo.test", responsavelId: USUARIOS_DEMO[2].id, cargo: "Secretária de Saúde", prazo: 15 },
+};
