@@ -31,6 +31,7 @@ export const esquemaEdital = z.object({
 export const esquemaId = z.object({ id: z.uuid() });
 
 export const esquemaModelo = z.object({
+  tipo: z.enum(["eliminacao", "emprestimo"], "Escolha o modelo."),
   baseLegal: z.string().trim().min(1, "Escreva o texto-base do termo.").max(1500, "O texto-base tem no máximo 1.500 caracteres."),
   assinaturas: z
     .string()

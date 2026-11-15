@@ -26,6 +26,12 @@ export const MODELO_PADRAO: ModeloTermo = {
   assinaturas: "Responsável pelo arquivo\nComissão Permanente de Avaliação de Documentos\nAutoridade que aprova a eliminação",
 };
 
+export const MODELO_EMPRESTIMO_PADRAO: ModeloTermo = {
+  baseLegal:
+    "Empréstimo temporário de documento do acervo, sob responsabilidade de quem retira. O documento deve ser devolvido íntegro, na caixa de origem, até a data prevista. Não retire folhas nem faça anotações no original.",
+  assinaturas: "Quem retira o documento\nResponsável pelo arquivo",
+};
+
 const data = dataBR;
 const corta = (t: string, max: number) => (t.length > max ? `${t.slice(0, max - 1)}…` : t);
 

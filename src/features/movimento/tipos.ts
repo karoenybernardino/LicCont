@@ -2,6 +2,7 @@
 // mostra dados fictícios.
 
 export type Emprestimo = { id: string; documentoId: string; titulo: string; objeto: string; caixa: string; quem: string; setor: string; prazo: string; devolvido: boolean };
+export type PedidoEmprestimo = { id: string; titulo: string; objeto: string; quem: string; setor: string; prazoDias: number; criadoEm: string; vencido: boolean; meu: boolean };
 export type RegraPrazo = { tipo: string; corrente: string; intermediaria: string; permanente: boolean };
 export type ProntoEliminacao = { id: string; titulo: string; caixa: string; venceu: string; marcado: boolean; secretariaId?: string };
 export type PrazoAVencer = { titulo: string; posicao: string; emDias: number };

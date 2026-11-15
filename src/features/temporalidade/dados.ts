@@ -6,7 +6,7 @@ import { tituloDocumento } from "@/features/documentos/titulo";
 import type { Modalidade, Tipo } from "@/features/documentos/tipos";
 import { NUMERO_SO_POR_ENDERECO_DEMO, REGRAS_EDITAVEIS_DEMO, termosDemo } from "@/features/demo/temporalidade";
 import { classeDocumento, estadoDoPrazo, hojeSaoPaulo, type Classe, type Destinacao, type Regra } from "./regras";
-import { MODELO_PADRAO, type ModeloTermo } from "./termo";
+import { MODELO_EMPRESTIMO_PADRAO, MODELO_PADRAO, type ModeloTermo } from "./termo";
 import type { ItemTermo, Termo, TermoCompleto } from "./tipos";
 
 export type { ItemTermo, Termo, TermoCompleto } from "./tipos";
@@ -31,11 +31,12 @@ export async function lerRegras(): Promise<Regra[]> {
 
 // Modelo do termo da prefeitura; sem linha salva, vale o texto-padrão.
 export async function lerModelo(tipo: "eliminacao" | "emprestimo" = "eliminacao"): Promise<ModeloTermo> {
-  if (emDemo()) return MODELO_PADRAO;
+  const padrao = tipo === "emprestimo" ? MODELO_EMPRESTIMO_PADRAO : MODELO_PADRAO;
+  if (emDemo()) return padrao;
   const sb = await clienteSessao();
-  if (!sb) return MODELO_PADRAO;
+  if (!sb) return padrao;
   const { data } = await sb.from("modelos_termo").select("base_legal, assinaturas").eq("tipo", tipo).maybeSingle();
-  return data ? { baseLegal: data.base_legal, assinaturas: data.assinaturas } : MODELO_PADRAO;
+  return data ? { baseLegal: data.base_legal, assinaturas: data.assinaturas } : padrao;
 }
 
 type LinhaDoc = {

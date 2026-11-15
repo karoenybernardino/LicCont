@@ -10,16 +10,37 @@ import { tituloDocumento } from "@/features/documentos/titulo";
 import { posicaoLegivel } from "@/features/inicio/resumo";
 import { quando } from "@/features/estrutura/alteracoes";
 import type { ItemPesquisa } from "@/features/documentos/tipos";
-import { CLASSES } from "@/features/temporalidade/regras";
+import { CLASSES, somarDias } from "@/features/temporalidade/regras";
+import type { EmprestimoParaTermo } from "./termo-emprestimo";
 import { lerRegras, lerTemporalidadeReal } from "@/features/temporalidade/dados";
 import { situacaoEmprestimo } from "./situacao";
-import type { Emprestimo, Movimentacao, PrazoAVencer, ProntoEliminacao, RegistroAuditoria, RegraPrazo, ResumoTemporalidade } from "./tipos";
+import type { Emprestimo, PedidoEmprestimo, Movimentacao, PrazoAVencer, ProntoEliminacao, RegistroAuditoria, RegraPrazo, ResumoTemporalidade } from "./tipos";
 
 // Empréstimos (Fase 6): leitura pela sessão da pessoa (o RLS limita à prefeitura
 // e às secretarias dela). Temporalidade (Fase 7): lê o banco.
 const FALHA_EMPRESTIMOS = "Não foi possível ler os empréstimos.";
 
 const codigoDaCaixa = (rua: string, modulo: number, nivel: number, caixa: number) => `${rua}-M${modulo}-N${nivel}-C${String(caixa).padStart(2, "0")}`;
+
+// Pedidos de empréstimo aguardando aprovação (só pendentes). Em demonstração não há.
+export async function listarPedidos(usuarioId: string): Promise<PedidoEmprestimo[]> {
+  if (emDemo()) return [];
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("pedidos_emprestimo")
+    .select("id, retirado_por_nome, retirado_por_setor, prazo_dias, criado_em, pedido_por, documentos(tipo, modalidade, numero, ano, objeto)")
+    .eq("situacao", "pendente")
+    .order("criado_em", { ascending: true })
+    .limit(200);
+  if (error) throw new Error(FALHA_EMPRESTIMOS);
+  const limite = Date.now() - 3 * 86_400_000;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((p) => ({
+    id: p.id, titulo: tituloDocumento(p.documentos), objeto: p.documentos.objeto, quem: p.retirado_por_nome, setor: p.retirado_por_setor,
+    prazoDias: p.prazo_dias, criadoEm: p.criado_em, vencido: Date.parse(p.criado_em) < limite, meu: p.pedido_por === usuarioId,
+  }));
+}
 
 export async function listarEmprestimos(): Promise<Emprestimo[]> {
   if (emDemo()) return emprestimosDemo();
@@ -43,6 +64,33 @@ export async function listarEmprestimos(): Promise<Emprestimo[]> {
     prazo: e.prazo_em,
     devolvido: e.devolvido_em !== null,
   }));
+}
+
+// Dados do termo de empréstimo (RLS: só quem enxerga a secretaria).
+export async function obterEmprestimoParaTermo(id: string): Promise<EmprestimoParaTermo | null> {
+  if (emDemo()) {
+    const e = emprestimosDemo().find((x) => x.id === id);
+    if (!e) return null;
+    return {
+      prefeitura: "Prefeitura Fictícia de Exemplo", secretaria: "Secretaria de demonstração", titulo: e.titulo, objeto: e.objeto, caixa: e.caixa,
+      quem: e.quem, setor: e.setor, retirada: somarDias(e.prazo, -15), prazo: e.prazo, devolvidoEm: e.devolvido ? e.prazo : null, observacao: null,
+    };
+  }
+  const sb = await clienteSessao();
+  if (!sb) return null;
+  const { data } = await sb
+    .from("emprestimos")
+    .select("retirado_por_nome, retirado_por_setor, retirado_em, prazo_em, observacao, devolvido_em, prefeituras(nome), secretarias(nome), documentos(tipo, modalidade, numero, ano, objeto), caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const e = data as any;
+  return {
+    prefeitura: e.prefeituras?.nome ?? "Prefeitura", secretaria: e.secretarias?.nome ?? "", titulo: tituloDocumento(e.documentos), objeto: e.documentos.objeto,
+    caixa: codigoDaCaixa(e.caixas.niveis.modulos.ruas.codigo, e.caixas.niveis.modulos.numero, e.caixas.niveis.numero, e.caixas.numero),
+    quem: e.retirado_por_nome, setor: e.retirado_por_setor, retirada: e.retirado_em, prazo: e.prazo_em, devolvidoEm: e.devolvido_em, observacao: e.observacao,
+  };
 }
 
 // Ids dos documentos com empréstimo aberto (só os que a pessoa pode ler).
