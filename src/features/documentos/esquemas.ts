@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hojeSaoPaulo } from "@/features/temporalidade/regras";
 import { lerValor } from "./formato";
 import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO } from "./tipos";
 
@@ -73,6 +74,8 @@ export const esquemaDocumento = z
       if (!(d.situacao in SITUACOES_CONTRATO)) erro("situacao", "Situação inválida para contrato.");
       if (d.encerrado_em) erro("encerrado_em", "Encerramento é só de licitação.");
     }
+    if (d.encerrado_em && d.encerrado_em > hojeSaoPaulo()) erro("encerrado_em", "O encerramento não pode ser no futuro.");
+    if (d.encerrado_em && d.encerrado_em < `${d.ano}-01-01`) erro("encerrado_em", "O encerramento não pode vir antes do ano do processo.");
     if (d.vigencia_inicio && d.vigencia_fim && d.vigencia_fim < d.vigencia_inicio) {
       erro("vigencia_fim", "O fim da vigência não pode vir antes do início.");
     }

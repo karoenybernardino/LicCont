@@ -41,6 +41,12 @@ describe("cadastro", () => {
     expect(r.success).toBe(true);
     if (r.success) expect(r.data).toMatchObject({ empresa: null, cnpj: null, valor: null, ano: 2023 });
   });
+  it("encerramento: só licitação, não no futuro e não antes do ano do processo", () => {
+    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2023-06-01" }).success).toBe(true);
+    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2999-01-01" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2022-12-31" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, tipo: "contrato", modalidade: "", situacao: "vigente", encerrado_em: "2023-06-01" }).success).toBe(false);
+  });
   it("licitação exige modalidade; situação segue o tipo", () => {
     expect(esquemaDocumento.safeParse({ ...base, modalidade: "" }).success).toBe(false);
     expect(esquemaDocumento.safeParse({ ...base, situacao: "vigente" }).success).toBe(false);

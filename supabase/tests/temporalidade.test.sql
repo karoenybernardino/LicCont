@@ -220,6 +220,12 @@ select results_eq($$select count(*)::int from public.documentos where id in
 select results_eq($$select situacao from public.descartes$$, array['aprovado'], 'termo aprovado');
 select throws_ok($$select public.descarte_cancelar((select id from public.descartes limit 1))$$,
   'LD009', null, 'termo aprovado não se cancela');
+select throws_ok($$update public.documentos set ativo = true where id = 'd1000000-0000-0000-0000-000000000001'$$,
+  'LD009', null, 'documento eliminado não volta a ficar ativo');
+select throws_ok($$update public.documentos set objeto = 'Outro texto' where id = 'd1000000-0000-0000-0000-000000000001'$$,
+  'LD009', null, 'documento eliminado não muda de conteúdo');
+select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000001']::uuid[])$$,
+  'LD001', null, 'documento inativo não entra em termo');
 reset role;
 select throws_ok($$update public.descartes set observacao = 'mudou'$$, 'LD009', null, 'termo aprovado não muda nem para o dono');
 select throws_ok($$delete from public.descartes$$, 'LD009', null, 'termo aprovado não se apaga nem para o dono');
@@ -246,6 +252,16 @@ select results_eq($$select count(*)::int from public.descarte_itens where aberto
   array[0], 'cancelar libera os itens');
 select lives_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000',
   array['d1000000-0000-0000-0000-000000000008']::uuid[])$$, 'documento liberado entra em novo termo');
+select throws_ok($$update public.documentos set ativo = false where id = 'd1000000-0000-0000-0000-000000000008'$$,
+  'LD009', null, 'documento de termo aberto não se desativa à mão');
+select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
+select throws_ok($$select public.descarte_publicar_edital((select max(id::text)::uuid from public.descartes), app.hoje())$$,
+  '42501', null, 'B não registra edital de termo de A');
+select throws_ok($$select public.descarte_cancelar('00000000-0000-0000-0000-000000000000')$$,
+  '42501', null, 'B não cancela termo de A');
+select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
+select throws_ok($$select public.descarte_cancelar((select id from public.descartes where numero = 3))$$,
+  '42501', null, 'consulta de Obras não cancela termo de Saúde');
 
 -- ---------------------------------------------------------------------------
 -- Privilégios

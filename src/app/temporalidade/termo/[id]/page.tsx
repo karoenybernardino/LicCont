@@ -5,6 +5,7 @@ import { Pilula } from "@/ui/canvas";
 import { Formulario } from "@/ui/formulario";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
 import { exigirSessao } from "@/features/sessao/dal";
+import { podeConferir } from "@/features/documentos/dados";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { esquemaId } from "@/features/documentos/esquemas";
 import { formatarData } from "@/features/documentos/formato";
@@ -27,6 +28,8 @@ export default async function Termo({ params }: { params: Promise<{ id: string }
   const t = await obterTermo(id);
   if (!t) notFound();
   const hoje = hojeSaoPaulo();
+  // Coordenador da secretaria do termo ou administrador (o banco confere de novo).
+  const podeAndar = await podeConferir(usuario, t.secretariaId);
   const liberaEm = t.editalEm ? aprovavelDesde(t.editalEm) : null;
   const numero = `${String(t.numero).padStart(3, "0")}/${t.ano}`;
   const baixar = (formato: "pdf" | "docx") => `/temporalidade/termo/${t.id}/arquivo?formato=${formato}`;
@@ -76,7 +79,7 @@ export default async function Termo({ params }: { params: Promise<{ id: string }
             </li>
           </ol>
 
-          {t.situacao === "rascunho" && (
+          {t.situacao === "rascunho" && podeAndar && (
             <Formulario acao={publicarEdital} botao="Registrar edital" enviando="Registrando…" className="gap-3">
               <input type="hidden" name="id" value={t.id} />
               <label className="flex flex-col gap-[5px] text-xs text-texto-suave">
@@ -93,7 +96,7 @@ export default async function Termo({ params }: { params: Promise<{ id: string }
               </p>
             </Formulario>
           )}
-          {(t.situacao === "rascunho" || t.situacao === "em_ciencia") && (
+          {(t.situacao === "rascunho" || t.situacao === "em_ciencia") && podeAndar && (
             <Formulario acao={cancelarTermo} botao="Cancelar termo" enviando="Cancelando…" variante="secundario" className="gap-3">
               <input type="hidden" name="id" value={t.id} />
             </Formulario>

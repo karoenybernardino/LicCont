@@ -234,6 +234,38 @@ revoke execute on function app.motivo_inelegivel(uuid, uuid) from public, anon;
 grant execute on function app.motivo_inelegivel(uuid, uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Documento de termo aprovado não muda nem volta a ficar ativo (o termo diria
+-- "eliminado" sobre um documento vivo, ou sobre outro conteúdo). Documento de
+-- termo ainda aberto não se desativa à mão (a aprovação falharia); a função de
+-- aprovação avisa o gatilho por uma chave local da transação.
+-- ---------------------------------------------------------------------------
+create or replace function app.documento_trava_eliminacao()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (
+    select 1 from public.descarte_itens i join public.descartes d on d.id = i.descarte_id and d.prefeitura_id = i.prefeitura_id
+    where i.documento_id = old.id and d.situacao = 'aprovado'
+  ) then
+    raise exception 'documento eliminado por termo aprovado não muda' using errcode = 'LD009';
+  end if;
+  if old.ativo and not new.ativo and coalesce(current_setting('app.descarte_aprovando', true), '') <> '1' and exists (
+    select 1 from public.descarte_itens i join public.descartes d on d.id = i.descarte_id and d.prefeitura_id = i.prefeitura_id
+    where i.documento_id = old.id and i.aberto and d.situacao in ('rascunho', 'em_ciencia')
+  ) then
+    raise exception 'documento está em termo de eliminação aberto' using errcode = 'LD009';
+  end if;
+  return new;
+end
+$$;
+revoke execute on function app.documento_trava_eliminacao() from public;
+create trigger b_documentos_trava_eliminacao before update on public.documentos
+  for each row execute function app.documento_trava_eliminacao();
+
+-- ---------------------------------------------------------------------------
 -- Funções do fluxo (únicas que escrevem em descartes e descarte_itens)
 -- ---------------------------------------------------------------------------
 
@@ -337,9 +369,11 @@ begin
       raise exception 'documento não pode ser eliminado: %', v_motivo using errcode = 'LD001';
     end if;
   end loop;
+  perform set_config('app.descarte_aprovando', '1', true);
   update public.documentos set ativo = false
   where prefeitura_id = d.prefeitura_id
     and id in (select documento_id from public.descarte_itens where descarte_id = d.id and aberto);
+  perform set_config('app.descarte_aprovando', '0', true);
   update public.descartes set situacao = 'aprovado', aprovado_por = auth.uid(), aprovado_em = now() where id = d.id;
 end
 $$;
