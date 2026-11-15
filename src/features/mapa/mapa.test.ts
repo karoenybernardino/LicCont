@@ -3,7 +3,7 @@ import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { DOCUMENTOS_DEMO, idCaixaDemo } from "@/features/demo/documentos";
 import { lerCodigo, formatarCodigo } from "./codigo";
 import { CORES } from "./cores";
-import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha } from "./geometria";
+import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha, zoomAlvo } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { PLANTA_VAZIA, type CaixaCompacta, type Planta } from "./tipos";
@@ -248,5 +248,16 @@ describe("medidas em metros", () => {
     expect(formatarMetros(7.2)).toBe("7,2 m");
     expect(formatarMetros(28)).toBe("28 m");
     expect(formatarMetros(1.2345)).toBe("1,23 m");
+  });
+});
+
+describe("zoom do mapa 3D", () => {
+  it("multiplica o zoom atual pelo fator", () => {
+    expect(zoomAlvo(20, 1.25, 4, 160)).toBe(25);
+    expect(zoomAlvo(20, 0.8, 4, 160)).toBe(16);
+  });
+  it("não passa dos limites", () => {
+    expect(zoomAlvo(150, 1.25, 4, 160)).toBe(160);
+    expect(zoomAlvo(4.5, 0.8, 4, 160)).toBe(4);
   });
 });
