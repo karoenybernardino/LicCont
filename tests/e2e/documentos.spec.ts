@@ -49,7 +49,7 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
 
   await page.getByRole("link", { name: "Abrir PDF" }).click();
   await expect(page.getByRole("toolbar", { name: "Controles do PDF" })).toBeVisible();
-  await expect(page.getByText("/ 3")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("de 3", { exact: true })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Próxima página" }).click();
   await expect(page.getByRole("img", { name: "Página 2 de 3" })).toBeVisible();
   await page.getByRole("button", { name: "Aumentar o zoom" }).click();
