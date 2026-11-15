@@ -15,7 +15,7 @@ export default async function NovaPrefeituraPagina() {
         <span>
           <Link href="/equipe" className="text-destaque hover:underline">Equipe LicCONT</Link>
           {" › "}
-          <Link href="/equipe" className="text-destaque hover:underline">Prefeituras</Link>
+          <Link href="/equipe/prefeituras" className="text-destaque hover:underline">Prefeituras</Link>
           {" › Nova prefeitura"}
         </span>
       }

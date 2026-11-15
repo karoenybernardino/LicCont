@@ -1,0 +1,502 @@
+[
+ {
+  "quadro": "AceiteEscuro",
+  "titulo": "Fase 8 · Aceite da política e do termo — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 841,
+  "rota": "tela de aceite, logo após o login (primeiro acesso e quando a versão mudar)",
+  "html": "html/AceiteEscuro.html",
+  "png": "png/AceiteEscuro.png"
+ },
+ {
+  "quadro": "AceiteClaro",
+  "titulo": "Fase 8 · Aceite da política e do termo — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 841,
+  "rota": "tela de aceite, logo após o login (primeiro acesso e quando a versão mudar)",
+  "html": "html/AceiteClaro.html",
+  "png": "png/AceiteClaro.png"
+ },
+ {
+  "quadro": "PrivacidadeEscuro",
+  "titulo": "Fase 8 · Página pública /privacidade — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/privacidade (pública, sem login)",
+  "html": "html/PrivacidadeEscuro.html",
+  "png": "png/PrivacidadeEscuro.png"
+ },
+ {
+  "quadro": "PrivacidadeClaro",
+  "titulo": "Fase 8 · Página pública /privacidade — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/privacidade (pública, sem login)",
+  "html": "html/PrivacidadeClaro.html",
+  "png": "png/PrivacidadeClaro.png"
+ },
+ {
+  "quadro": "TermosEscuro",
+  "titulo": "Fase 8 · Página pública /termos — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/termos (pública, sem login)",
+  "html": "html/TermosEscuro.html",
+  "png": "png/TermosEscuro.png"
+ },
+ {
+  "quadro": "TermosClaro",
+  "titulo": "Fase 8 · Página pública /termos — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1000,
+  "rota": "/termos (pública, sem login)",
+  "html": "html/TermosClaro.html",
+  "png": "png/TermosClaro.png"
+ },
+ {
+  "quadro": "RelatorioExportarEscuro",
+  "titulo": "Fase 8 · Exportar relatório (Auditoria) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "janela Exportar relatório, aberta de Auditoria, Empréstimos, Temporalidade e Estrutura",
+  "html": "html/RelatorioExportarEscuro.html",
+  "png": "png/RelatorioExportarEscuro.png"
+ },
+ {
+  "quadro": "RelatorioExportarClaro",
+  "titulo": "Fase 8 · Exportar relatório (Auditoria) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "janela Exportar relatório, aberta de Auditoria, Empréstimos, Temporalidade e Estrutura",
+  "html": "html/RelatorioExportarClaro.html",
+  "png": "png/RelatorioExportarClaro.png"
+ },
+ {
+  "quadro": "RelatorioPdfEscuro",
+  "titulo": "Fase 8 · Relatório em PDF (prévia) — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1180,
+  "rota": "prévia do relatório (PDF/CSV)",
+  "html": "html/RelatorioPdfEscuro.html",
+  "png": "png/RelatorioPdfEscuro.png"
+ },
+ {
+  "quadro": "RelatorioPdfClaro",
+  "titulo": "Fase 8 · Relatório em PDF (prévia) — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1180,
+  "rota": "prévia do relatório (PDF/CSV)",
+  "html": "html/RelatorioPdfClaro.html",
+  "png": "png/RelatorioPdfClaro.png"
+ },
+ {
+  "quadro": "SiteInicialEscuro",
+  "titulo": "Site inicial — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 4717,
+  "rota": "/ (visitante sem login)",
+  "html": "html/SiteInicialEscuro.html",
+  "png": "png/SiteInicialEscuro.png"
+ },
+ {
+  "quadro": "SiteInicialClaro",
+  "titulo": "Site inicial — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 4717,
+  "rota": "/ (visitante sem login)",
+  "html": "html/SiteInicialClaro.html",
+  "png": "png/SiteInicialClaro.png"
+ },
+ {
+  "quadro": "ImportarEnviarEscuro",
+  "titulo": "Fase 9 · Importação · 1 Enviar arquivos (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "/cadastro/importar",
+  "html": "html/ImportarEnviarEscuro.html",
+  "png": "png/ImportarEnviarEscuro.png"
+ },
+ {
+  "quadro": "ImportarEnviarClaro",
+  "titulo": "Fase 9 · Importação · 1 Enviar arquivos (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "/cadastro/importar",
+  "html": "html/ImportarEnviarClaro.html",
+  "png": "png/ImportarEnviarClaro.png"
+ },
+ {
+  "quadro": "ImportarMapearEscuro",
+  "titulo": "Fase 9 · Importação · 2 Casar colunas (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 890,
+  "rota": "/cadastro/importar (passo 2)",
+  "html": "html/ImportarMapearEscuro.html",
+  "png": "png/ImportarMapearEscuro.png"
+ },
+ {
+  "quadro": "ImportarMapearClaro",
+  "titulo": "Fase 9 · Importação · 2 Casar colunas (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 890,
+  "rota": "/cadastro/importar (passo 2)",
+  "html": "html/ImportarMapearClaro.html",
+  "png": "png/ImportarMapearClaro.png"
+ },
+ {
+  "quadro": "ImportarPreviaEscuro",
+  "titulo": "Fase 9 · Importação · 3 Conferir (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/cadastro/importar (passo 3)",
+  "html": "html/ImportarPreviaEscuro.html",
+  "png": "png/ImportarPreviaEscuro.png"
+ },
+ {
+  "quadro": "ImportarPreviaClaro",
+  "titulo": "Fase 9 · Importação · 3 Conferir (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/cadastro/importar (passo 3)",
+  "html": "html/ImportarPreviaClaro.html",
+  "png": "png/ImportarPreviaClaro.png"
+ },
+ {
+  "quadro": "ImportarResultadoEscuro",
+  "titulo": "Fase 9 · Importação · 4 Resultado e lotes (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/cadastro/importar (passo 4)",
+  "html": "html/ImportarResultadoEscuro.html",
+  "png": "png/ImportarResultadoEscuro.png"
+ },
+ {
+  "quadro": "ImportarResultadoClaro",
+  "titulo": "Fase 9 · Importação · 4 Resultado e lotes (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/cadastro/importar (passo 4)",
+  "html": "html/ImportarResultadoClaro.html",
+  "png": "png/ImportarResultadoClaro.png"
+ },
+ {
+  "quadro": "ImportarLocalizarEscuro",
+  "titulo": "Fase 9 · Importação · Localizar sem endereço (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/cadastro/localizar",
+  "html": "html/ImportarLocalizarEscuro.html",
+  "png": "png/ImportarLocalizarEscuro.png"
+ },
+ {
+  "quadro": "ImportarLocalizarClaro",
+  "titulo": "Fase 9 · Importação · Localizar sem endereço (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/cadastro/localizar",
+  "html": "html/ImportarLocalizarClaro.html",
+  "png": "png/ImportarLocalizarClaro.png"
+ },
+ {
+  "quadro": "PainelEscuro",
+  "titulo": "Fase 9 · Painel e relatórios · Painel inicial (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 830,
+  "rota": "/painel",
+  "html": "html/PainelEscuro.html",
+  "png": "png/PainelEscuro.png"
+ },
+ {
+  "quadro": "PainelClaro",
+  "titulo": "Fase 9 · Painel e relatórios · Painel inicial (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 830,
+  "rota": "/painel",
+  "html": "html/PainelClaro.html",
+  "png": "png/PainelClaro.png"
+ },
+ {
+  "quadro": "RelatoriosEscuro",
+  "titulo": "Fase 9 · Painel e relatórios · Relatórios (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 790,
+  "rota": "/relatorios",
+  "html": "html/RelatoriosEscuro.html",
+  "png": "png/RelatoriosEscuro.png"
+ },
+ {
+  "quadro": "RelatoriosClaro",
+  "titulo": "Fase 9 · Painel e relatórios · Relatórios (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 790,
+  "rota": "/relatorios",
+  "html": "html/RelatoriosClaro.html",
+  "png": "png/RelatoriosClaro.png"
+ },
+ {
+  "quadro": "FilaTceEscuro",
+  "titulo": "Fase 9 · TCE-CE · Importados do TCE a conferir (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/importados",
+  "html": "html/FilaTceEscuro.html",
+  "png": "png/FilaTceEscuro.png"
+ },
+ {
+  "quadro": "FilaTceClaro",
+  "titulo": "Fase 9 · TCE-CE · Importados do TCE a conferir (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 800,
+  "rota": "/importados",
+  "html": "html/FilaTceClaro.html",
+  "png": "png/FilaTceClaro.png"
+ },
+ {
+  "quadro": "ConfigTceEscuro",
+  "titulo": "Fase 9 · TCE-CE · Configuração da integração TCE-CE (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 920,
+  "rota": "/configuracoes/tce",
+  "html": "html/ConfigTceEscuro.html",
+  "png": "png/ConfigTceEscuro.png"
+ },
+ {
+  "quadro": "ConfigTceClaro",
+  "titulo": "Fase 9 · TCE-CE · Configuração da integração TCE-CE (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 920,
+  "rota": "/configuracoes/tce",
+  "html": "html/ConfigTceClaro.html",
+  "png": "png/ConfigTceClaro.png"
+ },
+ {
+  "quadro": "PesquisaOrigemEscuro",
+  "titulo": "Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/pesquisa",
+  "html": "html/PesquisaOrigemEscuro.html",
+  "png": "png/PesquisaOrigemEscuro.png"
+ },
+ {
+  "quadro": "PesquisaOrigemClaro",
+  "titulo": "Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/pesquisa",
+  "html": "html/PesquisaOrigemClaro.html",
+  "png": "png/PesquisaOrigemClaro.png"
+ },
+ {
+  "quadro": "PncpBuscaEscuro",
+  "titulo": "Fase 9 · TCE-CE · Buscar PDF no PNCP (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 860,
+  "rota": "/importados/[id]/pncp",
+  "html": "html/PncpBuscaEscuro.html",
+  "png": "png/PncpBuscaEscuro.png"
+ },
+ {
+  "quadro": "PncpBuscaClaro",
+  "titulo": "Fase 9 · TCE-CE · Buscar PDF no PNCP (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 860,
+  "rota": "/importados/[id]/pncp",
+  "html": "html/PncpBuscaClaro.html",
+  "png": "png/PncpBuscaClaro.png"
+ },
+ {
+  "quadro": "EquipePrefeiturasEscuro",
+  "titulo": "Equipe LicCONT · Prefeituras (lista + painel lateral) (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "/equipe/prefeituras",
+  "html": "html/EquipePrefeiturasEscuro.html",
+  "png": "png/EquipePrefeiturasEscuro.png"
+ },
+ {
+  "quadro": "EquipePrefeiturasClaro",
+  "titulo": "Equipe LicCONT · Prefeituras (lista + painel lateral) (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 760,
+  "rota": "/equipe/prefeituras",
+  "html": "html/EquipePrefeiturasClaro.html",
+  "png": "png/EquipePrefeiturasClaro.png"
+ },
+ {
+  "quadro": "EquipeNovaPrefeituraEscuro",
+  "titulo": "Equipe LicCONT · Nova prefeitura (em passos) (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/equipe/prefeituras/nova",
+  "html": "html/EquipeNovaPrefeituraEscuro.html",
+  "png": "png/EquipeNovaPrefeituraEscuro.png"
+ },
+ {
+  "quadro": "EquipeNovaPrefeituraClaro",
+  "titulo": "Equipe LicCONT · Nova prefeitura (em passos) (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 700,
+  "rota": "/equipe/prefeituras/nova",
+  "html": "html/EquipeNovaPrefeituraClaro.html",
+  "png": "png/EquipeNovaPrefeituraClaro.png"
+ },
+ {
+  "quadro": "EquipePrefeituraDetalheEscuro",
+  "titulo": "Equipe LicCONT · Prefeitura (abas) (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 810,
+  "rota": "/equipe/prefeituras/[id]",
+  "html": "html/EquipePrefeituraDetalheEscuro.html",
+  "png": "png/EquipePrefeituraDetalheEscuro.png"
+ },
+ {
+  "quadro": "EquipePrefeituraDetalheClaro",
+  "titulo": "Equipe LicCONT · Prefeitura (abas) (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 810,
+  "rota": "/equipe/prefeituras/[id]",
+  "html": "html/EquipePrefeituraDetalheClaro.html",
+  "png": "png/EquipePrefeituraDetalheClaro.png"
+ },
+ {
+  "quadro": "EquipeInicioEscuro",
+  "titulo": "Equipe LicCONT · Início (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/equipe",
+  "html": "html/EquipeInicioEscuro.html",
+  "png": "png/EquipeInicioEscuro.png"
+ },
+ {
+  "quadro": "EquipeInicioClaro",
+  "titulo": "Equipe LicCONT · Início (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/equipe",
+  "html": "html/EquipeInicioClaro.html",
+  "png": "png/EquipeInicioClaro.png"
+ },
+ {
+  "quadro": "EquipeDemosEscuro",
+  "titulo": "Equipe LicCONT · Pedidos de demonstração (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/equipe/demonstracoes",
+  "html": "html/EquipeDemosEscuro.html",
+  "png": "png/EquipeDemosEscuro.png"
+ },
+ {
+  "quadro": "EquipeDemosClaro",
+  "titulo": "Equipe LicCONT · Pedidos de demonstração (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 820,
+  "rota": "/equipe/demonstracoes",
+  "html": "html/EquipeDemosClaro.html",
+  "png": "png/EquipeDemosClaro.png"
+ },
+ {
+  "quadro": "EquipeIntegracoesEscuro",
+  "titulo": "Equipe LicCONT · Integrações (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/equipe/integracoes",
+  "html": "html/EquipeIntegracoesEscuro.html",
+  "png": "png/EquipeIntegracoesEscuro.png"
+ },
+ {
+  "quadro": "EquipeIntegracoesClaro",
+  "titulo": "Equipe LicCONT · Integrações (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 900,
+  "rota": "/equipe/integracoes",
+  "html": "html/EquipeIntegracoesClaro.html",
+  "png": "png/EquipeIntegracoesClaro.png"
+ },
+ {
+  "quadro": "EquipeAuditoriaEscuro",
+  "titulo": "Equipe LicCONT · Auditoria da equipe (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 840,
+  "rota": "/equipe/auditoria",
+  "html": "html/EquipeAuditoriaEscuro.html",
+  "png": "png/EquipeAuditoriaEscuro.png"
+ },
+ {
+  "quadro": "EquipeAuditoriaClaro",
+  "titulo": "Equipe LicCONT · Auditoria da equipe (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 840,
+  "rota": "/equipe/auditoria",
+  "html": "html/EquipeAuditoriaClaro.html",
+  "png": "png/EquipeAuditoriaClaro.png"
+ },
+ {
+  "quadro": "EquipeUsoEscuro",
+  "titulo": "Equipe LicCONT · Uso das prefeituras (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/equipe/uso",
+  "html": "html/EquipeUsoEscuro.html",
+  "png": "png/EquipeUsoEscuro.png"
+ },
+ {
+  "quadro": "EquipeUsoClaro",
+  "titulo": "Equipe LicCONT · Uso das prefeituras (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 640,
+  "rota": "/equipe/uso",
+  "html": "html/EquipeUsoClaro.html",
+  "png": "png/EquipeUsoClaro.png"
+ }
+]

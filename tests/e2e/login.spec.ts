@@ -170,6 +170,6 @@ test("equipe LicCONT entra pelo endereço próprio; usuário de prefeitura não"
   await expect(page).toHaveURL(/\/segundo-fator$/);
   await cadastrarAutenticador(page);
   await expect(page).toHaveURL(/\/equipe$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Prefeituras" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Início" })).toBeVisible();
   await conferirMolduraFixa(page);
 });

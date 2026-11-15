@@ -67,7 +67,7 @@ export function NovaPrefeitura() {
           <button type="submit" disabled={pendente} className={`${botaoPrimario} disabled:opacity-50`}>
             {pendente ? <span className="inline-flex items-center gap-2"><Girando />Criando…</span> : "Salvar e criar base"}
           </button>
-          <Link href="/equipe" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-linha px-5 text-sm font-medium hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco">
+          <Link href="/equipe/prefeituras" className="inline-flex min-h-10 items-center justify-center rounded-lg border border-linha px-5 text-sm font-medium hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco">
             Cancelar
           </Link>
         </div>

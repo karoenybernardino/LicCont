@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { filtrarPrefeituras, formatarCnpj, type PrefeituraLista } from "./lista";
 
-const base = { criadoEm: "2026-11-08T12:00:00Z", administradores: 0 };
+const base = { criadoEm: "2026-11-08T12:00:00Z", administradores: 0, plano: "completo", contratoInicio: null, implantacaoCentavos: null, mensalidadeCentavos: null };
 const itens: PrefeituraLista[] = [
   { id: "1", nome: "Prefeitura de Caririaçu", cnpj: "06738132000100", status: "implantacao", ...base },
   { id: "2", nome: "Câmara Municipal", cnpj: "11111111000111", status: "ativa", ...base },

@@ -11,7 +11,8 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
       <BarraLateral
         grupos={[
           [
-            { href: "/equipe", rotulo: "Prefeituras", dica: "Lista as prefeituras clientes.", icone: "secretarias" },
+            { href: "/equipe", rotulo: "Início", dica: "Mostra o que precisa de atenção hoje.", icone: "inicio" },
+            { href: "/equipe/prefeituras", rotulo: "Prefeituras", dica: "Lista as prefeituras clientes.", icone: "secretarias" },
             { href: "/equipe/uso", rotulo: "Uso do mês", dica: "Mostra o uso de cada prefeitura no mês.", icone: "painel" },
           ],
         ]}
