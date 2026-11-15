@@ -29,7 +29,7 @@ export default async function Secretarias({ searchParams }: { searchParams: Prom
   const href = (s: string) => `/secretarias?${new URLSearchParams({ ...(q && { q }), ...(s !== "todas" && { situacao: s }) })}`;
 
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Secretarias">
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Secretarias" trilha="Prefeitura › Configurações › Secretarias">
       <Painel className="pb-1.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Busca acao="/secretarias" valor={q} rotulo="Buscar secretaria" marcador="Buscar secretaria" extra={situacao === "todas" ? undefined : { situacao }} />

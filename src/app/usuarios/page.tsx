@@ -52,7 +52,7 @@ export default async function Usuarios() {
   const perfis = Object.entries(PERFIS) as [Perfil, string][];
 
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Usuários e perfis">
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Usuários e perfis" trilha="Administração · Acesso">
       <div className="grid items-start gap-4 xl:grid-cols-[1fr_1.5fr]">
         <Painel>
           <Rotulo>Perfis</Rotulo>
