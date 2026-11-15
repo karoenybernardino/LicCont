@@ -125,8 +125,8 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
       throw new Error(`${JSON.stringify(await page.locator('[role="alert"], [role="status"], button[type="submit"]').allInnerTexts())} :: ${posts.join(" | ")} :: ${e.message.slice(0, 40)}`);
     });
 
-  // Prefeitura com usuário não aceita outro "primeiro administrador".
+  // O administrador novo aparece na lista e pode ser removido pela equipe.
   await page.reload();
   await expect(page.getByRole("cell", { name: "admin.novo@exemplo.test" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cadastrar administrador" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Remover" })).toBeVisible();
 });

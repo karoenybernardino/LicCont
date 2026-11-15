@@ -62,16 +62,16 @@ const esquemaAdmin = z.object({
 // Cria a conta e vincula como primeiro administrador (a função do banco só aceita
 // prefeitura sem usuários e nunca alguém da equipe). Sem e-mail de convite:
 // devolve a senha provisória, mostrada uma única vez.
-async function criarAdmin(supabase: NonNullable<Awaited<ReturnType<typeof clienteSessao>>>, servico: NonNullable<ReturnType<typeof clienteServico>>, prefeitura: string, nome: string, email: string) {
+async function criarAdmin(supabase: NonNullable<Awaited<ReturnType<typeof clienteSessao>>>, servico: NonNullable<ReturnType<typeof clienteServico>>, prefeitura: string, nome: string, email: string, funcao: "cadastrar_primeiro_admin" | "equipe_incluir_admin" = "cadastrar_primeiro_admin") {
   const senha = senhaProvisoria();
   const { data, error } = await servico.auth.admin.createUser({ email, password: senha, email_confirm: true });
   if (error || !data.user) {
     return { erro: error?.code === "email_exists" ? "Não foi possível cadastrar este e-mail. Use outro e-mail institucional." : FALHA };
   }
-  const { error: erroAdmin } = await supabase.rpc("cadastrar_primeiro_admin", { p_prefeitura: prefeitura, p_usuario: data.user.id, p_nome: nome });
+  const { error: erroAdmin } = await supabase.rpc(funcao, { p_prefeitura: prefeitura, p_usuario: data.user.id, p_nome: nome });
   if (erroAdmin) {
     await servico.auth.admin.deleteUser(data.user.id);
-    return { erro: erroAdmin.code === "42501" ? "Não foi possível: esta prefeitura já tem usuários." : FALHA };
+    return { erro: erroAdmin.code === "42501" ? "Não foi possível: esta prefeitura já tem usuários." : erroAdmin.code === "23514" ? "Esta prefeitura já tem 5 administradores ativos." : FALHA };
   }
   return { senha };
 }
@@ -156,4 +156,33 @@ export async function atualizarPrefeitura(_: EstadoAcao, formData: FormData): Pr
   if (error || !data?.length) return { erro: error?.code === "23505" ? "Já existe uma prefeitura com este CNPJ." : FALHA };
   revalidatePath("/equipe", "layout");
   return { aviso: "Dados atualizados." };
+}
+
+// Outro administrador (além do primeiro): até 5 ativos. Senha provisória mostrada uma vez.
+export async function convidarAdmin(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  const supabase = await contexto();
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const servico = clienteServico();
+  if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
+  const id = idSchema.safeParse(formData.get("id"));
+  const admin = esquemaAdmin.safeParse({ nome: formData.get("nome"), email: formData.get("email") });
+  if (!id.success) return { erro: FALHA };
+  if (!admin.success) return { erro: admin.error.issues[0].message };
+  const r = await criarAdmin(supabase, servico, id.data, admin.data.nome, admin.data.email, "equipe_incluir_admin");
+  if ("erro" in r) return { erro: r.erro };
+  // Sem revalidar: a senha (mostrada uma vez) sumiria com o formulário.
+  return { aviso: "Administrador cadastrado.", senha: r.senha };
+}
+
+// Desativa um administrador (a conta continua, sem acesso). Só a equipe.
+export async function removerAdmin(formData: FormData): Promise<void> {
+  const supabase = await contexto();
+  const prefeitura = idSchema.safeParse(formData.get("prefeitura"));
+  const usuario = idSchema.safeParse(formData.get("usuario"));
+  if (!prefeitura.success) return;
+  if (!emDemo() && supabase && usuario.success) {
+    await supabase.rpc("equipe_desativar_admin", { p_prefeitura: prefeitura.data, p_usuario: usuario.data });
+  }
+  revalidatePath("/equipe", "layout");
+  redirect(`/equipe/${prefeitura.data}?aba=administradores`);
 }
