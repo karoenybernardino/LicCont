@@ -253,7 +253,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             </>,
             alvoAcoes,
           )}
-        <div className="grid grid-cols-[230px_minmax(0,1fr)_260px] items-start gap-4" onKeyDown={aoTeclar}>
+        <div className="grid grid-cols-[220px_minmax(0,1fr)_250px] items-start gap-3" onKeyDown={aoTeclar}>
           <aside className={estilos.cartao} aria-label="Ajustes do galpão">
             <h2 className={rotulo}>Tamanho do galpão</h2>
             <div className="grid grid-cols-2 gap-2">
@@ -321,7 +321,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                 {mensagem.texto}
               </p>
             )}
-            <div className="rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
+            <div className="sc max-h-[62vh] overflow-auto rounded-xl border border-linha p-2 focus-visible:outline-2 focus-visible:outline-foco" tabIndex={0} role="group" aria-label="Planta do galpão (editor)" aria-describedby="dica-editor">
               <PlantaSvg
                 metrosCelula={atual.metros}
                 leiaute={leiaute}
@@ -340,6 +340,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             </ul>
           </section>
 
+          <div className="flex min-w-0 flex-col gap-3">
           <aside className={estilos.cartao} aria-label="Selecionado">
             <div className="flex items-center justify-between gap-2">
               <h2 className={rotulo}>Selecionado</h2>
@@ -417,7 +418,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             )}
           </aside>
 
-          <aside className={`${estilos.cartao} col-start-3`} aria-label="Ruas do galpão">
+          <aside className={estilos.cartao} aria-label="Ruas do galpão">
             <h2 className={rotulo}>Ruas</h2>
             <ul className="flex flex-col gap-1.5">
               {leiaute.ruas.map((r) => (
@@ -468,6 +469,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
               </div>
             )}
           </aside>
+          </div>
         </div>
       </div>
       <div className="rounded-2xl border border-linha p-5 text-sm lg:hidden">
