@@ -21,13 +21,13 @@ grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 set local role service_role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select is(public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', ''), 'ok', 'grava o primeiro pedido');
-select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', '');
-select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', '');
+select lives_ok($$select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', '')$$, 'pedido de montagem');
+select lives_ok($$select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', '')$$, 'pedido de montagem');
 select is(public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'a@exemplo.test', 'h1', repeat('a', 64), '', ''), 'descartado', 'o quarto do mesmo e-mail em 24 h é descartado');
 select is(public.registrar_pedido_demonstracao('Outra Pessoa', '', 'Prefeitura Fictícia', 'b@exemplo.test', 'h2', repeat('b', 64), '', ''), 'ok', 'outro e-mail e outro IP ainda grava');
 -- 3 pedidos já saíram do IP "a"; mais 2 de e-mails diferentes completam 5 e o sexto é descartado.
-select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'c@exemplo.test', 'h3', repeat('a', 64), '', '');
-select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'd@exemplo.test', 'h4', repeat('a', 64), '', '');
+select lives_ok($$select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'c@exemplo.test', 'h3', repeat('a', 64), '', '')$$, 'pedido de montagem');
+select lives_ok($$select public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'd@exemplo.test', 'h4', repeat('a', 64), '', '')$$, 'pedido de montagem');
 select is(public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'e@exemplo.test', 'h5', repeat('a', 64), '', ''), 'descartado', 'o sexto pedido do mesmo IP em 1 h é descartado');
 select is(public.registrar_pedido_demonstracao('Pessoa Fictícia', '', 'Prefeitura Fictícia', 'e@exemplo.test', 'h5', null, '', ''), 'ok', 'sem IP o limite por IP não se aplica');
 select throws_ok($$select * from public.pedidos_demonstracao$$, '42501', null, 'service_role não lê a tabela direto');

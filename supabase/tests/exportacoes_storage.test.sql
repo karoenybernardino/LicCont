@@ -50,7 +50,6 @@ select is((select count(*) from storage.objects where bucket_id = 'exportacoes')
 select is((select count(*) from storage.objects where bucket_id = 'exportacoes' and name like '22222222%'), 0::bigint, 'administrador A não vê o da prefeitura B');
 select lives_ok($$insert into storage.objects (bucket_id, name) values ('exportacoes', '11111111-1111-1111-1111-111111111111/exportacao-2.zip')$$, 'administrador A grava na própria pasta');
 select throws_ok($$insert into storage.objects (bucket_id, name) values ('exportacoes', '22222222-2222-2222-2222-222222222222/invasao.zip')$$, '42501', null, 'administrador A não grava na pasta da B');
-delete from storage.objects where bucket_id = 'exportacoes' and name like '22222222%';
 select throws_ok($$select public.exportacoes_vencidas()$$, '42501', null, 'authenticated não lista vencidas');
 
 reset role;
