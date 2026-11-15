@@ -19,7 +19,7 @@ async function preencher(page: Page, numero: string, objeto: string) {
   await page.getByLabel("Objeto").fill(objeto);
   await page.getByLabel("Ano", { exact: true }).fill("2024");
   await page.getByLabel("Rua", { exact: true }).click();
-  await page.getByRole("option").first().click();
+  await page.getByRole("listbox", { name: "Ruas" }).getByRole("option").first().click();
   await page.getByRole("button", { name: "Próxima livre" }).click();
   await expect(page.getByText("cabem cerca de")).toBeVisible();
 }
@@ -27,19 +27,12 @@ async function preencher(page: Page, numero: string, objeto: string) {
 test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async ({ page }) => {
   test.setTimeout(150_000);
   await entrar(page, { email: USUARIOS.operadorDocs.email, secretaria: "Saúde" });
-  console.log("[docs-e2e] passo 1", new Date().toISOString());
   await page.getByRole("link", { name: "Cadastrar documento" }).first().click();
-  console.log("[docs-e2e] passo 2", new Date().toISOString());
   await expect(page.getByRole("heading", { level: 1, name: "Cadastrar documento" })).toBeVisible();
-  console.log("[docs-e2e] passo 3", new Date().toISOString());
   await semFalhasDeAcessibilidade(page);
-  console.log("[docs-e2e] passo 4", new Date().toISOString());
   await preencher(page, "901/2024", "Aquisição fictícia de teste do PDF");
-  console.log("[docs-e2e] passo 5", new Date().toISOString());
   await page.getByLabel("Escolher o PDF").setInputFiles(PDF);
-  console.log("[docs-e2e] passo 6", new Date().toISOString());
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
-  console.log("[docs-e2e] passo 7", new Date().toISOString());
   await expect(page.getByRole("heading", { level: 1, name: "Pregão Eletrônico 901/2024" }))
     .toBeVisible({ timeout: 60_000 })
     .catch(async (e) => {
@@ -47,11 +40,8 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
       throw new Error(`${page.url()} :: ${JSON.stringify(avisos)} :: ${e.message.slice(0, 80)}`);
     });
   await expect(page.getByText("3 páginas")).toBeVisible();
-  console.log("[docs-e2e] passo 8", new Date().toISOString());
   await expect(page.getByRole("img", { name: "Primeira página do PDF" })).toBeVisible();
-  console.log("[docs-e2e] passo 9", new Date().toISOString());
   await semFalhasDeAcessibilidade(page);
-  console.log("[docs-e2e] passo 10", new Date().toISOString());
 
   // Baixar original: o mesmo arquivo (mesmo SHA-256).
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Baixar original" }).click()]);
@@ -59,19 +49,12 @@ test("o operador cadastra com PDF, vê a miniatura e abre o visualizador", async
   expect(createHash("sha256").update(bytes).digest("hex")).toBe(createHash("sha256").update(readFileSync(PDF)).digest("hex"));
 
   await page.getByRole("link", { name: "Abrir PDF" }).click();
-  console.log("[docs-e2e] passo 11", new Date().toISOString());
   await expect(page.getByRole("toolbar", { name: "Controles do PDF" })).toBeVisible();
-  console.log("[docs-e2e] passo 12", new Date().toISOString());
   await expect(page.getByText("de 3", { exact: true })).toBeVisible({ timeout: 30_000 });
-  console.log("[docs-e2e] passo 13", new Date().toISOString());
   await page.getByRole("button", { name: "Próxima página" }).click();
-  console.log("[docs-e2e] passo 14", new Date().toISOString());
   await expect(page.getByRole("img", { name: "Página 2 de 3" })).toBeVisible();
-  console.log("[docs-e2e] passo 15", new Date().toISOString());
   await page.getByRole("button", { name: "Aumentar o zoom" }).click();
-  console.log("[docs-e2e] passo 16", new Date().toISOString());
   await semFalhasDeAcessibilidade(page);
-  console.log("[docs-e2e] passo 17", new Date().toISOString());
 });
 
 test("um arquivo que não é PDF, só com o nome trocado, é recusado", async ({ page }) => {

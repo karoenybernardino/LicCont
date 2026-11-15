@@ -105,6 +105,6 @@ export async function cadastrarPrimeiroAdmin(_: EstadoAcao, formData: FormData):
   if (!admin.success) return { erro: admin.error.issues[0].message };
   const r = await criarAdmin(supabase, servico, id.data, admin.data.nome, admin.data.email);
   if ("erro" in r) return { erro: r.erro };
-  revalidatePath(`/equipe/${id.data}`);
+  // Sem revalidar: a página trocaria o formulário pela tabela e a senha (mostrada uma vez) sumiria.
   return { aviso: "Primeiro administrador cadastrado.", senha: r.senha };
 }
