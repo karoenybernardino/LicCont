@@ -99,6 +99,13 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
   await page.getByLabel("CNPJ").fill("00.000.000/0005-55");
+  // Cada passo só vale depois da hidratação: repete o clique até o passo mudar.
+  for (const passo of ["Contrato e TCE-CE", "Administrador", "Conferir"]) {
+    await expect(async () => {
+      await page.getByRole("button", { name: "Continuar" }).click({ timeout: 2000 });
+      await expect(page.locator('li[aria-current="step"]')).toContainText(passo, { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+  }
   await page.getByRole("button", { name: "Salvar e criar base" }).click();
   await expect(page.getByRole("heading", { name: "Prefeitura Fictícia Nova" })).toBeVisible();
 
@@ -106,6 +113,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Situação atualizada.");
 
+  await page.getByRole("link", { name: "Administradores" }).click();
   const posts: string[] = [];
   page.on("response", (r) => r.request().method() === "POST" && posts.push(`${r.status()} ${new URL(r.url()).pathname}`));
   await page.getByLabel("Nome", { exact: true }).fill("Admin Fictício Novo");

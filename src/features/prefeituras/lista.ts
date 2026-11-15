@@ -1,6 +1,6 @@
 // Lista da equipe LicCONT: tipos e filtro puros (sem banco).
 export type StatusPrefeitura = "implantacao" | "ativa" | "suspensa";
-export type PrefeituraLista = { id: string; nome: string; cnpj: string; status: StatusPrefeitura; criadoEm: string; administradores: number; plano: string; contratoInicio: string | null; implantacaoCentavos: number | null; mensalidadeCentavos: number | null };
+export type PrefeituraLista = { id: string; nome: string; cnpj: string; status: StatusPrefeitura; criadoEm: string; administradores: number; plano: string; contratoInicio: string | null; implantacaoCentavos: number | null; mensalidadeCentavos: number | null; tceCodigo: string | null };
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR");
 
