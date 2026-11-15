@@ -72,7 +72,7 @@ documento (7, 9, 11) também passam por PR, com revisão do agente
 | 3 | **Situação do contrato e saída da prefeitura**: suspender e reativar com aviso claro (hoje só muda o status), e "Exportar todos os dados" para devolução ao fim do contrato (anexo contratual): ZIP com CSV do cadastro, PDFs originais e auditoria da prefeitura. Quem pede: administrador da prefeitura; a equipe só dispara depois de pedido registrado | Vitest do conteúdo do pacote (sem dado de outra prefeitura, proteção contra fórmula em CSV); pgTAP/Playwright: administrador de A não exporta B; exportação grava `auditoria` com ids e contagens, nunca o conteúdo; teste de volume com o acervo de teste da Fase 3 | a fazer |
 | 4 | **Relatórios** (ver "Relatórios" abaixo): inventário do acervo, empréstimos e atrasos, termos de eliminação, auditoria (botão "Exportar relatório" do quadro) e ocupação; CSV e PDF, gerados no servidor | Vitest dos esquemas de filtro e do conteúdo (cabeçalho, totais, sem CPF); Vitest de permissão (consulta não exporta; secretaria só a sua); Playwright: exportar e conferir o arquivo; pgTAP: relatório de A nunca traz linha de B; comparação `AuditoriaEscuro`/`AuditoriaClaro` | a fazer; depende do merge da Fase 7 para o relatório de termos |
 | 5 | **Relatório de uso da equipe** (mensal, agregado): prefeituras ativas, usuários, documentos, armazenamento, logins e tentativas recusadas; sem conteúdo de acervo | Vitest; pgTAP: só equipe com dois fatores | a fazer, mesma base da tarefa 1 |
-| 6 | **Aceite da política de privacidade e do termo de uso**: tabela `aceites` (usuário, prefeitura, documento, versão, momento; só inclusão), tela de aceite no primeiro acesso e quando a versão mudar, páginas públicas `/privacidade` e `/termos`. Os textos vêm da tarefa 7 | pgTAP de isolamento (regra 1): usuário de A não lê nem grava aceite de B; ninguém altera nem apaga; só o próprio usuário grava o próprio aceite; Playwright: sem aceite não entra no sistema, com aceite entra e a auditoria registra; Vitest de "versão nova exige novo aceite"; sem quadro no canvas: **pedir quadro antes de desenhar** | a fazer, depende das perguntas 4 e 5 |
+| 6 | **Aceite da política de privacidade e do termo de uso**: tabela `aceites` (usuário, prefeitura, documento, versão, momento; só inclusão), tela de aceite no primeiro acesso e quando a versão mudar, páginas públicas `/privacidade` e `/termos`. Os textos vêm da tarefa 7 | pgTAP de isolamento (regra 1): usuário de A não lê nem grava aceite de B; ninguém altera nem apaga; só o próprio usuário grava o próprio aceite; Playwright: sem aceite não entra no sistema, com aceite entra e a auditoria registra; Vitest de "versão nova exige novo aceite"; comparação com `AceiteEscuro`/`AceiteClaro`, `PrivacidadeEscuro`/`PrivacidadeClaro` e `TermosEscuro`/`TermosClaro` | a fazer, depende da pergunta 4 |
 | 7 | **Pacote LGPD** (documentos, ver abaixo): anexo contratual, registro de operações completo, plano de incidentes, procedimento de pedidos de titulares, política de privacidade, termo de uso, política de retenção, RIPD se o advogado pedir, `SECURITY.md` com contato real | Revisão do agente `conformidade-lgpd`; lista de pontos "a validar" fechada pelo advogado antes do piloto; Vitest/Playwright de que `/privacidade`, `/termos` e o contato de segurança respondem sem login | a fazer (texto), **trava no advogado** |
 | 8 | **Checklist de segurança** em `docs/seguranca/checklist-fase-8.md`, item a item com prova (ver abaixo), e os testes que faltam: pgTAP que percorre **todas** as tabelas de `public` e exige RLS ligado e nenhum GRANT para `anon`; Playwright dos cabeçalhos; `npm audit` no CI; varredura de segredos no histórico inteiro; rotação das chaves antes do piloto | Os próprios testes novos no CI; revisão pelo agente `auditor-seguranca`; checklist anexado ao PR com cada linha marcada e com o link da prova | a fazer |
 | 9 | **Backup e teste de restauração** (ver "Backup"): procedimento escrito, restauração ensaiada num projeto separado com dados fictícios, tempo medido | Relatório do ensaio em `docs/seguranca/` (data, tempo, o que foi conferido); não é teste automático | **bloqueada** até a pergunta 3 (custo) |
@@ -158,9 +158,8 @@ o advogado validar.
   IP no mesmo padrão da auditoria. Nenhum texto da política duplicado no banco.
 - Primeiro acesso: depois do login e antes de qualquer tela. Equipe LicCONT
   também aceita.
-- **Sem quadro no canvas** para a tela de aceite e para as páginas
-  `/privacidade` e `/termos`. Pelo `CLAUDE.md`, não inventar layout: pedir o
-  quadro (pergunta 5). Enquanto não vier, a tarefa fica parada.
+- Quadros no canvas e em `docs/telas/`: `AceiteEscuro`/`AceiteClaro`,
+  `PrivacidadeEscuro`/`PrivacidadeClaro` e `TermosEscuro`/`TermosClaro`.
 - Quem aceita pela prefeitura: o termo de uso é do **usuário**; o aceite do
   **contrato e do anexo** é da prefeitura e não passa pelo sistema (é
   assinatura de contrato). A pergunta 4 confirma a divisão com o advogado.
@@ -190,9 +189,9 @@ Regras comuns:
   e quantidade de linhas, **sem** o conteúdo.
 - Nenhum CPF. Campos livres que pareçam CPF já são recusados no cadastro
   (Fase 3); o relatório não os reintroduz.
-- Layout de CSV e de PDF: **não há quadro de relatório no canvas**. O PDF
-  usa o padrão do visualizador e dos termos (timbrado da prefeitura); o
-  desenho final precisa de quadro (pergunta 5).
+- Layout de CSV e de PDF: quadros no canvas e em `docs/telas/`:
+  `RelatorioExportarEscuro`/`RelatorioExportarClaro` e
+  `RelatorioPdfEscuro`/`RelatorioPdfClaro`.
 
 ## Pacote de LGPD (tarefa 7)
 
@@ -391,10 +390,11 @@ dados; backup e restauração conferidos de novo com dado real.
 4. **Pentest (custo)**: a resposta é sim ou não? Se sim: quanto pode gastar e
    quando; se não: aceita a autoavaliação gratuita (ASVS 1 e ZAP) no lugar,
    sabendo que não vira laudo para mostrar a prefeituras?
-5. **Quadros novos**: o canvas não tem tela de aceite, páginas
-   `/privacidade` e `/termos`, painel de uso da equipe nem layout dos
-   relatórios. Pode mandar quadros, ou prefere que eu siga o padrão de um
-   quadro existente (Usuários, Auditoria) e o senhor revise depois?
+5. **Quadros novos**: respondida. Quadros no canvas e em `docs/telas/`:
+   `AceiteEscuro`/`AceiteClaro`, `PrivacidadeEscuro`/`PrivacidadeClaro`,
+   `TermosEscuro`/`TermosClaro`, `EquipeUsoEscuro`/`EquipeUsoClaro`,
+   `RelatorioExportarEscuro`/`RelatorioExportarClaro` e
+   `RelatorioPdfEscuro`/`RelatorioPdfClaro`.
 6. **Quem entra na equipe LicCONT**: incluir ou remover integrante hoje é por
    SQL controlado. Quem aprova (os dois sócios?) e quer uma tela?
 7. **Retenção e fim de contrato**: por quanto tempo guardamos os dados da
@@ -422,7 +422,7 @@ dados; backup e restauração conferidos de novo com dado real.
 | Ponto | O que a Fase 8 faz |
 | --- | --- |
 | **Cartões do Início** (`features/inicio/`, montados por `features/movimento/dados.ts`) | **Não mexe.** Relatórios de empréstimos e termos leem as mesmas funções (`listarEmprestimos`, `lerTemporalidade`) ou as consultas por trás delas, sem alterar a assinatura nem o cartão |
-| **Navegação lateral** (`features/sessao/barra-lateral.tsx`) | O painel da equipe usa a barra própria de `features/equipe/pagina.tsx` (só "Prefeituras"). Entram "Uso" e "Relatórios" **só se a pergunta 5 trouxer o quadro**; para o administrador de prefeitura, "Relatórios" vira ação dentro de cada tela (Auditoria, Empréstimos, Temporalidade, Estrutura), **sem item novo no menu**, no mesmo espírito do contrato da Fase 7 |
+| **Navegação lateral** (`features/sessao/barra-lateral.tsx`) | O painel da equipe usa a barra própria de `features/equipe/pagina.tsx` (só "Prefeituras"). Entram "Uso" e "Relatórios" (quadros `EquipeUso*` e `Relatorio*` em `docs/telas/`); para o administrador de prefeitura, "Relatórios" vira ação dentro de cada tela (Auditoria, Empréstimos, Temporalidade, Estrutura), **sem item novo no menu**, no mesmo espírito do contrato da Fase 7 |
 | **`src/features/demo/`** | Dados novos em arquivo próprio (`src/features/demo/equipe-uso.ts`, `relatorios.ts`), como as Fases 6 e 7 fizeram; `movimento.ts` não recebe dado novo. Ação que grava, exporta ou aceita devolve `AVISO_DEMO` em demonstração |
 | **`features/movimento`** | Só leitura. Em `TABELAS_NOME` acrescentar `autorizacoes_suporte` e `aceites` se existirem (conflito de uma linha) |
 | **Auditoria** | Novas ações: `relatorio.exportado`, `dados.exportados`, `aceite.registrado`, `prefeitura.suspensa`, `prefeitura.reativada`. Seguem o padrão: só ids, tipos e contagens |
