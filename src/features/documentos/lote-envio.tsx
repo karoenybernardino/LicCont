@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { conferirEnvio, iniciarEnvio } from "./acoes";
+import { conferirEnvio, iniciarEnvio, salvarTextoPdf } from "./acoes";
 import { MOTIVOS } from "./conferencia";
 import { sugerirDocumento, type DocumentoSemPdf } from "./lote";
+import { lerTextoDoPdf } from "./ocr-navegador";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
 
 type Linha = { chave: number; arquivo: File; documento: string; estado: "espera" | "enviando" | "ok" | "erro"; msg: string };
@@ -17,6 +18,7 @@ const botao = "inline-flex min-h-10 items-center justify-center rounded-lg borde
 export function LoteEnvio({ documentos }: { documentos: DocumentoSemPdf[] }) {
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [ocupado, setOcupado] = useState(false);
+  const [ocr, setOcr] = useState(false);
   const proxima = useRef(0);
 
   function escolher(arquivos: FileList | null) {
@@ -43,7 +45,16 @@ export function LoteEnvio({ documentos }: { documentos: DocumentoSemPdf[] }) {
     if (a.miniatura && envio.urlMiniatura) await enviarParaStorage(envio.urlMiniatura, a.miniatura);
     mudar(l.chave, { msg: "Conferindo…" });
     const c = await conferirEnvio({ arquivo: envio.arquivoId, paginas: a.paginas, avisos: a.avisos, miniatura: !!a.miniatura && !!envio.urlMiniatura });
-    mudar(l.chave, c.ok ? { estado: "ok", msg: "Enviado." } : { estado: "erro", msg: c.erro });
+    if (!c.ok) return mudar(l.chave, { estado: "erro", msg: c.erro });
+    if (!ocr) return mudar(l.chave, { estado: "ok", msg: "Enviado." });
+    // Leitura do texto (OCR) no próprio navegador; se falhar, o PDF já está enviado.
+    try {
+      const { texto, paginas } = await lerTextoDoPdf(l.arquivo, (p, t) => mudar(l.chave, { msg: `Lendo o texto (página ${p} de ${t})…` }));
+      const r = texto ? await salvarTextoPdf({ arquivo: envio.arquivoId, texto, paginas }) : { ok: false, erro: "Nenhum texto encontrado." };
+      mudar(l.chave, { estado: "ok", msg: r.ok ? "Enviado e lido." : `Enviado. ${r.erro}` });
+    } catch {
+      mudar(l.chave, { estado: "ok", msg: "Enviado. Não foi possível ler o texto." });
+    }
   }
 
   async function enviarTodos() {
@@ -72,6 +83,13 @@ export function LoteEnvio({ documentos }: { documentos: DocumentoSemPdf[] }) {
           }}
           className={campo}
         />
+      </label>
+      <label className="flex items-start gap-2.5 text-sm">
+        <input type="checkbox" checked={ocr} disabled={ocupado} onChange={(e) => setOcr(e.target.checked)} className="mt-1" />
+        <span>
+          Ler o texto dos PDFs para a pesquisa achar palavras dentro deles
+          <span className="block text-xs text-texto-suave">Roda no seu computador e demora (cerca de alguns segundos por página, até 40 páginas por PDF). O PDF não sai da sua máquina; só o texto é guardado.</span>
+        </span>
       </label>
       {documentos.length === 0 && <p className="text-sm text-texto-suave">Todos os documentos ativos já têm PDF.</p>}
       {linhas.length > 0 && (
