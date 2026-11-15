@@ -87,7 +87,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
   const faixasValor = FAIXAS_VALOR.some(([k]) => k === valorAtual) || !valorAtual ? FAIXAS_VALOR : [...FAIXAS_VALOR, [valorAtual, "Faixa personalizada"] as [string, string]];
   const ordens = [["recentes", "Mais recentes"], ["antigos", "Mais antigos"], ["maior_valor", "Maior valor"]] as const;
   const ordemAtual = ordens.find(([k]) => k === f.ordem)?.[1] ?? "Mais recentes";
-  const mapa = r.itens.length > 0 ? `/mapa?codigos=${r.itens.slice(0, 50).map((i) => i.codigo).join(",")}` : "/mapa";
+  const mapa = r.itens.length > 0 ? `/mapa?codigos=${r.itens.filter((i) => i.codigo).slice(0, 50).map((i) => i.codigo).join(",")}` : "/mapa";
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Pesquisa">
@@ -156,6 +156,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             </span>
             <div className="grid grid-cols-2 gap-2">
               <Escolha nome="modalidade" rotulo="Modalidade" valor={f.modalidade} vazio="Todas" opcoes={Object.entries(MODALIDADES)} icone={<Ico><circle cx="12" cy="9" r="5" /><path d="M9 13.5L8 21l4-2 4 2-1-7.5" /></Ico>} />
+              <Escolha nome="origem" rotulo="Origem" valor={f.origem} vazio="Todas as origens" opcoes={[["manual", "Cadastrado à mão"], ["planilha", "Importado de planilha"], ["tce", "Importado do TCE"]]} icone={<Ico><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Ico>} />
               <Escolha nome="secretaria" rotulo="Secretaria" valor={f.secretaria} vazio="Todas" opcoes={[...nomes.entries()]} icone={<Ico><rect x="9" y="3" width="6" height="5" rx="1" /><rect x="3" y="16" width="6" height="5" rx="1" /><rect x="15" y="16" width="6" height="5" rx="1" /><path d="M12 8v4M6 16v-4h12v4" /></Ico>} />
             </div>
           </fieldset>
@@ -290,7 +291,11 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                         {d.objeto}
                         {d.empresa ? ` · ${d.empresa}` : ""}
                       </span>
-                      <span className="font-mono text-xs font-medium text-texto-suave">{d.codigo}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-medium text-texto-suave">{d.codigo ?? "Sem endereço"}</span>
+                        {d.origem === "tce" && <Pilula tom="aviso">Importado do TCE</Pilula>}
+                        {d.origem === "planilha" && <Pilula tom="aviso">Importado de planilha</Pilula>}
+                      </span>
                     </Link>
                   </li>
                 ))}

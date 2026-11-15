@@ -4,7 +4,7 @@ import { Busca, CartaoResumo, Filtros, Pilula, botaoContorno, botaoPrimario } fr
 import { PaginaEquipe } from "@/features/equipe/pagina";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { Icone } from "@/features/sessao/barra-lateral";
-import { listarPrefeituras } from "@/features/prefeituras/dados";
+import { listarPrefeituras, usoPrefeituras } from "@/features/prefeituras/dados";
 import { filtrarPrefeituras, formatarCnpj, type StatusPrefeitura } from "@/features/prefeituras/lista";
 import { formatarData } from "@/features/documentos/formato";
 import { exigirEquipe } from "@/features/sessao/dal";
@@ -28,6 +28,8 @@ export default async function PainelEquipe({ searchParams }: { searchParams: Pro
   const situacao = FILTROS.find(([v]) => v === busca.situacao)?.[0] ?? "todas";
   const todas = await listarPrefeituras();
   const n = (s: StatusPrefeitura) => todas.filter((p) => p.status === s).length;
+  const uso = await usoPrefeituras();
+  const docs = [...uso.values()].reduce((t, u) => t + u.documentos, 0);
   const lista = filtrarPrefeituras(todas, q, situacao);
   const admins = todas.reduce((t, p) => t + p.administradores, 0);
   const semAdmin = todas.filter((p) => p.administradores === 0).length;
@@ -38,7 +40,7 @@ export default async function PainelEquipe({ searchParams }: { searchParams: Pro
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <CartaoResumo rotulo="Prefeituras" valor={String(todas.length)} legenda={`${n("ativa")} ${n("ativa") === 1 ? "ativa" : "ativas"} · ${n("implantacao")} em implantação`} cor="teal" icone={<Icone nome="secretarias" />} />
         <CartaoResumo rotulo="Administradores" valor={String(admins)} legenda="em todas as prefeituras" cor="aco" icone={<Icone nome="usuarios" />} />
-        <CartaoResumo rotulo="Documentos no ar" valor="0" legenda="o cadastro chega na Fase 3" cor="ambar" icone={<Icone nome="cadastro" />} />
+        <CartaoResumo rotulo="Documentos no ar" valor={docs.toLocaleString("pt-BR")} legenda="cadastrados em todas as prefeituras" cor="ambar" icone={<Icone nome="cadastro" />} />
         <CartaoResumo rotulo="Pendências" valor={String(semAdmin)} legenda="prefeituras sem administrador ativo" cor="vermelho" icone={<Icone nome="auditoria" />} />
       </div>
 

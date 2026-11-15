@@ -51,7 +51,8 @@ export async function buscarNoMapa(entrada: unknown): Promise<ResultadoBusca> {
   const dados = esquemaBusca.safeParse(entrada);
   if (!dados.success) return [];
   const r = await pesquisar(usuario, lerFiltros({ q: dados.data.q }));
-  return r.itens.slice(0, 5).map((i) => ({ id: i.id, titulo: tituloDocumento(i), codigo: i.codigo }));
+  // Sem endereço (importado e ainda não localizado) não tem lugar no mapa.
+  return r.itens.filter((i) => i.codigo).slice(0, 5).map((i) => ({ id: i.id, titulo: tituloDocumento(i), codigo: i.codigo as string }));
 }
 
 export async function proximaLivre(entrada: unknown): Promise<string | null> {

@@ -10,6 +10,7 @@ export type Filtros = {
   ate: number | null;
   modalidade: string | null;
   secretaria: string | null;
+  origem: "manual" | "planilha" | "tce" | null;
   situacao: string | null;
   vmin: number | null;
   vmax: number | null;
@@ -67,6 +68,7 @@ export function lerFiltros(p: Params): Filtros {
     ate: inteiro(um(p, "ate"), 1950, 2100),
     modalidade: modalidade && modalidade in MODALIDADES ? modalidade : null,
     secretaria: secretaria && uuid.test(secretaria) ? secretaria : null,
+    origem: um(p, "origem") === "manual" || um(p, "origem") === "planilha" || um(p, "origem") === "tce" ? (um(p, "origem") as Filtros["origem"]) : null,
     situacao: situacao && situacao in SITUACOES_CONTRATO ? situacao : null,
     vmin: numero(um(p, "vmin")) ?? faixaLida(um(p, "valor"))[0],
     vmax: numero(um(p, "vmax")) ?? faixaLida(um(p, "valor"))[1],
@@ -91,6 +93,7 @@ export function paraQuery(f: Partial<Filtros>) {
   poe("ate", f.ate);
   poe("modalidade", f.modalidade);
   poe("secretaria", f.secretaria);
+  poe("origem", f.origem);
   poe("situacao", f.situacao);
   poe("vmin", f.vmin);
   poe("vmax", f.vmax);
@@ -102,5 +105,5 @@ export function paraQuery(f: Partial<Filtros>) {
 
 // Quantos filtros (fora a busca e a aba) estão ligados, para o "Limpar".
 export function filtrosAtivos(f: Filtros) {
-  return [f.de, f.ate, f.modalidade, f.secretaria, f.situacao, f.vmin, f.vmax, f.vigencia].filter((v) => v !== null).length;
+  return [f.de, f.ate, f.modalidade, f.secretaria, f.origem, f.situacao, f.vmin, f.vmax, f.vigencia].filter((v) => v !== null).length;
 }

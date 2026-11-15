@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
+import { VERSAO_TEXTOS } from "../../src/features/site/versao";
 import { SENHA, USUARIOS, type UsuarioTeste } from "./dados";
 
 // Cria os usuários fictícios no Supabase local (só no CI). A equipe LicCONT
@@ -43,6 +44,11 @@ export default async function preparar() {
         troca_senha_obrigatoria: !!u.troca,
       })
       .throwOnError();
+
+    // O aceite da política e do termo é exigido no primeiro acesso: aqui já está dado.
+    execFileSync("psql", [process.env.E2E_DB_URL ?? "", "-v", "ON_ERROR_STOP=1", "-v", `id=${id}`, "-v", `pref=${prefeitura}`, "-v", `versao=${VERSAO_TEXTOS}`], {
+      input: "insert into public.aceites (usuario_id, prefeitura_id, documento, versao) select :'id', :'pref', d, :'versao' from unnest(array['privacidade', 'termos']) d;",
+    });
 
     for (const nome of u.secretarias ?? []) {
       const secretaria = secretarias.find((s) => s.nome === nome && s.prefeitura_id === prefeitura)!.id;

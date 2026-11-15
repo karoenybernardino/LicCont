@@ -7,7 +7,7 @@ import type { ConteudoTermo } from "./termo";
 const A4: [number, number] = [595.28, 841.89];
 const M = 40;
 
-const seguro = (t: string, f: PDFFont) => {
+export const seguro = (t: string, f: PDFFont) => {
   let saida = "";
   for (const c of t) {
     try {
@@ -20,7 +20,7 @@ const seguro = (t: string, f: PDFFont) => {
   return saida;
 };
 
-function quebrar(texto: string, f: PDFFont, tam: number, largura: number) {
+export function quebrar(texto: string, f: PDFFont, tam: number, largura: number) {
   const linhas: string[] = [];
   let atual = "";
   for (const palavra of seguro(texto, f).split(/\s+/)) {

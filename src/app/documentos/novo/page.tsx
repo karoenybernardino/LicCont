@@ -23,7 +23,18 @@ export default async function NovoDocumento({ searchParams }: { searchParams: Pr
   ]);
   const padrao = secretarias.find((s) => s.id === secretaria.id)?.id ?? secretarias[0].id;
   return (
-    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Cadastrar documento" trilha="Acervo · Novo" acoes={<Link href="/documentos/lote" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">Enviar vários PDFs</Link>}>
+    <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Cadastrar documento" trilha="Acervo · Novo" acoes={
+        <>
+          {usuario.administrador && (
+            <Link href="/cadastro/importar" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">
+              Importar do GED ou planilha
+            </Link>
+          )}
+          <Link href="/documentos/lote" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">
+            Enviar vários PDFs
+          </Link>
+        </>
+      }>
       {salvo && (
         <p role="status" className="rounded-lg border border-linha bg-superficie-2 p-3 text-sm">
           Documento salvo. Cadastre o próximo.

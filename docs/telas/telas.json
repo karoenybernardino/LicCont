@@ -1138,5 +1138,25 @@
   "rota": "/pesquisa",
   "html": "html/PesquisaOrigemClaro.html",
   "png": "png/PesquisaOrigemClaro.png"
+ },
+ {
+  "quadro": "PncpBuscaEscuro",
+  "titulo": "Fase 9 · TCE-CE · Buscar PDF no PNCP (escuro)",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 860,
+  "rota": "/importados/[id]/pncp",
+  "html": "html/PncpBuscaEscuro.html",
+  "png": "png/PncpBuscaEscuro.png"
+ },
+ {
+  "quadro": "PncpBuscaClaro",
+  "titulo": "Fase 9 · TCE-CE · Buscar PDF no PNCP (claro)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 860,
+  "rota": "/importados/[id]/pncp",
+  "html": "html/PncpBuscaClaro.html",
+  "png": "png/PncpBuscaClaro.png"
  }
 ]

@@ -26,6 +26,8 @@ jobs:
         with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npm run lint
+      # Só dependências de produção; falha em vulnerabilidade alta ou crítica.
+      - run: npm audit --omit=dev --audit-level=high
 
   tipos:
     runs-on: ubuntu-latest

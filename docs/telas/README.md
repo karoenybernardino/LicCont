@@ -142,3 +142,5 @@ O canvas é privado (só abre logado no claude.ai), então **quem programa usa e
 | [Fase 9 · TCE-CE · Configuração da integração TCE-CE (claro)](png/ConfigTceClaro.png) | claro | 1280×920 | /configuracoes/tce |
 | [Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (escuro)](png/PesquisaOrigemEscuro.png) | escuro | 1280×1064 | /pesquisa |
 | [Fase 9 · TCE-CE · Pesquisa — selo e filtro Origem (claro)](png/PesquisaOrigemClaro.png) | claro | 1280×1064 | /pesquisa |
+| [Fase 9 · TCE-CE · Buscar PDF no PNCP (escuro)](png/PncpBuscaEscuro.png) | escuro | 1280×860 | /importados/[id]/pncp |
+| [Fase 9 · TCE-CE · Buscar PDF no PNCP (claro)](png/PncpBuscaClaro.png) | claro | 1280×860 | /importados/[id]/pncp |

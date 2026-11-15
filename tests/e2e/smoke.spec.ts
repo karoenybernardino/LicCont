@@ -59,9 +59,29 @@ test("respostas trazem os cabeçalhos básicos de segurança", async ({ request 
   expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
 });
 
-test("a página inicial manda para a tela de entrada", async ({ page }) => {
+test("a página inicial é pública e leva à tela de entrada", async ({ page }) => {
   await page.goto("/");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("O arquivo da prefeitura");
+  await page.getByRole("link", { name: "Entrar", exact: true }).first().click();
   await expect(page).toHaveURL(/\/entrar$/);
+});
+
+test("política de privacidade e termo de uso abrem sem login", async ({ page }) => {
+  for (const [rota, titulo] of [["/privacidade", "Política de privacidade"], ["/termos", "Termo de uso"]]) {
+    await page.goto(rota);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(titulo);
+  }
+});
+
+test("pedido de demonstração recusa e-mail inválido sem gravar", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Nome").fill("Pessoa Fictícia");
+  await page.getByLabel("Órgão").fill("Prefeitura Fictícia");
+  await page.getByLabel("E-mail").fill("sem-arroba");
+  await page.getByRole("button", { name: "Enviar pedido" }).click();
+  // O navegador bloqueia o envio por e-mail inválido: continua no formulário.
+  await expect(page.getByRole("button", { name: "Enviar pedido" })).toBeVisible();
 });
 
 test("nenhum script bloqueado pela CSP", async ({ page }) => {

@@ -46,6 +46,7 @@ export type DocumentoDetalhe = {
   vigencia_fim: string | null;
   encerrado_em: string | null;
   conferido: boolean;
+  origem?: "manual" | "planilha" | "tce";
   ativo: boolean;
   secretariaId: string;
   secretaria: string;
@@ -91,6 +92,7 @@ export async function pesquisar(u: Usuario, f: Filtros): Promise<ResultadoPesqui
     p_cursor_criado: cursorOk ? cc : null,
     p_cursor_valor: cursorOk && cv ? Number(cv) : null,
     p_cursor_id: cursorOk ? ci : null,
+    p_origem: f.origem,
   });
   if (error || !data) throw new Error(FALHA);
   const r = data as ResultadoPesquisa & { total: number | string };
@@ -120,7 +122,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
+      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, origem, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -136,7 +138,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   return {
     id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto,
     empresa: d.empresa, cnpj: d.cnpj, cpf_credor: d.cpf_credor ?? null, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
-    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em, conferido: !!d.conferido_em, ativo: d.ativo,
+    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em, conferido: !!d.conferido_em, origem: d.origem, ativo: d.ativo,
     secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "", caixaId: d.caixa_id,
     posicao: cx ? posicaoDe(cx.niveis.modulos.ruas.codigo, cx.niveis.modulos.numero, cx.niveis.numero, cx.numero) : null,
     arquivo: a

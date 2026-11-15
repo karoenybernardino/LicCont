@@ -68,6 +68,12 @@ test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuár
   await page.getByLabel("Nova senha", { exact: true }).fill(nova);
   await page.getByLabel("Repita a nova senha").fill(nova);
   await page.getByRole("button", { name: "Salvar senha" }).click();
+  // Primeiro acesso: aceite da política e do termo antes de usar o sistema.
+  await expect(page).toHaveURL(/\/aceite$/);
+  await page.getByRole("button", { name: "Aceitar e continuar" }).click();
+  await expect(page.getByTestId("erro-formulario")).toHaveText("Marque a caixa para continuar.");
+  await page.getByLabel("Li e aceito").check();
+  await page.getByRole("button", { name: "Aceitar e continuar" }).click();
   await expect(page).toHaveURL(/\/inicio$/);
   await expect(secretariaEmUso(page)).toHaveText("Obras");
   await expect(page.getByRole("link", { name: "Usuários e perfis", exact: true })).toHaveCount(0);

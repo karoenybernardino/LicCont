@@ -46,3 +46,59 @@ export async function listarAdministradores(prefeituraId: string): Promise<Admin
   const contas = await Promise.all((data ?? []).map((u) => servico.auth.admin.getUserById(u.id)));
   return (data ?? []).map((u, i) => ({ id: u.id, nome: u.nome, email: contas[i].data.user?.email ?? "", ativo: u.ativo }));
 }
+
+// Só números por prefeitura (função do banco que exige a equipe com 2º fator).
+export type UsoPrefeitura = {
+  prefeituraId: string;
+  secretarias: number;
+  usuarios: number;
+  documentos: number;
+  caixas: number;
+  bytesPdf: number;
+  ultimoAcesso: string | null;
+  loginsMes: number;
+};
+
+export async function usoPrefeituras(): Promise<Map<string, UsoPrefeitura>> {
+  const mapa = new Map<string, UsoPrefeitura>();
+  if (emDemo()) {
+    for (const p of PREFEITURAS_DEMO) {
+      mapa.set(p.id, { prefeituraId: p.id, secretarias: 4, usuarios: 6, documentos: 1240, caixas: 86, bytesPdf: 3_400_000_000, ultimoAcesso: DATA_DEMO, loginsMes: 57 });
+    }
+    return mapa;
+  }
+  const supabase = await clienteSessao();
+  if (!supabase) return mapa;
+  const { data } = await supabase.rpc("equipe_uso_prefeituras");
+  for (const r of data ?? []) {
+    mapa.set(r.prefeitura_id, {
+      prefeituraId: r.prefeitura_id,
+      secretarias: r.secretarias,
+      usuarios: r.usuarios,
+      documentos: r.documentos,
+      caixas: r.caixas,
+      bytesPdf: Number(r.bytes_pdf),
+      ultimoAcesso: r.ultimo_acesso,
+      loginsMes: r.logins_mes,
+    });
+  }
+  return mapa;
+}
+
+// Até quando há autorização de suporte valendo (ou null). Só a equipe executa.
+export async function suporteAutorizadoAte(prefeituraId: string): Promise<string | null> {
+  if (emDemo()) return null;
+  const supabase = await clienteSessao();
+  if (!supabase) return null;
+  const { data } = await supabase.rpc("suporte_autorizado", { p_prefeitura: prefeituraId });
+  return (data as string | null) ?? null;
+}
+
+// Tentativas de login recusadas no mês, em todas as prefeituras (um número).
+export async function recusadosNoMes(): Promise<number> {
+  if (emDemo()) return 12;
+  const supabase = await clienteSessao();
+  if (!supabase) return 0;
+  const { data } = await supabase.rpc("equipe_recusados_mes");
+  return Number(data ?? 0);
+}
