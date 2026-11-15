@@ -3,7 +3,9 @@ import { BotaoEnviar } from "@/ui/botao-enviar";
 import { SeletorTema } from "@/ui/seletor-tema";
 import { sair } from "./acoes";
 import { BarraLateral, Icone, type ItemMenu } from "./barra-lateral";
-import { podeCadastrar } from "@/features/documentos/dados";
+import { podeCadastrar, secretariasParaCadastro } from "@/features/documentos/dados";
+import { ehCoordenador } from "@/features/estrutura/dados";
+import { contarFila } from "@/features/tce/dados";
 import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
 
@@ -20,6 +22,7 @@ const PRINCIPAIS: ItemMenu[] = [
 const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", icone: "cadastro" };
 const EXTRAS: ItemMenu[] = [
   { href: "/inicio", rotulo: "Início", icone: "inicio" },
+  { href: "/painel", rotulo: "Painel", icone: "painel" },
   { href: "/estrutura", rotulo: "Estrutura física", icone: "estrutura" },
 ];
 const ADMIN: ItemMenu[] = [
@@ -63,7 +66,15 @@ export async function PaginaSistema({
     : PRINCIPAIS;
   // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
   const menu = principais.map((i) => (i.icone === "auditoria" && usuario.administrador ? { ...i, href: "/auditoria" } : i));
-  const admin = [...EXTRAS, ...(usuario.administrador ? ADMIN : []), CONFIG];
+  // Importados do TCE: quem confere (administrador ou coordenador), com a contagem da fila.
+  // Relatórios: quem exporta (administrador ou quem cadastra).
+  const confere = usuario.administrador || (await ehCoordenador(usuario));
+  const exporta = usuario.administrador || (await secretariasParaCadastro(usuario)).length > 0;
+  const gerenciais: ItemMenu[] = [
+    ...(confere ? [{ href: "/importados", rotulo: "Importados do TCE", icone: "importados" as const, prefixos: ["/importados"], contagem: await contarFila() }] : []),
+    ...(exporta ? [{ href: "/relatorios", rotulo: "Relatórios", icone: "relatorios" as const }] : []),
+  ];
+  const admin = [...EXTRAS.slice(0, 2), ...gerenciais, ...EXTRAS.slice(2), ...(usuario.administrador ? ADMIN : []), CONFIG];
   return (
     <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral

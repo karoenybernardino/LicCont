@@ -53,6 +53,23 @@ const ICONES = {
       <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3.2 3.2 0 0 1 0 6M18 14c1.7.7 3 2.5 3 5" />
     </>
   ),
+  painel: (
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
+  importados: (
+    <>
+      <path d="M12 3v12M7 10l5 5 5-5" />
+      <path d="M4 17v3h16v-3" />
+    </>
+  ),
+  relatorios: (
+    <>
+      <path d="M5 3h9l5 5v13H5z" />
+      <path d="M14 3v5h5M8 17v-3M12 17v-6M16 17v-4" />
+    </>
+  ),
   secretarias: (
     <>
       <path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 10h5a1 1 0 0 1 1 1v10M2 21h20" />
@@ -62,7 +79,7 @@ const ICONES = {
 } as const;
 
 export type IconeMenu = keyof typeof ICONES;
-export type ItemMenu = { href?: string; rotulo: string; icone: IconeMenu; prefixos?: string[] };
+export type ItemMenu = { href?: string; rotulo: string; icone: IconeMenu; prefixos?: string[]; contagem?: number };
 
 export function Icone({ nome, className = "" }: { nome: IconeMenu; className?: string }) {
   return (
@@ -120,12 +137,17 @@ export function BarraLateral({
       <li key={i.href}>
         <Link
           href={i.href}
-          aria-label={i.rotulo}
+          aria-label={i.contagem ? `${i.rotulo} (${i.contagem})` : i.rotulo}
           title={i.rotulo}
           aria-current={a ? "page" : undefined}
           className={`${botao} ${a ? "bg-aqua text-petroleo" : "text-[#8cc5cf] hover:shadow-[0_0_0_1.5px_var(--marca-aqua)]"}`}
         >
           <Icone nome={i.icone} />
+          {!!i.contagem && (
+            <span aria-hidden className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-[#b45309] px-1 text-[10px] font-bold text-white">
+              {i.contagem > 99 ? "99+" : i.contagem}
+            </span>
+          )}
           {a && <span aria-hidden className="absolute top-3.5 -right-3 hidden h-4 w-1.5 rounded-r-md bg-aqua md:block" />}
         </Link>
       </li>
