@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { botaoPrimario } from "@/ui/canvas";
 import { Painel, Rotulo, TituloPainel } from "@/features/estrutura/componentes";
-import { CampoRotulado, campo } from "@/features/movimento/ui";
-import { listarCaixas } from "@/features/documentos/acoes";
-import type { CaixaOcupada } from "@/features/documentos/dados";
+import { campo } from "@/features/movimento/ui";
+import { EscolhaCaixa } from "./escolha-caixa";
 import type { OpcoesEstrutura } from "@/features/documentos/formulario";
 import { localizarDocumentos } from "./acoes";
 import type { SemEndereco } from "./dados";
@@ -26,20 +25,8 @@ export function Localizar({
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
-  const [rua, setRua] = useState("");
-  const [modulo, setModulo] = useState("");
-  const [nivel, setNivel] = useState("");
   const [caixa, setCaixa] = useState("");
-  const [caixas, setCaixas] = useState<CaixaOcupada[]>([]);
   const [msg, setMsg] = useState<{ texto: string; erro: boolean } | null>(null);
-
-  useEffect(() => {
-    let vivo = true;
-    if (nivel) listarCaixas(nivel).then((l) => vivo && setCaixas(l));
-    return () => {
-      vivo = false;
-    };
-  }, [nivel]);
 
   const alternar = (id: string) =>
     setMarcados((s) => {
@@ -132,79 +119,7 @@ export function Localizar({
       <Painel>
         <TituloPainel>Onde estão estes {marcados.size || ""} documentos?</TituloPainel>
         <p className="text-sm text-texto-suave">Escolha a caixa. Os selecionados ficam no mesmo endereço.</p>
-        <CampoRotulado rotulo="Rua">
-          <select
-            className={campo}
-            value={rua}
-            onChange={(e) => {
-              setRua(e.target.value);
-              setModulo("");
-              setNivel("");
-              setCaixa("");
-              setCaixas([]);
-            }}
-          >
-            <option value="">Escolha a rua</option>
-            {estrutura.ruas.map((r) => (
-              <option key={r.id} value={r.id}>
-                Rua {r.codigo}
-              </option>
-            ))}
-          </select>
-        </CampoRotulado>
-        <CampoRotulado rotulo="Módulo">
-          <select
-            className={campo}
-            value={modulo}
-            disabled={!rua}
-            onChange={(e) => {
-              setModulo(e.target.value);
-              setNivel("");
-              setCaixa("");
-              setCaixas([]);
-            }}
-          >
-            <option value="">Escolha o módulo</option>
-            {estrutura.modulos
-              .filter((m) => m.ruaId === rua)
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  Módulo {m.numero}
-                </option>
-              ))}
-          </select>
-        </CampoRotulado>
-        <CampoRotulado rotulo="Nível">
-          <select
-            className={campo}
-            value={nivel}
-            disabled={!modulo}
-            onChange={(e) => {
-              setNivel(e.target.value);
-              setCaixa("");
-              setCaixas([]);
-            }}
-          >
-            <option value="">Escolha o nível</option>
-            {estrutura.niveis
-              .filter((n) => n.moduloId === modulo)
-              .map((n) => (
-                <option key={n.id} value={n.id}>
-                  Nível {n.numero}
-                </option>
-              ))}
-          </select>
-        </CampoRotulado>
-        <CampoRotulado rotulo="Caixa">
-          <select className={campo} value={caixa} disabled={!nivel} onChange={(e) => setCaixa(e.target.value)}>
-            <option value="">Escolha a caixa</option>
-            {caixas.map((c) => (
-              <option key={c.id} value={c.id} disabled={c.documentos >= c.capacidade}>
-                Caixa {String(c.numero).padStart(2, "0")} · {c.documentos}/{c.capacidade}
-              </option>
-            ))}
-          </select>
-        </CampoRotulado>
+        <EscolhaCaixa estrutura={estrutura} aoMudar={setCaixa} />
         {msg && (
           <p role={msg.erro ? "alert" : "status"} className={`text-sm ${msg.erro ? "text-[#b91c1c] dark:text-[#f87171]" : ""}`}>
             {msg.texto}
