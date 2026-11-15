@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CartaoResumo, Pilula } from "@/ui/canvas";
 import { PaginaEquipe } from "@/features/equipe/pagina";
-import { Painel, TituloPainel } from "@/features/estrutura/componentes";
+import { Painel } from "@/features/estrutura/componentes";
 import { Icone } from "@/features/sessao/barra-lateral";
 import { acoesEquipe, integracoes, listarPedidos } from "@/features/equipe/dados";
 import { SITUACOES_PEDIDO, haTempo, quando, textoAcao } from "@/features/equipe/textos";
@@ -37,7 +37,7 @@ export default async function InicioEquipe() {
     })),
     ...(antigo && !["hoje", "ontem"].includes(haTempo(antigo.criadoEm))
       ? [{ id: "pedido", titulo: "Pedido de demonstração sem resposta", rotulo: "Demonstração", tom: "aviso" as const,
-          texto: `Chegou ${haTempo(antigo.criadoEm)}. ${antigo.orgao}.`, href: "/equipe/prefeituras" }]
+          texto: `Chegou ${haTempo(antigo.criadoEm)}. ${antigo.orgao}.`, href: "/equipe/demonstracoes" }]
       : []),
   ];
 
@@ -52,12 +52,12 @@ export default async function InicioEquipe() {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Painel>
-          <TituloPainel>Precisa de atenção</TituloPainel>
+          <h2 className="text-[15px] font-bold">Precisa de atenção</h2>
           {atencao.length === 0 && <p className="text-sm text-texto-suave">Nada pendente agora.</p>}
           <ul className="flex flex-col gap-2.5">
             {atencao.map((a) => (
               <li key={a.id}>
-                <Link href={a.href} className={`flex items-center justify-between gap-3 rounded-lg border-l-[3px] px-3 py-2.5 hover:bg-[#edf5f7] dark:hover:bg-[#0a181c] ${a.tom === "erro" ? "border-[#ef4444] bg-[#ef4444]/10" : "border-[#f59e0b] bg-[#f59e0b]/10"}`}>
+                <Link href={a.href} className="flex items-center justify-between gap-3 border-b border-linha px-1 py-3 hover:bg-[#edf5f7] dark:hover:bg-[#0a181c]">
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold">{a.titulo}</span>
                     <span className="block text-[12.5px] text-texto-suave">{a.texto}</span>
@@ -72,8 +72,8 @@ export default async function InicioEquipe() {
         <div className="flex min-w-0 flex-col gap-4">
           <Painel>
             <div className="flex items-center justify-between gap-3">
-              <TituloPainel>Pedidos de demonstração</TituloPainel>
-              <span className="text-[12.5px] text-texto-suave">Ver todos em Demonstrações</span>
+              <h2 className="text-[15px] font-bold">Pedidos de demonstração</h2>
+              <Link href="/equipe/demonstracoes" className="text-[12.5px] text-destaque hover:underline">Ver todos</Link>
             </div>
             <ul className="flex flex-col divide-y divide-linha">
               {pedidos.slice(0, 4).map((p) => (
@@ -90,7 +90,7 @@ export default async function InicioEquipe() {
           </Painel>
 
           <Painel>
-            <TituloPainel>Últimas ações da equipe</TituloPainel>
+            <div className="flex items-center justify-between gap-3"><h2 className="text-[15px] font-bold">Últimas ações da equipe</h2><Link href="/equipe/auditoria" className="text-[12.5px] text-destaque hover:underline">Ver auditoria</Link></div>
             <ul className="flex flex-col divide-y divide-linha">
               {acoes.map((a) => (
                 <li key={a.id} className="py-2.5">
