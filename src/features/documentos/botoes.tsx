@@ -8,7 +8,7 @@ const estilo =
   "inline-flex min-h-10 items-center justify-center rounded-lg border border-linha px-4 text-[13px] font-medium hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:opacity-60";
 
 // "Baixar original": link assinado de 5 minutos, pedido na hora do clique.
-export function BotaoBaixar({ documentoId }: { documentoId: string }) {
+export function BotaoBaixar({ documentoId, className }: { documentoId: string; className?: string }) {
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   return (
@@ -16,7 +16,7 @@ export function BotaoBaixar({ documentoId }: { documentoId: string }) {
       <button
         type="button"
         disabled={pendente}
-        className={estilo}
+        className={className ?? estilo}
         onClick={() =>
           iniciar(async () => {
             setErro(null);
