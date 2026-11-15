@@ -126,9 +126,6 @@ export function NovaPrefeitura({ nomeInicial }: { nomeInicial?: string }) {
           <div className="flex flex-wrap gap-2.5">
             <Link href="/equipe/prefeituras" className={botaoContornoGrande}>Cancelar</Link>
             {passo > 1 && <button type="button" onClick={() => ir(passo - 1)} className={botaoContornoGrande}>Voltar</button>}
-<<<<<<< HEAD
-=======
->>>>>>> claude/equipe-9-19-integracoes-auditoria
             {/* key: sem ela o React reaproveita o botão e o clique de Continuar vira envio do formulário. */}
             {passo < 4 ? (
               <button key="continuar" type="button" onClick={() => ir(passo + 1)} className={botaoPrimario}>Continuar</button>
