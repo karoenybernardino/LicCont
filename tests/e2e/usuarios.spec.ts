@@ -97,6 +97,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await semFalhasDeAcessibilidade(page);
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
   await page.getByLabel("CNPJ").fill("00.000.000/0005-55");
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByRole("button", { name: "Salvar e criar base" }).click();
   await expect(page.getByRole("heading", { name: "Prefeitura Fictícia Nova" })).toBeVisible();
 
@@ -104,6 +105,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Situação atualizada.");
 
+  await page.getByRole("link", { name: "Administradores" }).click();
   const posts: string[] = [];
   page.on("response", (r) => r.request().method() === "POST" && posts.push(`${r.status()} ${new URL(r.url()).pathname}`));
   await page.getByLabel("Nome", { exact: true }).fill("Admin Fictício Novo");
