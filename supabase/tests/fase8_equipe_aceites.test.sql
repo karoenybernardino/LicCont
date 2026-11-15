@@ -85,9 +85,9 @@ select throws_ok($$select public.registrar_exportacao(1, 1, 0)$$, '42501', null,
 
 -- 5. relatório mensal
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
-select lives_ok($select public.equipe_recusados_mes()$, 'equipe lê o total de recusados');
+select lives_ok($$select public.equipe_recusados_mes()$$, 'equipe lê o total de recusados');
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
-select throws_ok($select public.equipe_recusados_mes()$, '42501', null, 'administrador de prefeitura não lê');
+select throws_ok($$select public.equipe_recusados_mes()$$, '42501', null, 'administrador de prefeitura não lê');
 
 reset role;
 set local role anon;
