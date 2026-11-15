@@ -39,6 +39,12 @@ type Props = {
     onElemento(e: PointerEvent, id: string): void;
     onFundo(e: PointerEvent): void;
     onGirar(id: string): void;
+    /** Arrastar o traço da entrada para outra parede. */
+    onEntrada(e: PointerEvent): void;
+    /** Arrastar a ponta da rua (só administrador): mais ou menos módulos. */
+    onPontaRua?(e: PointerEvent, id: string): void;
+    /** Parede em desenho (prévia), em células. */
+    previa?: { x: number; y: number; largura: number; profundidade: number } | null;
     svgRef: Ref<SVGSVGElement>;
   };
 };
@@ -78,6 +84,35 @@ function Porta({ el, largura, profundidade, c, fundo, escolhido }: { el: Element
       <rect x={x0} y={y0} width={w} height={h} fill={fundo} />
       <path d={folha} stroke={cor} strokeWidth="3" strokeLinecap="round" fill="none" />
       <path d={arco} stroke={cor} strokeWidth="1.5" strokeDasharray="5 4" fill="none" opacity=".8" />
+    </g>
+  );
+}
+
+// Janela: vão na parede com duas linhas e o vidro no meio.
+function Janela({ el, fundo, c, escolhido }: { el: ElementoPlanta; fundo: string; c: (typeof CORES)["claro"]["planta"]; escolhido: boolean }) {
+  const x0 = x(el.x);
+  const y0 = x(el.y);
+  const w = el.largura * PX;
+  const h = el.profundidade * PX;
+  const cor = escolhido ? LARANJA : c.parede;
+  const vertical = h > w;
+  const t = 5;
+  return (
+    <g>
+      <rect x={x0} y={y0} width={w} height={h} fill={fundo} />
+      {vertical ? (
+        <>
+          <line x1={x0 + w / 2 - t} y1={y0} x2={x0 + w / 2 - t} y2={y0 + h} stroke={cor} strokeWidth="2" />
+          <line x1={x0 + w / 2 + t} y1={y0} x2={x0 + w / 2 + t} y2={y0 + h} stroke={cor} strokeWidth="2" />
+          <line x1={x0 + w / 2} y1={y0} x2={x0 + w / 2} y2={y0 + h} stroke="#38bdf8" strokeWidth="2" />
+        </>
+      ) : (
+        <>
+          <line x1={x0} y1={y0 + h / 2 - t} x2={x0 + w} y2={y0 + h / 2 - t} stroke={cor} strokeWidth="2" />
+          <line x1={x0} y1={y0 + h / 2 + t} x2={x0 + w} y2={y0 + h / 2 + t} stroke={cor} strokeWidth="2" />
+          <line x1={x0} y1={y0 + h / 2} x2={x0 + w} y2={y0 + h / 2} stroke="#38bdf8" strokeWidth="2" />
+        </>
+      )}
     </g>
   );
 }
@@ -145,7 +180,7 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
 
       {/* Construção: paredes internas, pilares, áreas e portas. */}
       {elementos
-        .filter((el) => el.tipo !== "porta")
+        .filter((el) => el.tipo !== "porta" && el.tipo !== "janela")
         .map((el) => {
           const escolhido = editor?.elementoSelecionado === el.id;
           const cx = x(el.x);
@@ -278,6 +313,25 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
               </g>
             )}
 
+            {/* Ponta da rua: ao passar o mouse aparece a faixa; arrastar muda os módulos. */}
+            {editor?.onPontaRua && (() => {
+              const v = r.giro === 90 || r.giro === 270;
+              const fx = v ? rx : rx + rw - 10;
+              const fy = v ? ry + rh - 10 : ry;
+              return (
+                <g
+                  role="presentation"
+                  data-ponta-rua={r.codigo}
+                  className="group/ponta"
+                  style={{ cursor: v ? "ns-resize" : "ew-resize" }}
+                  onPointerDown={(ev) => editor.onPontaRua?.(ev, r.id)}
+                >
+                  <rect x={fx - (v ? 0 : 6)} y={fy - (v ? 6 : 0)} width={v ? rw : 22} height={v ? 22 : rh} fill="transparent" />
+                  <rect x={fx} y={fy} width={v ? rw : 10} height={v ? 10 : rh} rx="3" fill={LARANJA} className="opacity-0 transition-opacity group-hover/ponta:opacity-90" pointerEvents="none" />
+                </g>
+              );
+            })()}
+
             {/* Rua escolhida no editor: quatro alças nos cantos e o botão de girar. */}
             {escolhida && editor && (
               <g>
@@ -317,13 +371,17 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
 
       {/* Portas por cima da parede externa: a abertura apaga o trecho de parede. */}
       {elementos
-        .filter((el) => el.tipo === "porta")
+        .filter((el) => el.tipo === "porta" || el.tipo === "janela")
         .map((el) => {
           const escolhido = editor?.elementoSelecionado === el.id;
           return (
             <g key={el.id} onPointerDown={editor ? (ev) => editor.onElemento(ev, el.id) : undefined} style={editor ? { cursor: "move" } : undefined}>
               <rect x={x(el.x)} y={x(el.y)} width={el.largura * PX} height={el.profundidade * PX} fill="transparent" />
-              <Porta el={el} largura={leiaute.largura} profundidade={leiaute.profundidade} c={p} fundo={editor ? p.editor : p.fundo[0]} escolhido={!!escolhido} />
+              {el.tipo === "janela" ? (
+                <Janela el={el} c={p} fundo={editor ? p.editor : p.fundo[0]} escolhido={!!escolhido} />
+              ) : (
+                <Porta el={el} largura={leiaute.largura} profundidade={leiaute.profundidade} c={p} fundo={editor ? p.editor : p.fundo[0]} escolhido={!!escolhido} />
+              )}
               {el.rotulo && !editor && (
                 <text x={x(el.x) + 4} y={x(el.y) - 6} fontSize="11" fontWeight="600" fill="currentColor" className="text-petroleo dark:text-[#cfe9ee]">
                   {el.rotulo}
@@ -334,7 +392,8 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
         })}
 
       {/* Entrada do galpão */}
-      <g pointerEvents="none">
+      <g pointerEvents={editor ? undefined : "none"} data-entrada onPointerDown={editor?.onEntrada} style={editor ? { cursor: "grab" } : undefined}>
+        {editor && <line x1={entrada.x1} y1={entrada.y1} x2={entrada.x2} y2={entrada.y2} stroke="transparent" strokeWidth="26" />}
         <line x1={entrada.x1} y1={entrada.y1} x2={entrada.x2} y2={entrada.y2} stroke={p.entrada} strokeWidth="5" strokeDasharray="9 6" />
         <text
           x={entrada.tx}
@@ -349,6 +408,11 @@ export function PlantaSvg({ leiaute, elementos, tema, resumo, metrosCelula, modu
           ENTRADA
         </text>
       </g>
+
+      {/* Prévia da parede que está sendo desenhada. */}
+      {editor?.previa && (
+        <rect x={x(editor.previa.x)} y={x(editor.previa.y)} width={editor.previa.largura * PX} height={editor.previa.profundidade * PX} fill={LARANJA} opacity=".35" stroke={LARANJA} strokeDasharray="5 4" pointerEvents="none" />
+      )}
     </svg>
   );
 }

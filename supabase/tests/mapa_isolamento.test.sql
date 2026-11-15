@@ -292,6 +292,15 @@ select results_eq($$select count(*)::int from public.auditoria
   array[2], 'cada documento movido gera uma linha com a caixa de antes e a de depois');
 select isnt_empty($$select 1 from public.auditoria where acao = 'planta_elementos.insert'$$, 'elemento da planta entra na auditoria');
 select isnt_empty($$select 1 from public.auditoria where acao = 'ruas.update' and (depois ->> 'planta_x')::numeric = 3$$, 'posição da rua entra na auditoria');
+select lives_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y, largura, profundidade)
+  values ('11111111-1111-1111-1111-111111111111', 'c0a00000-0000-0000-0000-000000000000', 'janela', 0, 4.8, 1.2, 2.4)$$,
+  'janela é um tipo aceito de elemento');
+select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y, largura, profundidade)
+  values ('11111111-1111-1111-1111-111111111111', 'c0a00000-0000-0000-0000-000000000000', 'telhado', 0, 0, 1, 1)$$,
+  '23514', null, 'tipo fora da lista é recusado');
+select throws_ok($$insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, x, y, largura, profundidade)
+  values ('11111111-1111-1111-1111-111111111111', 'c0b00000-0000-0000-0000-000000000000', 'janela', 0, 0, 1, 1)$$,
+  '23503', null, 'janela em galpão de outra prefeitura é recusada');
 
 select * from finish();
 rollback;

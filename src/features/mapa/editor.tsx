@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent
 import type { Estrutura } from "@/features/estrutura/ocupacao";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { ajustarModulosDaRua, criarRuaNaPlanta, salvarPlanta } from "./acoes";
+import { encaixarNaParede, entradaPorPonto, modulosDoArrasto, paredeDesenhada } from "./edicao";
 import { calcularLeiaute } from "./geometria";
 import { MARGEM, PX, PlantaSvg } from "./planta";
 import { estilos } from "./painel-caixa";
@@ -27,6 +28,7 @@ const novoId = () => `novo-${Math.random().toString(36).slice(2, 10)}`;
 // Tamanho de um elemento novo: células de módulo x metros por célula.
 const padrao: Record<TipoElemento, { l: number; p: number; rotulo: string | null }> = {
   porta: { l: 1, p: 2, rotulo: "Porta" },
+  janela: { l: 2, p: 1, rotulo: null },
   pilar: { l: 1, p: 1, rotulo: null },
   parede: { l: 4, p: 1, rotulo: null },
   area: { l: 3, p: 2, rotulo: "Área" },
@@ -64,6 +66,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   const tema = useTema();
   const router = useRouter();
   const svgRef = useRef<SVGSVGElement>(null);
+  const ultimoMouse = useRef({ x: 0, y: 0 });
   const inicial = useMemo<Estado>(() => {
     const base = calcularLeiaute(estrutura, [], planta);
     const m = planta.metrosCelula ?? PADRAO_METROS_CELULA;
@@ -86,6 +89,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   const [mensagem, setMensagem] = useState<{ erro: boolean; texto: string } | null>(null);
   const [salvando, salvar] = useTransition();
   const [mexendo, mexer] = useTransition();
+  const [previa, setPrevia] = useState<{ x: number; y: number; largura: number; profundidade: number } | null>(null);
   const [nova, setNova] = useState({ aberta: false, modulos: 5, niveis: 4, capacidade: 20 });
 
   // Estrutura (rua nova, mais ou menos módulos): grava na hora, com auditoria, fora do "Salvar planta".
@@ -130,15 +134,19 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
   };
 
   // Arrastar rua ou elemento: o rascunho acompanha o mouse; soltar confirma.
-  function arrastar(e: PointerEvent, aplicar: (dx: number, dy: number) => Estado) {
+  function arrastar(e: PointerEvent, aplicar: (dx: number, dy: number) => Estado, aoFim?: (dx: number, dy: number) => void) {
     e.stopPropagation();
     const svg = svgRef.current;
     if (!svg) return;
     const escala = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
     const [x0, y0] = [e.clientX, e.clientY];
     let ultimo: Estado | null = null;
+    let d: [number, number] = [0, 0];
+    ultimoMouse.current = { x: e.clientX, y: e.clientY };
     const mover = (ev: globalThis.PointerEvent) => {
-      ultimo = aplicar(Math.round((ev.clientX - x0) / (PX * escala)), Math.round((ev.clientY - y0) / (PX * escala)));
+      ultimoMouse.current = { x: ev.clientX, y: ev.clientY };
+      d = [Math.round((ev.clientX - x0) / (PX * escala)), Math.round((ev.clientY - y0) / (PX * escala))];
+      ultimo = aplicar(d[0], d[1]);
       setRascunho(ultimo);
     };
     const soltar = () => {
@@ -146,6 +154,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
       window.removeEventListener("pointerup", soltar);
       window.removeEventListener("pointercancel", soltar);
       setRascunho(null);
+      aoFim?.(d[0], d[1]);
       if (ultimo && JSON.stringify(ultimo) !== JSON.stringify(estados[indice])) confirmar(ultimo);
     };
     window.addEventListener("pointermove", mover);
@@ -168,6 +177,71 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     const base = atual;
     arrastar(e, (dx, dy) => ({ ...base, elementos: base.elementos.map((x) => (x.id === id ? { ...x, x: limitar(el.x + dx * m), y: limitar(el.y + dy * m) } : x)) }));
   }
+  // Ponto do mouse na planta, em metros: o bruto e o preso às paredes do galpão.
+  const pontoDe = (cx: number, cy: number) => {
+    const r = svgRef.current!.getBoundingClientRect();
+    const escala = r.width / svgRef.current!.viewBox.baseVal.width;
+    const bruto = { x: (((cx - r.left) / escala - MARGEM) / PX) * m, y: (((cy - r.top) / escala - MARGEM) / PX) * m };
+    return { bruto, preso: { x: Math.max(0, Math.min(atual.largura, bruto.x)), y: Math.max(0, Math.min(atual.profundidade, bruto.y)) } };
+  };
+  const emCelulas = (r: { x: number; y: number; largura: number; profundidade: number }) => ({ x: r.x / m, y: r.y / m, largura: r.largura / m, profundidade: r.profundidade / m });
+
+  // Entrada do galpão: arrastar o traço laranja até outra parede (ou ao longo dela).
+  function aoEntrada(e: PointerEvent) {
+    if (!svgRef.current) return;
+    const base = atual;
+    const larg = leiaute.entrada.largura * m;
+    arrastar(e, () => {
+      const p = pontoDe(ultimoMouse.current.x, ultimoMouse.current.y).preso;
+      const n = entradaPorPonto(p.x, p.y, base.largura, base.profundidade, larg, m);
+      return { ...base, lado: n.lado, posicao: n.posicao };
+    });
+  }
+  // Ponta da rua (só administrador): arrastar muda quantos módulos ela tem.
+  function aoPontaRua(e: PointerEvent, id: string) {
+    const r = leiaute.ruas.find((x) => x.id === id);
+    if (!r) return;
+    setRuaSel(id);
+    setElSel(null);
+    const vertical = r.giro === 90 || r.giro === 270;
+    const delta = (dx: number, dy: number) => modulosDoArrasto((vertical ? dy : dx) * m, m, r.modulos);
+    const fantasma = (d: number) =>
+      d === 0 ? null : vertical ? { x: r.x, y: r.y + r.h + Math.min(0, d), largura: r.w, profundidade: Math.abs(d) } : { x: r.x + r.w + Math.min(0, d), y: r.y, largura: Math.abs(d), profundidade: r.h };
+    const base = atual;
+    arrastar(
+      e,
+      (dx, dy) => (setPrevia(fantasma(delta(dx, dy))), base),
+      (dx, dy) => {
+        setPrevia(null);
+        const d = delta(dx, dy);
+        if (d !== 0) estrutural(() => ajustarModulosDaRua({ rua: id, quantidade: d }));
+      },
+    );
+  }
+  // Parede: pressionar, arrastar e soltar desenha a reta, como no Revit.
+  function aoDesenharParede(e: PointerEvent) {
+    const ini = pontoDe(e.clientX, e.clientY).preso;
+    let fim = ini;
+    const mover = (ev: globalThis.PointerEvent) => {
+      fim = pontoDe(ev.clientX, ev.clientY).preso;
+      setPrevia(emCelulas(paredeDesenhada(ini, fim, m)));
+    };
+    const soltar = () => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", soltar);
+      setPrevia(null);
+      const id = novoId();
+      confirmar({ ...atual, elementos: [...atual.elementos, { id, tipo: "parede", rotulo: null, giro: 0, ...paredeDesenhada(ini, fim, m) }] });
+      setElSel(id);
+      setFerramenta("selecionar");
+    };
+    setPrevia(emCelulas(paredeDesenhada(ini, ini, m)));
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", soltar);
+  }
+
   function aoFundo(e: PointerEvent) {
     if (ferramenta === "selecionar") {
       setRuaSel(null);
@@ -176,6 +250,16 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
     }
     const svg = svgRef.current;
     if (!svg) return;
+    if (ferramenta === "parede") return aoDesenharParede(e);
+    if (ferramenta === "porta" || ferramenta === "janela") {
+      const dim = encaixarNaParede(pontoDe(e.clientX, e.clientY).bruto, atual.largura, atual.profundidade, m);
+      if (!dim) return setMensagem({ erro: true, texto: `Clique perto de uma parede externa para colocar ${ferramenta === "porta" ? "a porta" : "a janela"}.` });
+      const id = novoId();
+      confirmar({ ...atual, elementos: [...atual.elementos, { id, tipo: ferramenta, giro: 0, rotulo: ferramenta === "porta" ? "Porta" : null, ...dim }] });
+      setElSel(id);
+      setFerramenta("selecionar");
+      return;
+    }
     const r = svg.getBoundingClientRect();
     const escala = r.width / svg.viewBox.baseVal.width;
     const x = limitar(Math.floor(((e.clientX - r.left) / escala - MARGEM) / PX) * m);
@@ -290,7 +374,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             </div>
             <h2 className={rotulo}>Ferramentas</h2>
             <div role="group" aria-label="Ferramentas" className="flex flex-col gap-1.5">
-              {(["selecionar", "porta", "pilar", "parede", "area"] as Ferramenta[]).map((f) => (
+              {(["selecionar", "porta", "janela", "pilar", "parede", "area"] as Ferramenta[]).map((f) => (
                 <button key={f} type="button" aria-pressed={ferramenta === f} onClick={() => setFerramenta(f)} className={`${estilos.botaoBorda} justify-start ${ferramenta === f ? "!border-[#ff9f1c] bg-[#fff3d1] text-[#0b2e3a]" : ""}`}>
                   {f === "selecionar" ? "Selecionar e arrastar" : TIPOS_ELEMENTO[f]}
                 </button>
@@ -301,7 +385,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
           <section aria-label="Planta do galpão" className={estilos.cartao}>
             <div className="flex items-start justify-between gap-3">
               <p id="dica-editor" className="text-xs text-texto-suave">
-                Arraste as ruas na grade · clique no ícone laranja para girar · Delete remove o elemento. Com o foco aqui: setas movem, R gira.
+                Arraste as ruas na grade, o traço laranja da entrada e (administrador) a ponta de uma rua para mudar o tamanho · parede: arraste na planta · porta e janela: clique perto de uma parede externa · Delete remove o elemento. Com o foco aqui: setas movem, R gira.
               </p>
               <div className="flex shrink-0 gap-2">
                 <button type="button" aria-label="Desfazer" title="Desfazer" disabled={indice === 0} onClick={() => setIndice((i) => i - 1)} className={`${estilos.botaoBorda} !w-10 !px-0`}>↶</button>
@@ -332,7 +416,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
                 elementos={leiaute.elementos}
                 tema={tema}
                 resumo={`Planta de ${nomeGalpao}: ${leiaute.ruas.length} ruas, ${formatarMetros(atual.largura)} por ${formatarMetros(atual.profundidade)}`}
-                editor={{ ruaSelecionada: ruaSel, elementoSelecionado: elSel, onRua: aoRua, onElemento: aoElemento, onFundo: aoFundo, onGirar: girarRua, svgRef }}
+                editor={{ ruaSelecionada: ruaSel, elementoSelecionado: elSel, onRua: aoRua, onElemento: aoElemento, onFundo: aoFundo, onGirar: girarRua, onEntrada: aoEntrada, onPontaRua: ehAdmin ? aoPontaRua : undefined, previa, svgRef }}
               />
             </div>
             <ul aria-label="Legenda" className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-texto-suave">
@@ -401,7 +485,7 @@ export function EditorPlanta({ estrutura, planta, galpaoId, nomeGalpao, ehAdmin 
             ) : selEl ? (
               <>
                 <p className="font-titulo font-bold">{TIPOS_ELEMENTO[selEl.tipo]}</p>
-                {(selEl.tipo === "area" || selEl.tipo === "porta") && (
+                {(selEl.tipo === "area" || selEl.tipo === "porta" || selEl.tipo === "janela") && (
                   <label className="flex flex-col gap-1 text-xs text-texto-suave">
                     Nome
                     <input maxLength={40} className={campo} value={selEl.rotulo ?? ""} onChange={(e) => confirmar({ ...atual, elementos: atual.elementos.map((x) => (x.id === selEl.id ? { ...x, rotulo: e.target.value || null } : x)) })} />

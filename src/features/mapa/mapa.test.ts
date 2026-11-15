@@ -5,6 +5,7 @@ import { lerCodigo, formatarCodigo } from "./codigo";
 import { CORES } from "./cores";
 import { calcularLeiaute, centroDaCaixa, enderecoDaInstancia, paraCelulas, tamanhoRua, validarPlanta, vizinha, zoomAlvo } from "./geometria";
 import { galpaoGrande } from "./galpao-grande";
+import { encaixarNaParede, entradaPorPonto, modulosDoArrasto, paredeDesenhada } from "./edicao";
 import { faixaMedia, faixaOcupacao } from "./ocupacao";
 import { PLANTA_VAZIA, type CaixaCompacta, type Planta } from "./tipos";
 import { caminhoDeVolta, lerParametros, urlMapa } from "./url";
@@ -251,6 +252,31 @@ describe("medidas em metros", () => {
   });
 });
 
+describe("editor ao estilo Revit (edicao.ts)", () => {
+  const m = 1.2;
+  it("entrada vai para a parede mais próxima, centrada no ponto e presa nas pontas", () => {
+    expect(entradaPorPonto(6, 19, 16.8, 19.2, 3.6, m)).toEqual({ lado: "frente", posicao: 4.8 });
+    expect(entradaPorPonto(0.2, 9, 16.8, 19.2, 3.6, m)).toEqual({ lado: "esquerda", posicao: 7.2 });
+    expect(entradaPorPonto(16.7, 0.1, 16.8, 19.2, 3.6, m)).toEqual({ lado: "fundo", posicao: 13.2 });
+  });
+  it("parede desenhada fica reta, na grade, com pelo menos uma célula", () => {
+    expect(paredeDesenhada({ x: 1.3, y: 2.3 }, { x: 6.1, y: 3 }, m)).toEqual({ x: 1.2, y: 2.4, largura: 4.8, profundidade: 1.2 });
+    expect(paredeDesenhada({ x: 2.4, y: 8 }, { x: 2.5, y: 2.4 }, m)).toEqual({ x: 2.4, y: 2.4, largura: 1.2, profundidade: 6 });
+    expect(paredeDesenhada({ x: 2.4, y: 2.4 }, { x: 2.4, y: 2.4 }, m)).toMatchObject({ largura: 1.2, profundidade: 1.2 });
+  });
+  it("porta e janela encaixam na parede externa; longe dela, não", () => {
+    expect(encaixarNaParede({ x: 6, y: 0.3 }, 16.8, 19.2, m)).toEqual({ x: 4.8, y: 0, largura: 2.4, profundidade: 1.2 });
+    expect(encaixarNaParede({ x: 16.5, y: 6 }, 16.8, 19.2, m)).toEqual({ x: 15.6, y: 4.8, largura: 1.2, profundidade: 2.4 });
+    expect(encaixarNaParede({ x: 8, y: 9 }, 16.8, 19.2, m)).toBeNull();
+  });
+  it("arrastar a ponta da rua dá módulos a mais ou a menos, nunca abaixo de 1", () => {
+    expect(modulosDoArrasto(3.7, m, 5)).toBe(3);
+    expect(modulosDoArrasto(-2.5, m, 5)).toBe(-2);
+    expect(modulosDoArrasto(-99, m, 5)).toBe(-4);
+    expect(modulosDoArrasto(0.3, m, 5)).toBe(0);
+
+  });
+});
 describe("zoom do mapa 3D", () => {
   it("multiplica o zoom atual pelo fator", () => {
     expect(zoomAlvo(20, 1.25, 4, 160)).toBe(25);
