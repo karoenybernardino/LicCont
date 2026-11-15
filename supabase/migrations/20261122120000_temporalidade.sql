@@ -217,6 +217,46 @@ create trigger descarte_itens_imutavel before update or delete on public.descart
   for each row execute function app.descarte_item_imutavel();
 
 -- ---------------------------------------------------------------------------
+-- Por que um documento NÃO pode ser eliminado agora (null = pode).
+-- p_ignorar: termo em que ele já está (a aprovação confere de novo).
+-- ---------------------------------------------------------------------------
+create or replace function app.motivo_inelegivel(p_documento uuid, p_ignorar uuid default null)
+returns text
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  d public.documentos;
+  r public.tabela_temporalidade;
+  v_inicio date;
+begin
+  select * into d from public.documentos
+  where id = p_documento and prefeitura_id = app.prefeitura_atual();
+  if not found then return 'inexistente'; end if;
+  if not d.ativo then return 'inativo'; end if;
+  select * into r from public.tabela_temporalidade
+  where prefeitura_id = d.prefeitura_id and classe = app.classe_documento(d.tipo, d.modalidade);
+  if not found then return 'sem_regra'; end if;
+  if r.destinacao <> 'eliminacao' then return 'guarda_permanente'; end if;
+  v_inicio := case when d.tipo = 'contrato' then d.vigencia_fim else d.encerrado_em end;
+  if v_inicio is null then return 'sem_data'; end if;
+  if app.hoje() < (v_inicio + make_interval(years => r.prazo_corrente_anos + r.prazo_intermediaria_anos))::date then
+    return 'prazo_nao_cumprido';
+  end if;
+  if app.documento_emprestado(d.id) then return 'emprestado'; end if;
+  if exists (
+    select 1 from public.descarte_itens i
+    where i.documento_id = d.id and i.aberto and i.descarte_id is distinct from p_ignorar
+  ) then return 'em_outro_termo'; end if;
+  return null;
+end
+$$;
+revoke execute on function app.motivo_inelegivel(uuid, uuid) from public, anon;
+grant execute on function app.motivo_inelegivel(uuid, uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Documento de termo aprovado não muda nem volta a ficar ativo (o termo diria
 -- "eliminado" sobre um documento vivo, ou sobre outro conteúdo). Documento de
 -- termo ainda aberto não se desativa à mão (a aprovação falharia); a função de
