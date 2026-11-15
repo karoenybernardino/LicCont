@@ -5,6 +5,7 @@ import { Formulario } from "@/ui/formulario";
 import { Campo } from "@/ui/campo";
 import { Selecao } from "@/ui/selecao";
 import { CabecalhoPainel, Pilula } from "@/ui/canvas";
+import { PrimeiroAdmin } from "@/features/equipe/primeiro-admin";
 import { PaginaEquipe } from "@/features/equipe/pagina";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
 import { idSchema } from "@/features/login/esquemas";
@@ -99,7 +100,7 @@ export default async function DetalhePrefeitura({ params }: { params: Promise<{ 
               </table>
             </div>
           )}
-          {admins.length === 0 && (
+          <PrimeiroAdmin semAdmin={admins.length === 0}>
             <Formulario acao={cadastrarPrimeiroAdmin} botao="Cadastrar administrador" enviando="Cadastrando…" className="gap-3.5">
               <input type="hidden" name="id" value={p.id} />
               <div className="grid gap-3.5 sm:grid-cols-2">
@@ -107,7 +108,7 @@ export default async function DetalhePrefeitura({ params }: { params: Promise<{ 
                 <Campo rotulo="E-mail institucional" name="email" type="email" autoComplete="off" required placeholder="nome@prefeitura.gov.br" className={entrada} />
               </div>
             </Formulario>
-          )}
+          </PrimeiroAdmin>
           <p className="text-[12.5px] text-texto-suave">Sem administrador, a prefeitura fica em Pendências até um novo ser cadastrado.</p>
         </Painel>
       </div>
