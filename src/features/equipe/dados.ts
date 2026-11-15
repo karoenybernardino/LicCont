@@ -1,7 +1,7 @@
 import "server-only";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { emDemo } from "@/features/demo/dados";
-import { ACOES_DEMO, INTEGRACOES_DEMO, PEDIDOS_DEMO } from "@/features/demo/equipe";
+import { ACOES_DEMO, INTEGRACOES_DEMO, LOTES_DEMO, PEDIDOS_DEMO } from "@/features/demo/equipe";
 import type { SituacaoPedido } from "./textos";
 
 // Leituras da área da equipe. Só números, datas e situações: nada do acervo.
@@ -99,5 +99,34 @@ export async function acoesEquipe(opcoes: { dias?: number | null; prefeitura?: s
     statusNovo: r.status_novo,
     prefeitura: r.prefeitura_nome,
     ip: r.ip,
+  }));
+}
+
+export type Lote = { id: string; prefeituraId: string; prefeitura: string; linhas: number; gravados: number; pulados: number; situacao: string; criadoEm: string };
+
+// Lotes de importação de todas as prefeituras: só números, situação e data.
+export async function lotesRecentes(limite = 20): Promise<Lote[]> {
+  if (emDemo()) return LOTES_DEMO.slice(0, limite);
+  const supabase = await clienteSessao();
+  if (!supabase) return [];
+  const { data } = await supabase.rpc("equipe_lotes", { p_limite: limite });
+  type L = { id: string; prefeitura_id: string; prefeitura_nome: string; linhas_total: number; gravados: number; pulados: number; situacao: string; criado_em: string };
+  return ((data ?? []) as L[]).map((l) => ({
+    id: l.id, prefeituraId: l.prefeitura_id, prefeitura: l.prefeitura_nome, linhas: l.linhas_total,
+    gravados: l.gravados, pulados: l.pulados, situacao: l.situacao, criadoEm: l.criado_em,
+  }));
+}
+
+export type RodadaTce = { prefeitura: string; origem: string; situacao: string; novos: number; duplicados: number; jaExistentes: number; erro: string | null; iniciadaEm: string };
+
+export async function historicoTce(limite = 500): Promise<RodadaTce[]> {
+  if (emDemo()) return [];
+  const supabase = await clienteSessao();
+  if (!supabase) return [];
+  const { data } = await supabase.rpc("equipe_importacoes_tce", { p_limite: limite });
+  type R = { prefeitura_nome: string; origem: string; situacao: string; novos: number; duplicados: number; ja_existentes: number; erro_codigo: string | null; iniciada_em: string };
+  return ((data ?? []) as R[]).map((r) => ({
+    prefeitura: r.prefeitura_nome, origem: r.origem, situacao: r.situacao, novos: r.novos,
+    duplicados: r.duplicados, jaExistentes: r.ja_existentes, erro: r.erro_codigo, iniciadaEm: r.iniciada_em,
   }));
 }

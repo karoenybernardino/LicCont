@@ -17,7 +17,7 @@ export type Formato = "pdf" | "planilha";
 export type Filtros = { secretaria: string | null; de: string | null; ate: string | null };
 
 export type Relatorio = {
-  id: IdRelatorio;
+  id: IdRelatorio | "auditoria_equipe";
   titulo: string;
   linhasDeCabecalho: string[];
   colunas: string[];
