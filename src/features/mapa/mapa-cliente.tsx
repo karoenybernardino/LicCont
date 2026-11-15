@@ -296,16 +296,15 @@ export function MapaCliente({ estrutura, caixas, planta, galpoes, galpaoId, inic
           <>
             <form onSubmit={irPara} role="search" className="flex items-center">
               <label className="flex h-10 w-[300px] min-w-0 items-center gap-2 rounded-[10px] border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco max-md:h-11 max-md:w-48">
-                <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-texto-suave">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-4-4" />
-                </svg>
                 <span className="sr-only">Ir para caixa, rua ou documento</span>
                 <input value={busca} onChange={(e) => setBusca(e.target.value)} maxLength={60} placeholder="Ir para caixa, rua ou documento" className="min-w-0 flex-1 bg-transparent text-[13px] outline-0" />
+                <button type="submit" aria-label="Ir" className="order-first flex shrink-0 items-center text-texto-suave hover:text-texto focus-visible:outline-2 focus-visible:outline-foco">
+                  <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-texto-suave">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-4-4" />
+                  </svg>
+                </button>
               </label>
-              <button type="submit" className="sr-only">
-                Ir
-              </button>
             </form>
             {voltar && (
               <Link href={voltar} className={estilos.botaoBorda}>
