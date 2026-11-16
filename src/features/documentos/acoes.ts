@@ -211,7 +211,7 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
   // Só o servidor conclui (service_role): o hash e o tamanho saíram da leitura acima.
   const servico = clienteServico();
   if (!servico) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
-  const { error } = await servico.rpc("concluir_conferencia", {
+  const { data: motivoBanco, error } = await servico.rpc("concluir_conferencia", {
     p_usuario: usuario.id,
     p_arquivo: dados.data.arquivo,
     p_pronto: res.ok,
@@ -223,10 +223,12 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
     p_miniatura: res.ok && dados.data.miniatura,
   });
   if (error) return { ok: false, erro: MENSAGEM_INDISPONIVEL };
-  if (!res.ok) {
+  // O banco também recusa (ex.: sem espaço); vale o motivo dele.
+  const motivoFinal = res.ok ? (motivoBanco as Motivo | null) : res.motivo;
+  if (motivoFinal) {
     await sb.storage.from("acervo").remove([arq.caminho as string]);
     await sb.storage.from("miniaturas").remove([(arq.caminho as string).replace(/\.pdf$/, ".webp")]);
-    return { ok: false, erro: MOTIVOS[res.motivo] };
+    return { ok: false, erro: MOTIVOS[motivoFinal] ?? MENSAGEM_INDISPONIVEL };
   }
   atualizar();
   return { ok: true };

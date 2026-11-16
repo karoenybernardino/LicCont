@@ -58,13 +58,14 @@ export type UsoPrefeitura = {
   bytesPdf: number;
   ultimoAcesso: string | null;
   loginsMes: number;
+  limiteBytes: number;
 };
 
 export async function usoPrefeituras(): Promise<Map<string, UsoPrefeitura>> {
   const mapa = new Map<string, UsoPrefeitura>();
   if (emDemo()) {
     for (const p of PREFEITURAS_DEMO) {
-      mapa.set(p.id, { prefeituraId: p.id, secretarias: 4, usuarios: 6, documentos: 1240, caixas: 86, bytesPdf: 3_400_000_000, ultimoAcesso: DATA_DEMO, loginsMes: 57 });
+      mapa.set(p.id, { prefeituraId: p.id, secretarias: 4, usuarios: 6, documentos: 1240, caixas: 86, bytesPdf: 3_400_000_000, ultimoAcesso: DATA_DEMO, loginsMes: 57, limiteBytes: 10 * 1024 ** 3 });
     }
     return mapa;
   }
@@ -81,6 +82,7 @@ export async function usoPrefeituras(): Promise<Map<string, UsoPrefeitura>> {
       bytesPdf: Number(r.bytes_pdf),
       ultimoAcesso: r.ultimo_acesso,
       loginsMes: r.logins_mes,
+      limiteBytes: Number(r.limite_bytes),
     });
   }
   return mapa;

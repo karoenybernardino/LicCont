@@ -241,7 +241,7 @@ function ResumoUso({ uso, suporte }: { uso: UsoPrefeitura; suporte: string | nul
     <Painel>
       <span className={rotuloMini}>Uso (só números)</span>
       <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-        {([["Secretarias", uso.secretarias.toLocaleString("pt-BR")], ["Usuários ativos", uso.usuarios.toLocaleString("pt-BR")], ["Documentos", uso.documentos.toLocaleString("pt-BR")], ["Caixas", uso.caixas.toLocaleString("pt-BR")], ["PDFs guardados", formatarGb(uso.bytesPdf)], ["Logins no mês", uso.loginsMes.toLocaleString("pt-BR")], ["Último acesso", quando(uso.ultimoAcesso)]] as const).map(([r, v]) => (
+        {([["Secretarias", uso.secretarias.toLocaleString("pt-BR")], ["Usuários ativos", uso.usuarios.toLocaleString("pt-BR")], ["Documentos", uso.documentos.toLocaleString("pt-BR")], ["Caixas", uso.caixas.toLocaleString("pt-BR")], ["PDFs guardados", `${formatarGb(uso.bytesPdf)} de ${formatarGb(uso.limiteBytes)}`], ["Logins no mês", uso.loginsMes.toLocaleString("pt-BR")], ["Último acesso", quando(uso.ultimoAcesso)]] as const).map(([r, v]) => (
           <div key={r}><dt className="text-texto-suave">{r}</dt><dd className="font-mono text-base font-semibold">{v}</dd></div>
         ))}
       </dl>
