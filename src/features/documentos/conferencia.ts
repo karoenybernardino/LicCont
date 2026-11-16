@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 // Conferência do PDF no servidor (o navegador não é confiável). Lê o objeto
 // em partes, sem carregar o arquivo inteiro: hash SHA-256, cabeçalho "%PDF-",
 // fim "%%EOF" e "/Encrypt" (PDF com senha). Nada daqui vai para log.
-export type Motivo = "nao_pdf" | "com_senha" | "corrompido" | "grande_demais" | "incompleto";
+export type Motivo = "nao_pdf" | "com_senha" | "corrompido" | "grande_demais" | "incompleto" | "sem_espaco";
 export type Resultado = { ok: true; sha256: string; tamanho: number } | { ok: false; motivo: Motivo };
 
 const ENCRYPT = Buffer.from("/Encrypt");
@@ -48,4 +48,5 @@ export const MOTIVOS: Record<Motivo, string> = {
   corrompido: "O PDF está corrompido.",
   grande_demais: "O PDF passa do tamanho máximo.",
   incompleto: "O envio ficou incompleto. Envie de novo.",
+  sem_espaco: "O espaço de armazenamento da prefeitura acabou. Fale com a equipe LicCONT.",
 };

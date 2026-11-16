@@ -6,7 +6,9 @@ import { Painel } from "@/features/estrutura/componentes";
 import { Icone } from "@/features/sessao/barra-lateral";
 import { acoesEquipe, integracoes, listarPedidos } from "@/features/equipe/dados";
 import { SITUACOES_PEDIDO, haTempo, quando, textoAcao } from "@/features/equipe/textos";
-import { listarPrefeituras } from "@/features/prefeituras/dados";
+import { listarPrefeituras, usoPrefeituras } from "@/features/prefeituras/dados";
+import { nivelArmazenamento } from "@/features/prefeituras/uso";
+import { formatarGb } from "@/features/equipe/textos";
 import { exigirEquipe } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Início da equipe · LicCONT" };
@@ -17,8 +19,8 @@ type Atencao = { id: string; titulo: string; texto: string; rotulo: string; tom:
 // Só números, datas e situações: nada do acervo.
 export default async function InicioEquipe() {
   await exigirEquipe();
-  const [prefeituras, integ, pedidos, acoes] = await Promise.all([
-    listarPrefeituras(), integracoes(), listarPedidos(100), acoesEquipe({ limite: 4 }),
+  const [prefeituras, integ, pedidos, acoes, uso] = await Promise.all([
+    listarPrefeituras(), integracoes(), listarPedidos(100), acoesEquipe({ limite: 4 }), usoPrefeituras(),
   ]);
   const ativas = prefeituras.filter((p) => p.status === "ativa").length;
   const comErro = prefeituras.filter((p) => integ.get(p.id)?.situacao === "erro");
@@ -31,6 +33,17 @@ export default async function InicioEquipe() {
       id: `tce-${p.id}`, titulo: `${p.nome} · TCE fora do ar`, rotulo: "Integração", tom: "erro" as const,
       texto: `Última rodada falhou ${quando(integ.get(p.id)?.ultimaEm ?? null)}. Tenta de novo à noite.`, href: `/equipe/prefeituras?sel=${p.id}`,
     })),
+    ...prefeituras.flatMap((p) => {
+      const u = uso.get(p.id);
+      const a = u ? nivelArmazenamento(u) : null;
+      if (!u || !a || a.nivel === "ok") return [];
+      return [{
+        id: `armazenamento-${p.id}`, titulo: `${p.nome} · armazenamento em ${a.porcento}%`, rotulo: "Armazenamento",
+        tom: a.nivel === "cheio" ? ("erro" as const) : ("aviso" as const),
+        texto: `${formatarGb(u.bytesPdf)} de ${formatarGb(u.limiteBytes)}.${a.nivel === "cheio" ? " Novos PDFs estão bloqueados." : ""}`,
+        href: `/equipe/${p.id}`,
+      }];
+    }),
     ...semAdmin.map((p) => ({
       id: `adm-${p.id}`, titulo: p.nome, rotulo: "Pendência", tom: "aviso" as const,
       texto: "Sem administrador ativo.", href: `/equipe/${p.id}`,

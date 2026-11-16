@@ -115,6 +115,8 @@ export function mensagemDocumento(codigo: string | undefined) {
       return "Esta caixa está desativada. Escolha outra.";
     case "LC005":
       return "Ainda há documentos ativos nesta caixa.";
+    case "LC007":
+      return "O espaço de armazenamento da prefeitura acabou. Fale com a equipe LicCONT.";
     case "42501":
       return "Você não tem permissão para esta ação.";
     case "23503":

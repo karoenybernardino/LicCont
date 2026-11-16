@@ -25,3 +25,9 @@ export function usoParaCsv(linhas: LinhaUso[], recusados: number): string {
     ["tentativas_recusadas_no_mes", "", "", "", "", "", "", String(recusados)],
   ]);
 }
+
+// Aviso só para a equipe LicCONT: a 80% do limite e ao chegar nele.
+export function nivelArmazenamento(uso: Pick<UsoPrefeitura, "bytesPdf" | "limiteBytes">): { nivel: "ok" | "aviso" | "cheio"; porcento: number } {
+  const porcento = uso.limiteBytes > 0 ? Math.floor((uso.bytesPdf / uso.limiteBytes) * 100) : 0;
+  return { nivel: porcento >= 100 ? "cheio" : porcento >= 80 ? "aviso" : "ok", porcento };
+}
