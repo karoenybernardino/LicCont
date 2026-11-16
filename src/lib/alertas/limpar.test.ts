@@ -13,11 +13,19 @@ describe("alerta de erro sem dado pessoal", () => {
     expect(t).toContain("Failing row contains [dados removidos]");
   });
 
+  it("linha do banco com parênteses no conteúdo some inteira", () => {
+    const t = limparTexto("Failing row contains (1, Maria (Sec. Saude), texto secreto) x");
+    expect(t).toBe("Failing row contains [dados removidos]");
+    expect(limparTexto('duplicate key · Key (numero)=(Contrato (aditivo) 1) already exists')).toBe("duplicate key · Key [dados removidos]");
+  });
+
   it("tira pessoa, requisição, rastros, variáveis e a consulta da URL", () => {
     const e = limparEvento({
       type: undefined,
       user: { email: "a@b.test", ip_address: "1.2.3.4" },
       extra: { corpo: "segredo" },
+      logentry: { message: "%s", params: ["segredo"] },
+      tags: { url: "/pesquisa?busca=x" },
       breadcrumbs: [{ message: "busca" }],
       server_name: "maquina",
       request: { url: "https://app.test/pesquisa?busca=texto%20do%20documento", method: "GET", cookies: { a: "b" }, headers: { cookie: "x" }, data: "corpo" },
@@ -29,6 +37,8 @@ describe("alerta de erro sem dado pessoal", () => {
     expect(e.extra).toBeUndefined();
     expect(e.breadcrumbs).toBeUndefined();
     expect(e.server_name).toBeUndefined();
+    expect(e.logentry).toBeUndefined();
+    expect(e.tags).toBeUndefined();
     expect(e.request).toEqual({ url: "https://app.test/pesquisa", method: "GET" });
     expect(e.transaction).toBe("/pesquisa");
     expect(Object.keys(e.contexts ?? {})).toEqual(["os"]);

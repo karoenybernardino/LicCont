@@ -5,7 +5,8 @@ import type { ErrorEvent } from "@sentry/nextjs";
 // barreira: tira pessoa, requisição, rastros e variáveis, corta a consulta das
 // URLs (a busca pode ter texto de documento) e mascara o que sobrar no texto.
 
-const LINHA_DO_BANCO = /(Failing row contains|Key) \([^]*?\)(=\([^]*?\))?/g;
+// Da linha do banco em diante, tudo sai (o conteúdo pode ter parênteses).
+const LINHA_DO_BANCO = /(Failing row contains|Key) \([\s\S]*$/;
 const EMAIL = /[^\s@<>"'(),;]+@[^\s@<>"'(),;]+\.[^\s@<>"'(),;]+/g;
 const CPF = /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g;
 const MAXIMO = 500;
@@ -29,6 +30,8 @@ export function limparEvento(evento: ErrorEvent): ErrorEvent {
   delete evento.extra;
   delete evento.breadcrumbs;
   delete evento.server_name;
+  delete evento.logentry;
+  delete evento.tags;
   if (evento.request) evento.request = { url: evento.request.url && semConsulta(evento.request.url), method: evento.request.method };
   if (evento.transaction) evento.transaction = semConsulta(evento.transaction);
   if (evento.message) evento.message = limparTexto(evento.message);
@@ -37,6 +40,7 @@ export function limparEvento(evento: ErrorEvent): ErrorEvent {
   }
   for (const ex of evento.exception?.values ?? []) {
     if (ex.value) ex.value = limparTexto(ex.value);
+    if (ex.type) ex.type = limparTexto(ex.type);
     for (const quadro of ex.stacktrace?.frames ?? []) delete quadro.vars;
   }
   return evento;

@@ -21,6 +21,9 @@ Sem `NEXT_PUBLIC_SENTRY_DSN` o Sentry fica desligado (local, CI e demonstração
 
 ### Conferir (Preview)
 
+0. Manter a **Deployment Protection** (Vercel Authentication) ligada nos Previews. Sem ela,
+   qualquer pessoa pode chamar `/api/erro-teste` e gastar a cota grátis do Sentry
+   (5 mil erros por mês).
 1. Abrir `https://<endereço-do-preview>/api/erro-teste`. Responde erro 500. Essa rota só
    existe em Preview: em Production devolve 404.
 2. Em alguns segundos aparece no Sentry o erro "Erro de teste do LicCONT".
