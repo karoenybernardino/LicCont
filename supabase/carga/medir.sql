@@ -94,7 +94,7 @@ begin
 end $$;
 
 \echo
-\echo '== Resultados (ms, mediana de 3) =='
+\echo '== Resultados (ms, mediana de 3; "25 páginas somadas" = 1 rodada) =='
 select grupo, consulta, round(ms, 1) as ms, meta_ms,
        case when meta_ms is null then '—' when ms < meta_ms then 'passou' else 'NÃO passou' end as resultado,
        linhas
