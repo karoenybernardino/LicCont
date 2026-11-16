@@ -2,7 +2,8 @@
 --   1. envio que passa do limite é recusado (LC007); troca de PDF conta só a diferença;
 --   2. o uso de uma prefeitura não bloqueia a outra, e o gatilho não revela o uso
 --      de outra prefeitura (quem tenta enviar para B recebe 42501, não LC007);
---   3. dois envios ao mesmo tempo: a conferência do segundo recusa com sem_espaco;
+--   3. dois envios pendentes que cabiam sozinhos: a conferência do segundo (com o
+--      tamanho medido pelo servidor) recusa com sem_espaco;
 --   4. a equipe recebe o limite em equipe_uso_prefeituras.
 -- Tudo fictício e dentro da transação (ROLLBACK no fim).
 begin;
@@ -98,7 +99,7 @@ select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, doc
   values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000', 'w.pdf', 1000000)$$,
   'o uso de A não conta para B');
 
--- Dois envios de A que cabiam sozinhos: o servidor conclui os dois; o segundo não cabe.
+-- Dois envios de A que cabiam sozinhos: o servidor conclui um depois do outro; o segundo não cabe.
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001');
 select lives_ok($$select public.marcar_conferindo('f0a20000-0000-0000-0000-000000000000')$$, 'marca o primeiro');
 select lives_ok($$select public.marcar_conferindo('f0a30000-0000-0000-0000-000000000000')$$, 'marca o segundo');
@@ -116,6 +117,12 @@ select is((select sum(tamanho)::bigint from public.arquivos where prefeitura_id 
 
 -- Equipe: o limite vem junto do uso.
 select ok(pg_get_function_result('public.equipe_uso_prefeituras()'::regprocedure) like '%limite_bytes bigint%', 'equipe_uso_prefeituras devolve limite_bytes');
+select ok(has_function_privilege('authenticated', 'public.equipe_uso_prefeituras()', 'execute'), 'a função recriada continua executável pela sessão');
+select ok(not has_function_privilege('anon', 'public.equipe_uso_prefeituras()', 'execute'), 'anon não executa o uso');
+set local role authenticated;
+select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001');
+select throws_ok($$select * from public.equipe_uso_prefeituras()$$, '42501', null, 'administrador de prefeitura não vê o uso da equipe');
+reset role;
 select ok(not has_function_privilege('authenticated', 'app.armazenamento_cabe(uuid, uuid, bigint)', 'execute'), 'quem usa o sistema não consulta o uso direto');
 select ok(not has_function_privilege('anon', 'app.armazenamento_cabe(uuid, uuid, bigint)', 'execute'), 'anon não consulta o uso');
 

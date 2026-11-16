@@ -78,7 +78,8 @@ begin
   -- calculou o SHA-256, o tamanho e a verificação do formato. A pessoa já passou por
   -- marcar_conferindo, que checa dono e permissão de cadastro.
   -- Trava a prefeitura: dois envios concluídos juntos não passam do limite juntos.
-  select p.limite_pdf_mb into v_limite_mb from public.prefeituras p where p.id = a.prefeitura_id for update;
+  -- "no key update": não segura os inserts com chave para prefeituras (auditoria etc.).
+  select p.limite_pdf_mb into v_limite_mb from public.prefeituras p where p.id = a.prefeitura_id for no key update;
   if p_pronto and p_tamanho > v_limite_mb::bigint * 1024 * 1024 then
     p_pronto := false;
     p_motivo := 'grande_demais';
