@@ -115,13 +115,16 @@ select throws_ok($$insert into public.arquivo_textos (arquivo_id, prefeitura_id,
 select is((select count(*)::int from public.arquivo_textos), 1, 'coordenador lê o texto da própria secretaria');
 select is((select (public.pesquisar_documentos('desfibrilador') ->> 'total')::int), 1, 'a pesquisa acha o documento pelo texto do PDF');
 select is((select (public.pesquisar_documentos('hospital inexistente') ->> 'total')::int), 0, 'e não acha o que não está no texto');
+select is((select array_agg(x) from app.documentos_com_texto('desfibrilador') x), array['d1000000-0000-0000-0000-000000000001'::uuid], 'busca no texto do PDF devolve o documento');
 
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
 select is_empty($$select 1 from public.arquivo_textos$$, 'consulta de Obras não lê o texto de Saúde');
 select is((select (public.pesquisar_documentos('desfibrilador') ->> 'total')::int), 0, 'nem a pesquisa dela acha esse texto');
+select is_empty($$select 1 from app.documentos_com_texto('desfibrilador')$$, 'nem a busca no texto do PDF');
 
 select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
 select is_empty($$select 1 from public.arquivo_textos$$, 'B não lê o texto de A');
+select is_empty($$select 1 from app.documentos_com_texto('desfibrilador')$$, 'B não acha o texto de A');
 select throws_ok($$select public.salvar_texto_pdf('f1000000-0000-0000-0000-000000000001', 'texto', 1)$$, '42501', null, 'B não grava texto em arquivo de A');
 select throws_ok($$delete from public.arquivo_textos$$, '42501', null, 'ninguém apaga texto');
 
@@ -130,6 +133,11 @@ select is_empty($$select 1 from public.auditoria where depois::text like '%desfi
 select table_privs_are('public', 'arquivo_textos', 'anon', array[]::text[], 'anon sem privilégio em arquivo_textos');
 select table_privs_are('public', 'arquivo_textos', 'authenticated', array['SELECT'], 'authenticated só lê arquivo_textos');
 select ok(not has_function_privilege('anon', 'public.salvar_texto_pdf(uuid, text, int)', 'execute'), 'anon não grava texto');
+-- Desempenho (docs/desempenho.md): com muito OCR o planejador escolhia Seq Scan
+-- e lia o texto de todos os PDFs; a busca precisa ir pelo índice GIN.
+select is((select prosecdef from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure), false, 'busca no PDF roda como quem chama (RLS vale)');
+select ok('enable_seqscan=off' = any((select proconfig from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure)), 'busca no PDF vai pelo índice');
+select ok(not has_function_privilege('anon', 'app.documentos_com_texto(text)', 'execute'), 'anon não busca no PDF');
 
 select * from finish();
 rollback;

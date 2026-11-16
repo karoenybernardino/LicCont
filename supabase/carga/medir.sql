@@ -45,11 +45,15 @@ select pg_temp.medir('busca', 'pesquisar_documentos: "hidrometro" (só no texto 
   $$select public.pesquisar_documentos(p_busca := 'hidrometro')$$);
 select pg_temp.medir('busca', 'pesquisar_documentos: "xilografia" (não acha nada)', 1000,
   $$select public.pesquisar_documentos(p_busca := 'xilografia')$$);
+select pg_temp.medir('busca', 'pesquisar_documentos: "habilitacao" (palavra comum no PDF)', 1000,
+  $$select public.pesquisar_documentos(p_busca := 'habilitacao')$$);
 select pg_temp.medir('busca', 'documentos.texto_busca like (direto)', 1000,
   $$select id from public.documentos where ativo and texto_busca like '%pavimentacao%'$$);
 select pg_temp.medir('busca', 'arquivo_textos.texto_busca like (direto)', 1000,
   $$select documento_id from public.arquivo_textos where texto_busca like '%hidrometro%'$$);
 
+select pg_temp.medir('busca', 'app.documentos_com_texto (índice GIN)', 1000,
+  $$select app.documentos_com_texto('hidrometro')$$);
 select pg_temp.medir('listagem', 'pesquisar_documentos: 1ª página', 500,
   $$select public.pesquisar_documentos()$$);
 select pg_temp.medir('listagem', 'pesquisar_documentos: 2ª página (cursor)', 500,
@@ -120,6 +124,11 @@ select version();
 set role authenticated;
 explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%hidrometro%';
 explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%xilografia%';
+-- O que app.documentos_com_texto roda (com enable_seqscan off, como na função).
+set enable_seqscan = off;
+explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%hidrometro%';
+explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%habilitacao%';
+reset enable_seqscan;
 explain (analyze, buffers) select id from public.documentos where ativo and texto_busca like '%pavimentacao%';
 explain (analyze, buffers) select s.id, (select count(*) from public.documentos d where d.secretaria_id = s.id and d.ativo) from public.secretarias s;
 explain (analyze, buffers) select * from public.documentos order by id limit 1000 offset 24000;
