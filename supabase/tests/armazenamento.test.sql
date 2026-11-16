@@ -46,7 +46,8 @@ insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo,
   ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '1/2024', 2024, 'Objeto fictício um', 'concluida'),
   ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '2/2024', 2024, 'Objeto fictício dois', 'concluida'),
   ('d0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '3/2024', 2024, 'Objeto fictício três', 'concluida'),
-  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '1/2024', 2024, 'Objeto fictício B', 'concluida');
+  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '1/2024', 2024, 'Objeto fictício B', 'concluida'),
+  ('d0b20000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '2/2024', 2024, 'Objeto fictício B dois', 'concluida');
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid)
 returns void language sql as $$
@@ -74,11 +75,11 @@ select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-00
 select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
   values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'x.pdf', 200000)$$,
   'LC007', null, 'envio que passa do limite é recusado');
-select lives_ok($$insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
-  values ('f0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'y.pdf', 100000)$$,
+select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'y.pdf', 100000)$$,
   'envio que cabe passa');
-select lives_ok($$insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
-  values ('f0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a30000-0000-0000-0000-000000000000', 'z.pdf', 100000)$$,
+select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a30000-0000-0000-0000-000000000000', 'z.pdf', 100000)$$,
   'outro envio que cabe sozinho também passa (ainda não conferido)');
 select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
   values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 't.pdf', 1000000)$$,
@@ -89,7 +90,7 @@ select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, do
 
 select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001');
 select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho)
-  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000', 'x.pdf', 10)$$,
+  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b20000-0000-0000-0000-000000000000', 'x.pdf', 10)$$,
   'LC007', null, 'B cheia não recebe envio');
 reset role;
 update public.arquivos set ativo = false, situacao = 'recusado' where id = 'f0b10000-0000-0000-0000-000000000000';
@@ -101,16 +102,18 @@ select lives_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, doc
 
 -- Dois envios de A que cabiam sozinhos: o servidor conclui um depois do outro; o segundo não cabe.
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001');
-select lives_ok($$select public.marcar_conferindo('f0a20000-0000-0000-0000-000000000000')$$, 'marca o primeiro');
-select lives_ok($$select public.marcar_conferindo('f0a30000-0000-0000-0000-000000000000')$$, 'marca o segundo');
+select lives_ok($$select public.marcar_conferindo((select id from public.arquivos where documento_id = 'd0a20000-0000-0000-0000-000000000000'))$$, 'marca o primeiro');
+select lives_ok($$select public.marcar_conferindo((select id from public.arquivos where documento_id = 'd0a30000-0000-0000-0000-000000000000'))$$, 'marca o segundo');
 reset role;
+select set_config('t.a2', (select id::text from public.arquivos where documento_id = 'd0a20000-0000-0000-0000-000000000000'), true);
+select set_config('t.a3', (select id::text from public.arquivos where documento_id = 'd0a30000-0000-0000-0000-000000000000'), true);
 set local role service_role;
-select is(public.concluir_conferencia('0a000000-0000-0000-0000-000000000001', 'f0a20000-0000-0000-0000-000000000000', true,
+select is(public.concluir_conferencia('0a000000-0000-0000-0000-000000000001', current_setting('t.a2')::uuid, true,
   repeat('a', 64), 100000, 1, null, '{}', false), null, 'o primeiro fica pronto');
-select is(public.concluir_conferencia('0a000000-0000-0000-0000-000000000001', 'f0a30000-0000-0000-0000-000000000000', true,
+select is(public.concluir_conferencia('0a000000-0000-0000-0000-000000000001', current_setting('t.a3')::uuid, true,
   repeat('a', 64), 100000, 1, null, '{}', false), 'sem_espaco', 'o segundo é recusado por falta de espaço');
 reset role;
-select results_eq($$select situacao, ativo, motivo_recusa from public.arquivos where id = 'f0a30000-0000-0000-0000-000000000000'$$,
+select results_eq($$select situacao, ativo, motivo_recusa from public.arquivos where documento_id = 'd0a30000-0000-0000-0000-000000000000'$$,
   $$values ('recusado'::text, false, 'sem_espaco'::text)$$, 'e fica recusado, inativo');
 select is((select sum(tamanho)::bigint from public.arquivos where prefeitura_id = '11111111-1111-1111-1111-111111111111' and ativo), 1000000::bigint,
   'o uso de A ficou dentro do limite');
