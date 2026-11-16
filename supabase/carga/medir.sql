@@ -124,11 +124,13 @@ select version();
 set role authenticated;
 explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%hidrometro%';
 explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%xilografia%';
--- O que app.documentos_com_texto roda (com enable_seqscan off, como na função).
-set enable_seqscan = off;
-explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%hidrometro%';
-explain (analyze, buffers) select documento_id from public.arquivo_textos where texto_busca like '%habilitacao%';
-reset enable_seqscan;
+-- O que app.documentos_com_texto roda (como dona da tabela, filtro da política escrito).
+reset role;
+explain (analyze, buffers) select documento_id from public.arquivo_textos
+  where prefeitura_id = md5('carga-pref-1')::uuid and texto_busca like '%hidrometro%';
+explain (analyze, buffers) select documento_id from public.arquivo_textos
+  where prefeitura_id = md5('carga-pref-1')::uuid and texto_busca like '%habilitacao%';
+set role authenticated;
 explain (analyze, buffers) select id from public.documentos where ativo and texto_busca like '%pavimentacao%';
 explain (analyze, buffers) select s.id, (select count(*) from public.documentos d where d.secretaria_id = s.id and d.ativo) from public.secretarias s;
 explain (analyze, buffers) select * from public.documentos order by id limit 1000 offset 24000;

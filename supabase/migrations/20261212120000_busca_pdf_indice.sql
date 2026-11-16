@@ -1,22 +1,27 @@
 -- Busca no texto do PDF pelo índice GIN (teste de carga, docs/desempenho.md).
--- Com 10 mil textos de OCR o planejador escolhia Seq Scan em arquivo_textos:
--- o texto fica no TOAST, a tabela parece pequena e o custo de descomprimir não
--- entra na conta; a busca passava de 1 s. Agora a pesquisa pega, uma vez só e
--- pelo índice, os documentos cujo texto contém o termo.
--- Só troca o corpo da função (mesma assinatura): compatível com o app no ar.
+-- Com 10 mil textos de OCR a busca em arquivo_textos lia a tabela inteira
+-- (Seq Scan, ~1,1 s). Causa: com RLS, o Postgres só usa no índice condições
+-- "leakproof", e o LIKE não é; o filtro da política vem antes e o GIN nunca
+-- entra. Agora a pesquisa pega, uma vez só, os documentos cujo texto contém o
+-- termo, por esta função.
+-- Só troca o corpo da pesquisar_documentos (mesma assinatura): compatível com o
+-- app no ar.
 
--- Recebe o termo já sem acento e com % _ \ escapados (como faz a pesquisa).
--- security invoker: o RLS de arquivo_textos vale (prefeitura e secretarias).
+-- security definer para o índice valer; o acesso é o MESMO da política
+-- arquivo_textos_le (prefeitura de quem chama e secretarias permitidas), escrito
+-- aqui. Mudou a política, muda aqui. Recebe o termo já sem acento e com % _ \
+-- escapados (como faz a pesquisa). Devolve só ids de documento.
 create or replace function app.documentos_com_texto(p_termo text)
 returns setof uuid
 language sql
 stable
-security invoker
+security definer
 set search_path = ''
-set enable_seqscan = off
 as $$
   select t.documento_id from public.arquivo_textos t
-  where t.texto_busca like '%' || p_termo || '%'
+  where t.prefeitura_id = (select app.prefeitura_atual())
+    and t.secretaria_id in (select app.secretarias_permitidas())
+    and t.texto_busca like '%' || p_termo || '%'
 $$;
 revoke execute on function app.documentos_com_texto(text) from public, anon;
 grant execute on function app.documentos_com_texto(text) to authenticated;

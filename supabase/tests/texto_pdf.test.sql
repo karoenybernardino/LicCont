@@ -133,10 +133,10 @@ select is_empty($$select 1 from public.auditoria where depois::text like '%desfi
 select table_privs_are('public', 'arquivo_textos', 'anon', array[]::text[], 'anon sem privilégio em arquivo_textos');
 select table_privs_are('public', 'arquivo_textos', 'authenticated', array['SELECT'], 'authenticated só lê arquivo_textos');
 select ok(not has_function_privilege('anon', 'public.salvar_texto_pdf(uuid, text, int)', 'execute'), 'anon não grava texto');
--- Desempenho (docs/desempenho.md): com muito OCR o planejador escolhia Seq Scan
--- e lia o texto de todos os PDFs; a busca precisa ir pelo índice GIN.
-select is((select prosecdef from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure), false, 'busca no PDF roda como quem chama (RLS vale)');
-select ok('enable_seqscan=off' = any((select proconfig from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure)), 'busca no PDF vai pelo índice');
+-- Desempenho (docs/desempenho.md): com RLS o LIKE não usa o índice GIN; a busca
+-- no PDF roda como dona da tabela e repete o filtro da política (testado acima).
+select is((select prosecdef from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure), true, 'busca no PDF roda como dona (índice vale)');
+select ok((select proconfig from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure) @> array['search_path=""'], 'busca no PDF com search_path fixo');
 select ok(not has_function_privilege('anon', 'app.documentos_com_texto(text)', 'execute'), 'anon não busca no PDF');
 
 select * from finish();
