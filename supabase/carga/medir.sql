@@ -109,7 +109,7 @@ select pg_size_pretty(pg_database_size(current_database())) as banco,
        pg_size_pretty(pg_total_relation_size('public.documentos')) as documentos,
        pg_size_pretty(pg_total_relation_size('public.arquivos')) as arquivos,
        pg_size_pretty(pg_total_relation_size('public.arquivo_textos')) as arquivo_textos_total,
-       pg_size_pretty(pg_relation_size('public.arquivo_textos_busca_idx')) as gin_arquivo_textos,
+       pg_size_pretty(pg_relation_size('public.arquivo_textos_busca_pref_idx')) as gin_arquivo_textos,
        pg_size_pretty(pg_relation_size('public.documentos_busca_idx')) as gin_documentos,
        pg_size_pretty(pg_total_relation_size('public.auditoria')) as auditoria;
 select count(*) as documentos, (select count(*) from public.arquivos) as arquivos,

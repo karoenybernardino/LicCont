@@ -7,6 +7,15 @@
 -- Só troca o corpo da pesquisar_documentos (mesma assinatura): compatível com o
 -- app no ar.
 
+-- Índice com a prefeitura na frente: sem ela, uma palavra comum fazia reler o
+-- texto de todas as prefeituras (2,5 s com 10 mil textos). btree_gin é extensão
+-- do próprio Postgres (sem serviço externo). Troca o índice antigo, que só tinha
+-- os trigramas.
+create extension if not exists btree_gin with schema extensions;
+create index arquivo_textos_busca_pref_idx on public.arquivo_textos
+  using gin (prefeitura_id, texto_busca extensions.gin_trgm_ops);
+drop index public.arquivo_textos_busca_idx;
+
 -- security definer para o índice valer; o acesso é o MESMO da política
 -- arquivo_textos_le (prefeitura de quem chama e secretarias permitidas), escrito
 -- aqui. Mudou a política, muda aqui. Recebe o termo já sem acento e com % _ \

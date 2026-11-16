@@ -137,6 +137,7 @@ select ok(not has_function_privilege('anon', 'public.salvar_texto_pdf(uuid, text
 -- no PDF roda como dona da tabela e repete o filtro da política (testado acima).
 select is((select prosecdef from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure), true, 'busca no PDF roda como dona (índice vale)');
 select ok((select proconfig from pg_proc where oid = 'app.documentos_com_texto(text)'::regprocedure) @> array['search_path=""'], 'busca no PDF com search_path fixo');
+select has_index('public', 'arquivo_textos', 'arquivo_textos_busca_pref_idx', array['prefeitura_id', 'texto_busca'], 'índice da busca no PDF começa pela prefeitura');
 select ok(not has_function_privilege('anon', 'app.documentos_com_texto(text)', 'execute'), 'anon não busca no PDF');
 
 select * from finish();
