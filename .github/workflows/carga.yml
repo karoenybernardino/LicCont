@@ -5,6 +5,10 @@ name: Carga
 # nos PRs que mexem nos scripts de carga. Resultado: resumo do job e artefato.
 on:
   workflow_dispatch:
+    inputs:
+      ocr_por_prefeitura:
+        description: Textos de OCR por prefeitura (4 prefeituras)
+        default: "250"
   pull_request:
     paths:
       - supabase/carga/**
@@ -18,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
+      OCR: ${{ inputs.ocr_por_prefeitura || '2500' }}
       DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -28,7 +33,7 @@ jobs:
           version: 3.0.0
       - run: supabase db start
       - name: Gerar dados fictícios
-        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/carga/carga.sql
+        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -v ocr_por_prefeitura="$OCR" -f supabase/carga/carga.sql
       - name: Medir
         run: |
           nproc; free -h

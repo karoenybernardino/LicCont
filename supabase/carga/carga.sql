@@ -2,7 +2,11 @@
 -- Nunca rodar contra produção. Uso: psql "$DB_URL" -v ON_ERROR_STOP=1 -f carga.sql
 -- 4 prefeituras x 25 mil documentos = 100 mil, com secretarias, estrutura,
 -- caixas, arquivos e, em parte dos documentos, texto de OCR longo.
+-- Textos de OCR por prefeitura: padrão 250; o workflow pode trocar (-v ocr_por_prefeitura=N).
+\if :{?ocr_por_prefeitura}
+\else
 \set ocr_por_prefeitura 250
+\endif
 \timing on
 
 begin;
