@@ -12,6 +12,7 @@
 -- do próprio Postgres (sem serviço externo). Troca o índice antigo, que só tinha
 -- os trigramas.
 create extension if not exists btree_gin with schema extensions;
+-- Sem concurrently (migração roda em transação); hoje a tabela é pequena.
 create index arquivo_textos_busca_pref_idx on public.arquivo_textos
   using gin (prefeitura_id, texto_busca extensions.gin_trgm_ops);
 drop index public.arquivo_textos_busca_idx;
@@ -66,12 +67,14 @@ declare
   v_itens jsonb;
   v_proximo jsonb;
   v_pdf uuid[] := '{}';
+  v_tamanho int := length(app.sem_acento(trim(coalesce(p_busca, ''))));
 begin
   if v_busca <> '' then
     v_busca := replace(replace(replace(v_busca, '\', '\\'), '%', '\%'), '_', '\_');
   end if;
   -- Texto do PDF: uma busca só, pelo índice, antes de filtrar os documentos.
-  if length(v_busca) >= 4 then
+  -- Tamanho antes do escape: "%%" não dispara leitura de todos os textos.
+  if v_tamanho >= 4 then
     v_pdf := array(select app.documentos_com_texto(v_busca));
   end if;
 

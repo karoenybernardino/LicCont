@@ -116,11 +116,20 @@ select is((select count(*)::int from public.arquivo_textos), 1, 'coordenador lê
 select is((select (public.pesquisar_documentos('desfibrilador') ->> 'total')::int), 1, 'a pesquisa acha o documento pelo texto do PDF');
 select is((select (public.pesquisar_documentos('hospital inexistente') ->> 'total')::int), 0, 'e não acha o que não está no texto');
 select is((select array_agg(x) from app.documentos_com_texto('desfibrilador') x), array['d1000000-0000-0000-0000-000000000001'::uuid], 'busca no texto do PDF devolve o documento');
+-- A função repete à mão o filtro da política arquivo_textos_le: o resultado com
+-- curinga tem de ser o mesmo da leitura pelo RLS, para cada pessoa.
+select set_eq($$select app.documentos_com_texto('%')$$, $$select documento_id from public.arquivo_textos$$, 'busca no PDF = política (coordenador)');
 
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
 select is_empty($$select 1 from public.arquivo_textos$$, 'consulta de Obras não lê o texto de Saúde');
 select is((select (public.pesquisar_documentos('desfibrilador') ->> 'total')::int), 0, 'nem a pesquisa dela acha esse texto');
 select is_empty($$select 1 from app.documentos_com_texto('desfibrilador')$$, 'nem a busca no texto do PDF');
+select set_eq($$select app.documentos_com_texto('%')$$, $$select documento_id from public.arquivo_textos$$, 'busca no PDF = política (consulta de outra secretaria)');
+
+select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal1');
+select is_empty($$select 1 from app.documentos_com_texto('%')$$, 'admin sem o 2º fator não acha texto de PDF');
+select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
+select set_eq($$select app.documentos_com_texto('%')$$, $$select documento_id from public.arquivo_textos$$, 'busca no PDF = política (admin)');
 
 select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
 select is_empty($$select 1 from public.arquivo_textos$$, 'B não lê o texto de A');

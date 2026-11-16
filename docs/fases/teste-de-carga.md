@@ -12,4 +12,5 @@ Plano curto. Resultado em `docs/desempenho.md`.
    runner: sem Docker na máquina de desenvolvimento e sem tocar produção.
 4. Metas: busca < 1 s, listagem < 500 ms, painel < 1 s.
 5. Pronto quando os números e o "passou / não passou" estão em `docs/desempenho.md`.
-   Correção de consulta que não passar fica para outro PR.
+6. A busca no texto do PDF não passou com 10 mil textos. A correção entrou no
+   mesmo PR, a pedido (migração `20261212120000_busca_pdf_indice.sql`).
