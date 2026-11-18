@@ -6,34 +6,13 @@ import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
-import { esquemaEdital, esquemaId, esquemaModelo, esquemaTermo, lerRegra } from "./esquemas";
+import { esquemaEdital, esquemaId, esquemaModelo, esquemaTermo } from "./esquemas";
 import { mensagemDoBanco } from "./regras";
 
 // Mensagens fixas por código do banco: nada do documento nem de pessoa volta no erro.
 // O banco confere papel, prefeitura, secretaria e prazo de novo (public.descarte_*).
 
 export type RetornoTermo = { erro?: string; aviso?: string; id?: string };
-
-// Cria ou altera a regra de um tipo. Só administrador (o RLS exige aal2).
-export async function salvarRegra(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const { usuario } = await exigirAdmin();
-  const dados = lerRegra(formData);
-  if (!dados.success) return { erro: dados.error.issues[0].message };
-  if (emDemo()) return { aviso: AVISO_DEMO };
-  const sb = await clienteSessao();
-  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
-  const { classe, corrente, intermediaria, destinacao } = dados.data;
-  const campos = { prazo_corrente_anos: corrente, prazo_intermediaria_anos: intermediaria, destinacao };
-  const alterou = await sb.from("tabela_temporalidade").update(campos).eq("classe", classe).select("id");
-  if (alterou.error) return { erro: mensagemDoBanco(alterou.error.code) };
-  if (!alterou.data?.length) {
-    const novo = await sb.from("tabela_temporalidade").insert({ prefeitura_id: usuario.prefeituraId, classe, ...campos });
-    if (novo.error) return { erro: mensagemDoBanco(novo.error.code) };
-  }
-  revalidatePath("/temporalidade");
-  revalidatePath("/inicio");
-  return { aviso: "Regra salva." };
-}
 
 // Salva o texto-base e as assinaturas do termo da prefeitura. Só administrador.
 export async function salvarModelo(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {

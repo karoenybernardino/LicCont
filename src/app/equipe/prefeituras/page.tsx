@@ -48,6 +48,9 @@ export default async function Prefeituras({ searchParams }: { searchParams: Prom
 
   return (
     <PaginaEquipe titulo="Prefeituras">
+      <div className="flex justify-end">
+        <Link href="/equipe/prefeituras/parceiras" className={botaoContorno}>Empresas parceiras</Link>
+      </div>
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <CartaoResumo rotulo="Prefeituras" valor={String(todas.length)} legenda={`${n("ativa")} ${n("ativa") === 1 ? "ativa" : "ativas"} · ${n("implantacao")} em implantação`} cor="teal" icone={<Icone nome="secretarias" />} />
         <CartaoResumo rotulo="Administradores" valor={String(admins)} legenda="em todas as prefeituras" cor="aco" icone={<Icone nome="usuarios" />} />

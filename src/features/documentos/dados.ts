@@ -28,6 +28,16 @@ export type ArquivoDoc = {
   motivo: string | null;
   miniatura: boolean;
   sha256: string | null;
+  // Decreto 10.278/2020 (Anexo II): campos preenchidos pela pessoa; os técnicos vêm do envio.
+  titulo: string | null;
+  assunto: string | null;
+  autor: string | null;
+  local: string | null;
+  genero: string;
+  selo: "consulta" | "valor_legal";
+  assinaturaIcp: boolean;
+  enviadoEm: string | null;
+  temTexto: boolean;
 };
 export type DocumentoDetalhe = {
   id: string;
@@ -45,6 +55,14 @@ export type DocumentoDetalhe = {
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
   encerrado_em: string | null;
+  classeId: string | null;
+  grupoId: string | null;
+  tipologiaId: string | null;
+  tipologia: string | null;
+  dataProducao: string | null;
+  observacao: string | null;
+  volume: number;
+  eventoEm: string | null;
   conferido: boolean;
   origem?: "manual" | "planilha" | "tce";
   ativo: boolean;
@@ -110,10 +128,11 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
     const cx = caixaDemo(d.caixa_id);
     const sec = SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "";
     return {
-      ...d, encerrado_em: null, cpf_credor: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
+      ...d, encerrado_em: null, cpf_credor: null, classeId: null, grupoId: null, tipologiaId: null, tipologia: null, dataProducao: null, observacao: null, volume: 1, eventoEm: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
       posicao: cx ? posicaoDe(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero) : null,
       arquivo: d.arquivo
-        ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null }
+        ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null,
+          titulo: null, assunto: null, autor: null, local: null, genero: "textual", selo: "consulta", assinaturaIcp: false, enviadoEm: null, temTexto: true }
         : null,
     };
   }
@@ -122,7 +141,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, conferido_em, ativo, origem, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256)",
+      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, classe_id, grupo_id, tipologia_id, data_producao, observacao, volume, evento_em, tipologias(nome), conferido_em, ativo, origem, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256, titulo, assunto, autor, local_digitalizacao, genero, selo, assinatura_icp)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -135,16 +154,21 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   // O ativo; senão o último envio (conferindo, recusado...).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const a = (arqs.find((x) => x.ativo) ?? arqs[0]) as any;
+  const comTexto = a ? await sb.from("arquivo_textos").select("arquivo_id").eq("arquivo_id", a.id).maybeSingle() : null;
   return {
     id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto,
     empresa: d.empresa, cnpj: d.cnpj, cpf_credor: d.cpf_credor ?? null, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
-    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em, conferido: !!d.conferido_em, origem: d.origem, ativo: d.ativo,
+    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em,
+    classeId: d.classe_id ?? null, grupoId: d.grupo_id ?? null, tipologiaId: d.tipologia_id ?? null, tipologia: d.tipologias?.nome ?? null,
+    dataProducao: d.data_producao ?? null, observacao: d.observacao ?? null, volume: d.volume ?? 1, eventoEm: d.evento_em ?? null, conferido: !!d.conferido_em, origem: d.origem, ativo: d.ativo,
     secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "", caixaId: d.caixa_id,
     posicao: cx ? posicaoDe(cx.niveis.modulos.ruas.codigo, cx.niveis.modulos.numero, cx.niveis.numero, cx.numero) : null,
     arquivo: a
       ? {
           id: a.id, nome: a.nome_original, paginas: a.paginas, tamanho: Number(a.tamanho), situacao: a.situacao,
           avisos: a.avisos ?? [], motivo: a.motivo_recusa, miniatura: !!a.miniatura_caminho, sha256: a.sha256 ?? null,
+          titulo: a.titulo ?? null, assunto: a.assunto ?? null, autor: a.autor ?? null, local: a.local_digitalizacao ?? null, genero: a.genero ?? "textual",
+          selo: a.selo ?? "consulta", assinaturaIcp: !!a.assinatura_icp, enviadoEm: a.enviado_em ?? null, temTexto: !!comTexto?.data,
         }
       : null,
   };

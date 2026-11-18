@@ -6,6 +6,8 @@ import { MODALIDADE_POR_TEXTO, SITUACAO_POR_TEXTO, TIPO_POR_TEXTO, CAMPOS, semAc
 // célula (pode ter nome de empresa ou de pessoa).
 
 export type Secretaria = { id: string; nome: string };
+// Tabela de temporalidade e tipologias do órgão, para ligar a linha à classe pelo código ou nome.
+export type Referencias = { classes: { id: string; codigo: string; nome: string }[]; tipologias: { id: string; nome: string }[] };
 export type ErroLinha = { linha: number; campo: string; motivo: string };
 export type DadosImportacao = {
   secretaria_id: string;
@@ -21,6 +23,10 @@ export type DadosImportacao = {
   situacao: string;
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
+  classe_id: string | null;
+  tipologia_id: string | null;
+  data_producao: string | null;
+  volume: number;
 };
 export type LinhaValida = { linha: number; dados: DadosImportacao; chave: string };
 export type LinhaRepetida = { linha: number; motivo: "arquivo" | "sistema" };
@@ -66,7 +72,14 @@ export function validarLinhas(
   secretarias: Secretaria[],
   existentes: ReadonlySet<string>,
   padrao?: Secretaria,
+  ref: Referencias = { classes: [], tipologias: [] },
 ): Conferencia {
+  const classePor = new Map<string, string>();
+  for (const c of ref.classes) {
+    classePor.set(semAcento(c.codigo), c.id);
+    if (!classePor.has(semAcento(c.nome))) classePor.set(semAcento(c.nome), c.id);
+  }
+  const tipologiaPor = new Map(ref.tipologias.map((t) => [semAcento(t.nome), t.id]));
   const porNome = new Map(secretarias.map((s) => [semAcento(s.nome), s.id]));
   const validas: LinhaValida[] = [];
   const erros: ErroLinha[] = [];
@@ -98,6 +111,18 @@ export function validarLinhas(
     if (ini === undefined) erro("vigencia_inicio", "Data inválida. Use dd/mm/aaaa.");
     if (fim === undefined) erro("vigencia_fim", "Data inválida. Use dd/mm/aaaa.");
 
+    const classeTxt = pega("classe");
+    const classeId = classeTxt ? (classePor.get(semAcento(classeTxt)) ?? null) : null;
+    if (classeTxt && !classeId) erro("classe", "Classe não cadastrada. Use o código ou o nome da tabela de temporalidade.");
+    const tipologiaTxt = pega("tipologia");
+    const tipologiaId = tipologiaTxt ? (tipologiaPor.get(semAcento(tipologiaTxt)) ?? null) : null;
+    if (tipologiaTxt && !tipologiaId) erro("tipologia", "Tipologia não cadastrada.");
+    const dataProducao = lerData(pega("data_producao"));
+    if (dataProducao === undefined) erro("data_producao", "Data inválida. Use dd/mm/aaaa.");
+    const volumeTxt = pega("volume");
+    const volume = volumeTxt ? Number(volumeTxt) : 1;
+    if (!Number.isInteger(volume) || volume < 1 || volume > 99) erro("volume", "Volume inválido (de 1 a 99).");
+
     if (falhas.length) {
       erros.push(...falhas);
       return;
@@ -118,6 +143,12 @@ export function validarLinhas(
       vigencia_inicio: ini ?? "",
       vigencia_fim: fim ?? "",
       encerrado_em: "",
+      classe: classeId ?? CAIXA_FALSA,
+      tipologia: tipologiaId ?? "",
+      data_producao: dataProducao ?? "2000-01-01",
+      volume,
+      observacao: "",
+      evento_em: "",
     });
     if (!r.success) {
       for (const p of r.error.issues) {
@@ -129,7 +160,7 @@ export function validarLinhas(
     const d = r.data;
     const dados: DadosImportacao = {
       secretaria_id: d.secretaria,
-      tipo: d.tipo,
+      tipo: tipo as "licitacao" | "contrato",
       modalidade: d.modalidade,
       numero: d.numero,
       ano: d.ano,
@@ -141,6 +172,10 @@ export function validarLinhas(
       situacao: d.situacao,
       vigencia_inicio: d.vigencia_inicio,
       vigencia_fim: d.vigencia_fim,
+      classe_id: classeId,
+      tipologia_id: tipologiaId,
+      data_producao: dataProducao ?? null,
+      volume,
     };
     const chave = chaveProcesso(dados);
     if (vistas.has(chave)) return void repetidas.push({ linha, motivo: "arquivo" });

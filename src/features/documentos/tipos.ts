@@ -1,7 +1,7 @@
 // Vocabulário dos documentos (plano: docs/fases/fase-3.md). As chaves são as
 // gravadas no banco; os textos são os da tela.
 
-export const TIPOS = { licitacao: "Licitação", contrato: "Contrato" } as const;
+export const TIPOS = { licitacao: "Licitação", contrato: "Contrato", outro: "Documento" } as const;
 export type Tipo = keyof typeof TIPOS;
 
 export const MODALIDADES = {
@@ -27,10 +27,11 @@ export const SITUACOES_LICITACAO = {
   anulada: "Anulada",
 } as const;
 export const SITUACOES_CONTRATO = { vigente: "Vigente", encerrado: "Encerrado", rescindido: "Rescindido" } as const;
-export const SITUACOES: Record<string, string> = { ...SITUACOES_LICITACAO, ...SITUACOES_CONTRATO };
+export const SITUACOES_OUTRO = { arquivado: "Arquivado" } as const;
+export const SITUACOES: Record<string, string> = { ...SITUACOES_LICITACAO, ...SITUACOES_CONTRATO, ...SITUACOES_OUTRO };
 
 export function situacoesDe(tipo: Tipo): Record<string, string> {
-  return tipo === "licitacao" ? SITUACOES_LICITACAO : SITUACOES_CONTRATO;
+  return tipo === "licitacao" ? SITUACOES_LICITACAO : tipo === "contrato" ? SITUACOES_CONTRATO : SITUACOES_OUTRO;
 }
 
 export type ItemPesquisa = {

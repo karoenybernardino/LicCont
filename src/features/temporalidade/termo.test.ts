@@ -8,7 +8,7 @@ const base = {
   observacao: null, editalEm: "2026-01-02", aprovadoEm: "2026-03-01T12:00:00Z",
   documentos: Array.from({ length: 80 }, (_, i) => ({
     titulo: `Contrato ${String(i + 1).padStart(3, "0")}/2005`, objeto: "Objeto fictício de teste com acentuação: manutenção, ação, coração.",
-    caixa: "A-M1-N1-C01", inicio: "2005-01-01", fim: "2010-01-01", classe: "contrato" as const, extremos: "2005 – 2010", vencimento: "2020-01-01",
+    caixa: "A-M1-N1-C01", inicio: "2005-01-01", fim: "2010-01-01", classe: "Contratos e aditivos", extremos: "2005 – 2010", vencimento: "2020-01-01",
   })),
 };
 

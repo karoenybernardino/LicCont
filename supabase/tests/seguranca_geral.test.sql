@@ -20,7 +20,7 @@ select is(
   (select coalesce(string_agg(distinct table_name, ', ' order by table_name), '')
      from information_schema.role_table_grants
     where table_schema = 'public' and grantee = 'service_role'
-      and table_name not in ('prefeituras', 'secretarias', 'usuarios', 'vinculos', 'equipe_liccont', 'auditoria', 'descarte_itens', 'descartes', 'etiquetas', 'modelos_termo', 'tabela_temporalidade', 'tentativas_login')),
+      and table_name not in ('prefeituras', 'secretarias', 'usuarios', 'vinculos', 'equipe_liccont', 'auditoria', 'descarte_itens', 'descartes', 'etiquetas', 'modelos_termo', 'tentativas_login')),
   '', 'service_role só tem privilégio nas tabelas de cadastro do servidor (as outras, só por função)');
 
 select is(

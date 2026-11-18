@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { Pilula } from "@/ui/canvas";
 import type { Usuario } from "@/features/sessao/dal";
 import { linkDaMiniatura } from "./acoes";
+import { DigitalizacaoDoc } from "./digitalizacao";
+import { lerRegras } from "@/features/temporalidade/dados";
+import { prazoDeGuarda } from "@/features/temporalidade/classes-tabela";
 import { BotaoBaixar, BotoesGestao } from "./botoes";
 import {
   podeConferir,
@@ -236,6 +239,7 @@ export async function PainelDocumento({
     documentosEmprestados(),
   ]);
   const emprestado = emprestados.has(doc.id);
+  const regraDoc = doc.classeId ? (await lerRegras()).find((r) => r.id === doc.classeId) : undefined;
   const a = doc.arquivo;
   const titulo = tituloDocumento(doc);
   const pos = doc.posicao;
@@ -281,6 +285,17 @@ export async function PainelDocumento({
         </div>
       </div>
 
+      {a?.situacao === "pronto" && (
+        <DigitalizacaoDoc
+          d={{
+            documentoId: doc.id, arquivoId: a.id, classe: regraDoc?.classe ?? "Sem classe", codigo: regraDoc?.codigo ?? "—", grupo: regraDoc?.grupo ?? "—",
+            prazo: regraDoc ? prazoDeGuarda(regraDoc) : "—", destinacao: regraDoc?.destinacao === "guarda_permanente" ? "guarda permanente" : "eliminação",
+            dataProducao: formatarData(doc.dataProducao), tipologia: doc.tipologia, titulo: a.titulo, assunto: a.assunto, autor: a.autor, local: a.local, genero: a.genero,
+            selo: a.selo, assinaturaIcp: a.assinaturaIcp, enviadoEm: a.enviadoEm, sha256: a.sha256, paginas: a.paginas, avisos: a.avisos, temTexto: a.temTexto, podeEditar: cadastra,
+          }}
+        />
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
         <div className={`${cartao} flex-1`}>
           <span className={ROT}>Onde está guardado</span>
@@ -307,9 +322,14 @@ export async function PainelDocumento({
                     : "Sem caixa definida."}
                 </p>
                 {doc.caixaId ? (
-                  <Link href={`/etiquetas?caixas=${doc.caixaId}`} className={`${botaoCanvas} w-full`}>
-                    Imprimir etiqueta
-                  </Link>
+                  <>
+                    <Link href={`/etiquetas?documentos=${doc.id}`} className={`${botaoCanvas} w-full`}>
+                      Baixar etiqueta do documento
+                    </Link>
+                    <Link href={`/etiquetas?caixas=${doc.caixaId}`} className={`${botaoCanvas} w-full`}>
+                      Baixar etiqueta da caixa
+                    </Link>
+                  </>
                 ) : (
                   <button type="button" disabled title="Sem caixa definida" className={`${botaoCanvas} w-full cursor-not-allowed opacity-50`}>
                     Imprimir etiqueta

@@ -14,6 +14,8 @@ test.describe.configure({ mode: "serial", retries: 0 });
 const PDF = path.join(process.cwd(), "public", "demo", "documento-de-demonstracao.pdf");
 
 async function preencher(page: Page, numero: string, objeto: string) {
+  await page.getByLabel("Classe (tabela de temporalidade)").selectOption({ index: 1 });
+  await page.getByLabel("Data do documento").fill("2024-03-01");
   await page.getByLabel("Modalidade").selectOption("pregao_eletronico");
   await page.getByLabel("Título do processo").fill(numero);
   await page.getByLabel("Objeto").fill(objeto);

@@ -14,6 +14,10 @@ export const CAMPOS = [
   { chave: "valor", rotulo: "Valor", obrigatorio: false, apelidos: ["valor", "valor total", "valor global"] },
   { chave: "vigencia_inicio", rotulo: "Início da vigência", obrigatorio: false, apelidos: ["inicio da vigencia", "início da vigência", "vigencia inicio", "data inicio", "início"] },
   { chave: "vigencia_fim", rotulo: "Fim da vigência", obrigatorio: false, apelidos: ["fim da vigencia", "fim da vigência", "vigencia fim", "data fim", "término", "termino"] },
+  { chave: "classe", rotulo: "Classe (código ou nome)", obrigatorio: false, apelidos: ["classe", "codigo de classificacao", "código de classificação", "classificacao", "classificação", "cod. classe"] },
+  { chave: "tipologia", rotulo: "Tipologia documental", obrigatorio: false, apelidos: ["tipologia", "tipologia documental"] },
+  { chave: "volume", rotulo: "Volume", obrigatorio: false, apelidos: ["volume", "vol", "vol."] },
+  { chave: "data_producao", rotulo: "Data do documento", obrigatorio: false, apelidos: ["data", "data do documento", "data do ato", "data de producao", "data de produção"] },
 ] as const;
 
 export type ChaveCampo = (typeof CAMPOS)[number]["chave"];

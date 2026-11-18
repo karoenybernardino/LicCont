@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { hojeSaoPaulo } from "@/features/temporalidade/regras";
 import { lerValor } from "./formato";
-import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO } from "./tipos";
+import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, SITUACOES_OUTRO } from "./tipos";
 
 const uuid = z.guid("Escolha uma opção da lista.");
 const vazioParaNulo = (v: unknown) => (v === undefined || (typeof v === "string" && v.trim() === "") ? null : v);
@@ -59,7 +59,7 @@ const anoMax = () => new Date().getFullYear() + 1;
 
 export const esquemaDocumento = z
   .object({
-    tipo: z.enum(["licitacao", "contrato"], { error: "Escolha o tipo." }),
+    tipo: z.enum(["licitacao", "contrato", "outro"], { error: "Escolha o tipo." }),
     modalidade: z.preprocess(vazioParaNulo, z.enum(Object.keys(MODALIDADES) as [string, ...string[]]).nullable()),
     numero: z.string().trim().min(1, "Informe o número do processo.").max(30, "No máximo 30 caracteres."),
     ano: z.coerce.number().int().min(1950, "Ano inválido.").max(anoMax(), "Ano inválido."),
@@ -72,12 +72,25 @@ export const esquemaDocumento = z
     situacao: z.string().min(1, "Escolha a situação."),
     vigencia_inicio: data,
     vigencia_fim: data,
-    // Início da contagem do prazo de guarda da licitação (Fase 7); contrato conta do fim da vigência.
+    // Evento do prazo de guarda da licitação; contrato conta do fim da vigência.
     encerrado_em: data,
+    // Classificação: a classe define o grupo e o prazo; tipologia é opcional.
+    classe: uuid,
+    tipologia: z.preprocess(vazioParaNulo, uuid.nullable()),
+    // Data em que o documento foi feito: de onde o prazo fixo conta e que sai na etiqueta.
+    data_producao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data do documento."),
+    observacao: z.preprocess(vazioParaNulo, z.string().trim().max(300, "No máximo 300 caracteres.").refine(temCpf, MSG_CPF).nullable()),
+    volume: z.preprocess((v) => (v === "" || v === undefined ? 1 : v), z.coerce.number().int("Volume inválido.").min(1, "Volume inválido.").max(99, "Volume inválido.")),
+    evento_em: data,
   })
   .superRefine((d, ctx) => {
     const erro = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message });
-    if (d.tipo === "licitacao") {
+    if (d.data_producao > hojeSaoPaulo()) erro("data_producao", "A data do documento não pode ser no futuro.");
+    if (d.tipo === "outro") {
+      if (!(d.situacao in SITUACOES_OUTRO)) erro("situacao", "Situação inválida.");
+      if (d.modalidade) erro("modalidade", "Modalidade é só de licitação.");
+      if (d.vigencia_inicio || d.vigencia_fim || d.encerrado_em) erro("vigencia_fim", "Vigência e encerramento são só de licitação e contrato.");
+    } else if (d.tipo === "licitacao") {
       if (!d.modalidade) erro("modalidade", "Escolha a modalidade.");
       if (!(d.situacao in SITUACOES_LICITACAO)) erro("situacao", "Situação inválida para licitação.");
       if (d.vigencia_inicio || d.vigencia_fim) erro("vigencia_fim", "Vigência é só de contrato.");
@@ -120,7 +133,9 @@ export function mensagemDocumento(codigo: string | undefined) {
     case "42501":
       return "Você não tem permissão para esta ação.";
     case "23503":
-      return "A caixa ou a secretaria escolhida não é válida.";
+      return "A caixa, a secretaria ou a classe escolhida não é válida.";
+    case "23502":
+      return "Escolha o grupo e a classe do documento.";
     default:
       return "Não foi possível salvar. Tente de novo.";
   }

@@ -89,3 +89,25 @@ describe("validarLinhas", () => {
     expect(rel).toEqual([["Linha", "Campo", "Motivo"], ["7", "Ano", "Ano inválido."]]);
   });
 });
+
+describe("classe, tipologia, data e volume na importação", () => {
+  const T = [...TITULOS, "Classe", "Tipologia", "Volume", "Data do documento"];
+  const m = sugerirMapa(T);
+  const ref = { classes: [{ id: "c1000000-0000-0000-0000-000000000001", codigo: "031", nome: "Licitações e Contratos" }], tipologias: [{ id: "e1000000-0000-0000-0000-000000000001", nome: "Processo licitatório" }] };
+  const l = (extra: string[], numero = "001/2024") => [...linha({ Número: numero }), ...extra];
+  it("liga a classe pelo código ou pelo nome e lê tipologia, volume e data", () => {
+    const r = validarLinhas([l(["031", "processo licitatorio", "2", "12/02/2024"]), l(["licitacoes e contratos", "", "", ""], "002/2024")], m, SEC, new Set(), undefined, ref);
+    expect(r.erros).toEqual([]);
+    expect(r.validas[0].dados).toMatchObject({ classe_id: ref.classes[0].id, tipologia_id: ref.tipologias[0].id, volume: 2, data_producao: "2024-02-12" });
+    expect(r.validas[1].dados).toMatchObject({ classe_id: ref.classes[0].id, tipologia_id: null, volume: 1, data_producao: null });
+  });
+  it("recusa classe, tipologia, volume e data que não existem, sem repetir o texto da célula", () => {
+    const r = validarLinhas([l(["999", "Outra", "0", "31/02/2024"])], m, SEC, new Set(), undefined, ref);
+    expect(r.erros.map((e) => e.campo).sort()).toEqual(["Classe (código ou nome)", "Data do documento", "Tipologia documental", "Volume"]);
+    expect(JSON.stringify(r.erros)).not.toContain("999");
+  });
+  it("sem as colunas novas a linha vale como antes (sem classe)", () => {
+    const r = validarLinhas([linha()], mapa, SEC, new Set());
+    expect(r.validas[0].dados).toMatchObject({ classe_id: null, volume: 1, data_producao: null });
+  });
+});
