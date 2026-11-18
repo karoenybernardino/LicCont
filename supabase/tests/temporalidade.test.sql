@@ -1,5 +1,5 @@
 -- Fase 7 · Temporalidade e descarte: isolamento, permissões e a regra de pronto.
---   1. tabela_temporalidade: outra prefeitura não lê nem escreve; só administrador escreve;
+--   1. classes_documentais: outra prefeitura não lê nem escreve; só administrador grava (pela função);
 --   2. descartes e descarte_itens: só leitura pela Data API; outra prefeitura não lê;
 --   3. documento fora do prazo, de guarda permanente, sem data, de outra secretaria
 --      ou já em outro termo é recusado;
@@ -90,32 +90,47 @@ $$;
 grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 
 -- ---------------------------------------------------------------------------
--- 1. tabela_temporalidade
+-- 1. classes_documentais
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
-select throws_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao)
-  values ('11111111-1111-1111-1111-111111111111', 'contrato', 2, 3, 'eliminacao')$$, '42501', null, 'consulta não cria regra');
+select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos"}]'::jsonb)$$,
+  '42501', null, 'consulta não cria classe');
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
-select throws_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao)
-  values ('11111111-1111-1111-1111-111111111111', 'contrato', 2, 3, 'eliminacao')$$, '42501', null, 'coordenador não cria regra');
+select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos"}]'::jsonb)$$,
+  '42501', null, 'coordenador não cria classe');
 
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
-select lives_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao) values
-  ('11111111-1111-1111-1111-111111111111', 'contrato', 2, 3, 'eliminacao'),
-  ('11111111-1111-1111-1111-111111111111', 'licitacao', 1, 1, 'guarda_permanente'),
-  ('11111111-1111-1111-1111-111111111111', 'dispensa_inexigibilidade', 1, 1, 'eliminacao')$$, 'administrador cria as regras');
-select throws_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao)
-  values ('11111111-1111-1111-1111-111111111111', 'contrato', 9, 9, 'eliminacao')$$, '23505', null, 'uma regra por classe');
-select throws_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao)
-  values ('22222222-2222-2222-2222-222222222222', 'contrato', 2, 3, 'eliminacao')$$, '42501', null, 'administrador de A não cria regra em B');
-select lives_ok($$update public.tabela_temporalidade set prazo_corrente_anos = 2 where classe = 'contrato'$$, 'administrador altera regra');
+select lives_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[
+  {"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"apos_evento","evento":"Término do contrato","destinacao":"eliminacao"},
+  {"codigo":"LP","nome":"Licitações permanentes","grupo":"Licitações e Contratos","tipo_prazo":"permanente","destinacao":"guarda_permanente"},
+  {"codigo":"DI","nome":"Dispensas","grupo":"Licitações e Contratos","prazo_corrente":1,"prazo_intermediaria":1,"tipo_prazo":"apos_evento","evento":"Encerramento","destinacao":"eliminacao"}]'::jsonb)$$,
+  'administrador cria as classes');
+select lives_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"apos_evento","evento":"Término do contrato","destinacao":"eliminacao"}]'::jsonb)$$,
+  'reenviar o mesmo código atualiza, não duplica');
+select results_eq($$select count(*)::int from public.classes_documentais where codigo = 'CT'$$, array[1], 'uma classe por código');
+select throws_ok($$select public.classes_salvar('22222222-2222-2222-2222-222222222222', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos"}]'::jsonb)$$,
+  '42501', null, 'administrador de A não cria classe em B');
+select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"XX","nome":"Sem grupo","grupo":"Inexistente"}]'::jsonb)$$,
+  '22023', null, 'grupo desconhecido é recusado');
+select throws_ok($$update public.classes_documentais set nome = 'Direto'$$, '42501', null, 'ninguém altera classe direto pela Data API');
 
 select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
-select is_empty($$select 1 from public.tabela_temporalidade$$, 'B não lê regras de A');
-select is_empty($$update public.tabela_temporalidade set prazo_corrente_anos = 1 returning 1$$, 'B não altera regras de A');
-select throws_ok($$insert into public.tabela_temporalidade (prefeitura_id, classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao)
-  values ('11111111-1111-1111-1111-111111111111', 'licitacao', 1, 1, 'eliminacao')$$, '42501', null, 'B não cria regra em A');
+select is_empty($$select 1 from public.classes_documentais$$, 'B não lê classes de A');
+select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"ZZ","nome":"Invasão","grupo":"Licitações e Contratos"}]'::jsonb)$$,
+  '42501', null, 'B não cria classe em A');
+
+-- Liga os documentos às classes (como postgres).
+reset role;
+update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'CT')
+  where id in ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000005',
+               'd1000000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000009');
+update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'LP')
+  where id = 'd1000000-0000-0000-0000-000000000003';
+update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'DI')
+  where id = 'd1000000-0000-0000-0000-000000000004';
+set local role authenticated;
+select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
 
 -- ---------------------------------------------------------------------------
 -- 2. Criar termo: quem pode e o que pode entrar
@@ -133,7 +148,7 @@ select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-0000000
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000003']::uuid[])$$,
   'LD001', null, 'documento de guarda permanente é recusado');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000005']::uuid[])$$,
-  'LD001', null, 'documento sem data de início é recusado');
+  'LD001', null, 'documento aguardando o evento é recusado');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000006']::uuid[])$$,
   'LD002', null, 'documento de outra secretaria é recusado');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000007']::uuid[])$$,
@@ -199,7 +214,7 @@ select throws_ok($$select public.descarte_aprovar('00000000-0000-0000-0000-00000
 
 -- Um documento deixa de estar apto (virou permanente) antes da aprovação: nada é eliminado.
 reset role;
-update public.tabela_temporalidade set destinacao = 'guarda_permanente' where classe = 'dispensa_inexigibilidade';
+update public.classes_documentais set tipo_prazo = 'permanente', evento = null, destinacao = 'guarda_permanente' where codigo = 'DI';
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select throws_ok($$select public.descarte_aprovar((select id from public.descartes limit 1))$$,
@@ -207,7 +222,7 @@ select throws_ok($$select public.descarte_aprovar((select id from public.descart
 select results_eq($$select count(*)::int from public.documentos where ativo and id in
   ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000004')$$, array[2], 'nenhum documento foi desativado');
 reset role;
-update public.tabela_temporalidade set destinacao = 'eliminacao' where classe = 'dispensa_inexigibilidade';
+update public.classes_documentais set tipo_prazo = 'apos_evento', evento = 'Encerramento', destinacao = 'eliminacao' where codigo = 'DI';
 set local role authenticated;
 
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
@@ -292,12 +307,13 @@ set local role authenticated;
 -- Privilégios
 -- ---------------------------------------------------------------------------
 reset role;
-select table_privs_are('public', 'tabela_temporalidade', 'anon', array[]::text[], 'anon sem privilégio em tabela_temporalidade');
+select table_privs_are('public', 'classes_documentais', 'anon', array[]::text[], 'anon sem privilégio em classes_documentais');
+select table_privs_are('public', 'classes_documentais', 'authenticated', array['SELECT'], 'authenticated só lê classes_documentais');
 select table_privs_are('public', 'descartes', 'anon', array[]::text[], 'anon sem privilégio em descartes');
 select table_privs_are('public', 'descarte_itens', 'anon', array[]::text[], 'anon sem privilégio em descarte_itens');
 select table_privs_are('public', 'descartes', 'authenticated', array['SELECT'], 'authenticated só lê descartes');
 select table_privs_are('public', 'descarte_itens', 'authenticated', array['SELECT'], 'authenticated só lê descarte_itens');
-select ok(not has_table_privilege('authenticated', 'public.tabela_temporalidade', 'delete'), 'ninguém apaga regra');
+select ok(not has_table_privilege('authenticated', 'public.classes_documentais', 'delete'), 'ninguém apaga classe direto');
 select ok(not has_table_privilege('authenticated', 'public.documentos', 'delete'), 'ninguém apaga documento');
 select ok(not has_function_privilege('anon', 'public.descarte_aprovar(uuid)', 'execute'), 'anon não executa descarte_aprovar');
 select ok(not has_function_privilege('anon', 'public.descarte_criar(uuid, uuid[], text)', 'execute'), 'anon não executa descarte_criar');

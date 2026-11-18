@@ -1,19 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { aprovavelDesde, dataBR, observacaoTermo, classeDocumento, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
+import { aprovavelDesde, dataBR, observacaoTermo, dataDoEvento, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
 
+const r = (id: string, o: Partial<Regra>): Regra => ({
+  id, codigo: id, classe: id, grupoId: "g", grupo: "Licitações e Contratos", corrente: 0, intermediaria: 0, tipoPrazo: "fixo", evento: null,
+  destinacao: "eliminacao", observacao: null, ativa: true, ...o,
+});
 const regras: Regra[] = [
-  { classe: "contrato", corrente: 2, intermediaria: 3, destinacao: "eliminacao" },
-  { classe: "licitacao", corrente: 1, intermediaria: 1, destinacao: "guarda_permanente" },
-  { classe: "dispensa_inexigibilidade", corrente: 1, intermediaria: 1, destinacao: "eliminacao" },
+  r("ct", { corrente: 2, intermediaria: 3, tipoPrazo: "apos_evento", evento: "Término do contrato" }),
+  r("lp", { tipoPrazo: "permanente", destinacao: "guarda_permanente" }),
+  r("fx", { corrente: 1, intermediaria: 1 }),
 ];
-const contrato = (fim: string | null) => ({ tipo: "contrato" as const, modalidade: null, vigencia_fim: fim, encerrado_em: null });
+const doc = (o: Partial<Parameters<typeof estadoDoPrazo>[0]>) => ({ tipo: "contrato" as const, classe_id: "ct", data_producao: null, evento_em: null, vigencia_fim: null, encerrado_em: null, ...o });
+const contrato = (fim: string | null) => doc({ vigencia_fim: fim });
 
-describe("classeDocumento", () => {
-  it("separa contrato, dispensa/inexigibilidade e demais licitações", () => {
-    expect(classeDocumento("contrato", null)).toBe("contrato");
-    expect(classeDocumento("licitacao", "dispensa")).toBe("dispensa_inexigibilidade");
-    expect(classeDocumento("licitacao", "inexigibilidade")).toBe("dispensa_inexigibilidade");
-    expect(classeDocumento("licitacao", "pregao_eletronico")).toBe("licitacao");
+describe("dataDoEvento", () => {
+  it("usa o evento informado; senão, fim da vigência (contrato) ou encerramento (licitação)", () => {
+    expect(dataDoEvento(doc({ evento_em: "2020-01-01", vigencia_fim: "2019-01-01" }))).toBe("2020-01-01");
+    expect(dataDoEvento(doc({ vigencia_fim: "2019-01-01" }))).toBe("2019-01-01");
+    expect(dataDoEvento(doc({ tipo: "licitacao", encerrado_em: "2018-05-05" }))).toBe("2018-05-05");
+    expect(dataDoEvento(doc({ tipo: "outro" }))).toBeNull();
   });
 });
 
@@ -35,16 +40,17 @@ describe("estadoDoPrazo", () => {
     expect(estadoDoPrazo(contrato("2020-06-15"), regras, "2025-03-16")).toMatchObject({ estado: "vigente", emDias: 91 });
   });
   it("guarda permanente nunca fica pronto", () => {
-    const d = { tipo: "licitacao" as const, modalidade: "concorrencia" as const, vigencia_fim: null, encerrado_em: "1990-01-01" };
-    expect(estadoDoPrazo(d, regras, "2026-11-15")).toEqual({ estado: "permanente" });
+    expect(estadoDoPrazo(doc({ classe_id: "lp", vigencia_fim: "1990-01-01" }), regras, "2026-11-15")).toEqual({ estado: "permanente" });
   });
-  it("sem regra e sem data não entram na fila", () => {
-    expect(estadoDoPrazo(contrato(null), regras, "2026-11-15")).toEqual({ estado: "sem_data" });
+  it("sem classe, sem regra e sem evento não entram na fila", () => {
+    expect(estadoDoPrazo(contrato(null), regras, "2026-11-15")).toEqual({ estado: "aguardando_evento" });
     expect(estadoDoPrazo(contrato("2000-01-01"), [], "2026-11-15")).toEqual({ estado: "sem_regra" });
+    expect(estadoDoPrazo(doc({ classe_id: null, vigencia_fim: "2000-01-01" }), regras, "2026-11-15")).toEqual({ estado: "sem_regra" });
   });
-  it("licitação conta do encerramento, não da vigência", () => {
-    const d = { tipo: "licitacao" as const, modalidade: "dispensa" as const, vigencia_fim: null, encerrado_em: "2000-01-01" };
+  it("prazo fixo conta da data do documento, não do evento", () => {
+    const d = doc({ classe_id: "fx", data_producao: "2000-01-01", vigencia_fim: "2020-01-01" });
     expect(estadoDoPrazo(d, regras, "2026-11-15")).toMatchObject({ estado: "pronto", vencimento: "2002-01-01" });
+    expect(estadoDoPrazo(doc({ classe_id: "fx" }), regras, "2026-11-15")).toEqual({ estado: "sem_data" });
   });
 });
 

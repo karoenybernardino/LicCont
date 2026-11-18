@@ -1,18 +1,19 @@
 // Regras puras da temporalidade (sem banco): o banco repete a mesma conta em
 // app.motivo_inelegivel, e os dois precisam concordar (ver regras.test.ts).
 // Datas são "AAAA-MM-DD" no fuso de São Paulo, nunca Date solto.
-import type { Modalidade, Tipo } from "@/features/documentos/tipos";
-
-export const CLASSES = {
-  licitacao: "Processo licitatório",
-  dispensa_inexigibilidade: "Dispensa e inexigibilidade",
-  contrato: "Contrato administrativo",
-} as const;
-export type Classe = keyof typeof CLASSES;
-export const CLASSES_LISTA = Object.keys(CLASSES) as Classe[];
+import type { Tipo } from "@/features/documentos/tipos";
 
 export type Destinacao = "eliminacao" | "guarda_permanente";
-export type Regra = { classe: Classe; corrente: number; intermediaria: number; destinacao: Destinacao };
+// fixo: conta da data do documento; apos_evento: conta do evento informado; permanente: nunca elimina.
+export type TipoPrazo = "fixo" | "apos_evento" | "permanente";
+export const TIPOS_PRAZO: Record<TipoPrazo, string> = { fixo: "Prazo fixo", apos_evento: "Após um evento", permanente: "Guarda permanente" };
+
+// Uma linha da tabela de temporalidade do órgão (classe documental).
+export type Regra = {
+  id: string; codigo: string; classe: string; grupoId: string; grupo: string;
+  corrente: number; intermediaria: number; tipoPrazo: TipoPrazo; evento: string | null;
+  destinacao: Destinacao; observacao: string | null; ativa: boolean;
+};
 
 // Resolução CONARQ 40/2014 (nova redação da 44/2020): o edital de ciência fica
 // publicado antes da eliminação. Prazo mínimo adotado: 45 dias (confirmar com o
@@ -20,11 +21,6 @@ export type Regra = { classe: Classe; corrente: number; intermediaria: number; d
 // public.descarte_aprovar).
 export const PRAZO_CIENCIA_DIAS = 45;
 export const AVISO_DIAS = 90;
-
-export function classeDocumento(tipo: Tipo, modalidade: Modalidade | null): Classe {
-  if (tipo === "contrato") return "contrato";
-  return modalidade === "dispensa" || modalidade === "inexigibilidade" ? "dispensa_inexigibilidade" : "licitacao";
-}
 
 export function hojeSaoPaulo(agora = new Date()) {
   return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
@@ -60,22 +56,26 @@ export function somarDias(iso: string, dias: number) {
   return paraIso(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
 }
 
-export type DocumentoPrazo = { tipo: Tipo; modalidade: Modalidade | null; vigencia_fim: string | null; encerrado_em: string | null };
+export type DocumentoPrazo = {
+  tipo: Tipo; classe_id: string | null; data_producao: string | null; evento_em: string | null;
+  vigencia_fim: string | null; encerrado_em: string | null;
+};
 export type EstadoPrazo =
-  | { estado: "sem_regra" | "sem_data" | "permanente" }
+  | { estado: "sem_regra" | "sem_data" | "aguardando_evento" | "permanente" }
   | { estado: "vigente" | "vence" | "pronto"; vencimento: string; emDias: number };
 
-// Contrato conta do fim da vigência; licitação, do encerramento do processo.
-export function inicioDaContagem(d: DocumentoPrazo) {
-  return d.tipo === "contrato" ? d.vigencia_fim : d.encerrado_em;
+// Evento do prazo "após evento": o informado, ou o fim da vigência (contrato) / encerramento (licitação).
+export function dataDoEvento(d: DocumentoPrazo) {
+  return d.evento_em ?? (d.tipo === "contrato" ? d.vigencia_fim : d.tipo === "licitacao" ? d.encerrado_em : null);
 }
 
+// Mesma conta de app.motivo_inelegivel: prazo fixo conta da data do documento.
 export function estadoDoPrazo(d: DocumentoPrazo, regras: Regra[], hoje: string): EstadoPrazo {
-  const regra = regras.find((r) => r.classe === classeDocumento(d.tipo, d.modalidade));
+  const regra = d.classe_id ? regras.find((r) => r.id === d.classe_id) : undefined;
   if (!regra) return { estado: "sem_regra" };
   if (regra.destinacao === "guarda_permanente") return { estado: "permanente" };
-  const inicio = inicioDaContagem(d);
-  if (!inicio) return { estado: "sem_data" };
+  const inicio = regra.tipoPrazo === "apos_evento" ? dataDoEvento(d) : d.data_producao;
+  if (!inicio) return { estado: regra.tipoPrazo === "apos_evento" ? "aguardando_evento" : "sem_data" };
   const vencimento = somarAnos(inicio, regra.corrente + regra.intermediaria);
   const emDias = diasEntre(hoje, vencimento);
   return { estado: emDias <= 0 ? "pronto" : emDias <= AVISO_DIAS ? "vence" : "vigente", vencimento, emDias };
@@ -101,9 +101,11 @@ export function observacaoTermo(
 export const MOTIVOS: Record<string, string> = {
   inexistente: "Documento não encontrado.",
   inativo: "O documento está desativado.",
-  sem_regra: "A tabela de temporalidade não tem regra para este tipo.",
+  sem_regra: "O documento não tem classe na tabela de temporalidade.",
   guarda_permanente: "Documento de guarda permanente não pode ser eliminado.",
-  sem_data: "Falta a data de início da contagem do prazo.",
+  sem_data: "Falta a data do documento, de onde o prazo começa a contar.",
+  aguardando_evento: "Falta informar o evento que inicia o prazo de guarda.",
+  digitalizado_sem_icp: "Documento digitalizado só pode ser eliminado com assinatura ICP-Brasil.",
   prazo_nao_cumprido: "O prazo de guarda ainda não foi cumprido.",
   emprestado: "O documento está emprestado.",
   em_outro_termo: "O documento já está em outro termo.",

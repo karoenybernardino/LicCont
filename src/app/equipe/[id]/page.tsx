@@ -18,6 +18,9 @@ import { listarAdministradores, obterPrefeitura, suporteAutorizadoAte, usoPrefei
 import { formatarCnpj } from "@/features/prefeituras/lista";
 import { formatarData } from "@/features/documentos/formato";
 import { exigirEquipe } from "@/features/sessao/dal";
+import { classesDoOrgao, listarParceiras, marcaDoOrgao } from "@/features/equipe/marca";
+import { FormMarca } from "@/features/equipe/marca-form";
+import { EditorClasses } from "@/features/temporalidade/classes";
 
 export const metadata: Metadata = { title: "Prefeitura · LicCONT" };
 
@@ -28,6 +31,7 @@ const ABAS = [
   ["resumo", "Resumo"],
   ["administradores", "Administradores"],
   ["tce", "Integração TCE-CE"],
+  ["marca", "Logo e temporalidade"],
   ["uso", "Uso"],
   ["auditoria", "Auditoria"],
 ] as const;
@@ -35,7 +39,7 @@ const reais = (c: number | null) => (c === null ? "" : (c / 100).toLocaleString(
 const rotuloMini = "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
 
 // Quadro EquipePrefeituraDetalhe: cabeçalho e abas Resumo, Administradores, Integração TCE-CE, Uso e Auditoria.
-export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; editar?: string; importou?: string }> }) {
+export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; editar?: string; importou?: string; marca?: string }> }) {
   await exigirEquipe();
   const { id } = await params;
   const busca = await searchParams;
@@ -48,6 +52,8 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
   const uso = usoTodas.get(id);
   const i = integ.get(id);
   const aviso = busca.importou ? AVISOS_IMPORTAR[busca.importou] : undefined;
+  const [marca, parceiras, classes] = aba === "marca" ? await Promise.all([marcaDoOrgao(id), listarParceiras(), classesDoOrgao(id)]) : [null, [], { classes: [], grupos: [] }];
+  const avisoMarca = busca.marca ? ({ ok: "Marca salva.", logo: "O logo precisa ser PNG ou SVG de até 1 MB.", demo: "Modo demonstração: nada foi salvo.", erro: "Não foi possível salvar. Confira os dados." } as Record<string, string>)[busca.marca] : undefined;
   const acoes = aba === "auditoria" ? await acoesEquipe({ prefeitura: id, limite: 50 }) : [];
   const href = (a: string) => `/equipe/${id}?aba=${a}`;
 
@@ -213,6 +219,30 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
             </form>
           )}
         </Painel>
+      )}
+
+      {aba === "marca" && (
+        <>
+          {avisoMarca && <p role="status" className={`rounded-lg px-4 py-2.5 text-sm font-medium ${busca.marca === "ok" ? "bg-[#ccfbf1] text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]" : "bg-[#fee2e2] text-[#991b1b] dark:bg-[#3f1d1d] dark:text-[#fca5a5]"}`}>{avisoMarca}</p>}
+          <div className="grid items-start gap-4 xl:grid-cols-[400px_minmax(0,1fr)]">
+            <Painel>
+              <CabecalhoPainel
+                icone={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h10l4 4v14H5zM14 3v5h5" /></svg>}
+                titulo="Logo do órgão"
+                subtitulo="Sai no topo das etiquetas, da folha de conteúdo e dos relatórios."
+              />
+              {marca && <FormMarca id={id} marca={marca} parceiras={parceiras} />}
+            </Painel>
+            <Painel>
+              <CabecalhoPainel
+                icone={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h10l4 4v14H5zM9 13h6M9 17h6" /></svg>}
+                titulo="Tabela de temporalidade"
+                subtitulo="Código de classificação e prazo de guarda que saem nas etiquetas."
+              />
+              <EditorClasses prefeitura={id} classes={classes.classes} grupos={classes.grupos} />
+            </Painel>
+          </div>
+        </>
       )}
 
       {aba === "uso" && (uso ? <ResumoUso uso={uso} suporte={suporte} /> : <Painel><p className="text-sm text-texto-suave">Sem dados de uso.</p></Painel>)}

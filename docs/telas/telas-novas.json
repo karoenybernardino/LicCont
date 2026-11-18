@@ -498,5 +498,95 @@
   "rota": "/equipe/uso",
   "html": "html/EquipeUsoClaro.html",
   "png": "png/EquipeUsoClaro.png"
+ },
+ {
+  "quadro": "EtiquetasEscuro",
+  "titulo": "Etiquetas · vários tipos, caixas e documentos, filtros — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1040,
+  "rota": "/etiquetas (substitui o quadro Etiquetas anterior)",
+  "html": "html/EtiquetasEscuro.html",
+  "png": "png/EtiquetasEscuro.png"
+ },
+ {
+  "quadro": "EtiquetasClaro",
+  "titulo": "Etiquetas · vários tipos, caixas e documentos, filtros — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1040,
+  "rota": "/etiquetas (substitui o quadro Etiquetas anterior)",
+  "html": "html/EtiquetasClaro.html",
+  "png": "png/EtiquetasClaro.png"
+ },
+ {
+  "quadro": "EquipeParceirasEscuro",
+  "titulo": "Equipe LicCONT · Empresas parceiras — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 840,
+  "rota": "/equipe/prefeituras/parceiras",
+  "html": "html/EquipeParceirasEscuro.html",
+  "png": "png/EquipeParceirasEscuro.png"
+ },
+ {
+  "quadro": "EquipeParceirasClaro",
+  "titulo": "Equipe LicCONT · Empresas parceiras — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 840,
+  "rota": "/equipe/prefeituras/parceiras",
+  "html": "html/EquipeParceirasClaro.html",
+  "png": "png/EquipeParceirasClaro.png"
+ },
+ {
+  "quadro": "EtqPapelCaixa",
+  "titulo": "Etiqueta da caixa — como sai no papel (A4 deitada, 2 por folha)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 874,
+  "rota": "PDF de impressão da etiqueta da caixa",
+  "html": "html/EtqPapelCaixa.html",
+  "png": "png/EtqPapelCaixa.png"
+ },
+ {
+  "quadro": "EtqPapelDocumento",
+  "titulo": "Etiqueta do documento — como sai no papel (A4, 4 por folha)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1203,
+  "rota": "PDF de impressão da etiqueta do documento",
+  "html": "html/EtqPapelDocumento.html",
+  "png": "png/EtqPapelDocumento.png"
+ },
+ {
+  "quadro": "EtqPapelConteudo",
+  "titulo": "Folha de conteúdo da caixa — como sai no papel (A4 em pé)",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1203,
+  "rota": "PDF de impressão da folha de conteúdo",
+  "html": "html/EtqPapelConteudo.html",
+  "png": "png/EtqPapelConteudo.png"
+ },
+ {
+  "quadro": "EquipePrefeituraLogoEscuro",
+  "titulo": "Equipe LicCONT · Prefeitura · Logo e temporalidade — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "/equipe/prefeituras/[id] (aba Logo e temporalidade)",
+  "html": "html/EquipePrefeituraLogoEscuro.html",
+  "png": "png/EquipePrefeituraLogoEscuro.png"
+ },
+ {
+  "quadro": "EquipePrefeituraLogoClaro",
+  "titulo": "Equipe LicCONT · Prefeitura · Logo e temporalidade — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 720,
+  "rota": "/equipe/prefeituras/[id] (aba Logo e temporalidade)",
+  "html": "html/EquipePrefeituraLogoClaro.html",
+  "png": "png/EquipePrefeituraLogoClaro.png"
  }
 ]

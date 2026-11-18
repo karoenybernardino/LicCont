@@ -55,6 +55,12 @@ export async function salvarDocumento(formData: FormData): Promise<Retorno> {
     vigencia_inicio: d.vigencia_inicio,
     vigencia_fim: d.vigencia_fim,
     encerrado_em: d.encerrado_em,
+    classe_id: d.classe,
+    tipologia_id: d.tipologia,
+    data_producao: d.data_producao,
+    observacao: d.observacao,
+    volume: d.volume,
+    evento_em: d.evento_em,
   };
   if (editar) {
     const { data, error } = await sb.from("documentos").update(campos).eq("id", idEdicao as string).select("id");
@@ -258,6 +264,33 @@ export async function linkDoPdf(documentoId: string, baixar: boolean): Promise<{
   // Trilha de acesso: quem abriu ou baixou (só o id do arquivo, nunca o nome).
   await sb.rpc("registrar_auditoria", { p_acao: baixar ? "arquivos.baixar" : "arquivos.ver", p_alvo_tabela: "arquivos", p_alvo_id: arq.id as string });
   return { url: data.signedUrl };
+}
+
+// Metadados do Decreto 10.278/2020 que a pessoa preenche (os técnicos já vêm do envio: hash,
+// data, responsável, identificador). Só quem cadastra na secretaria; o banco confere de novo.
+const esquemaMetadados = z.object({
+  arquivo: z.guid(),
+  titulo: z.string().trim().max(200),
+  assunto: z.string().trim().max(300),
+  autor: z.string().trim().max(200),
+  local: z.string().trim().max(200),
+  genero: z.enum(["textual", "iconografico", "cartografico", "sonoro", "audiovisual", "outro"]),
+  selo: z.enum(["consulta", "valor_legal"]),
+});
+
+export async function salvarMetadadosArquivo(entrada: unknown): Promise<Retorno> {
+  await exigirSessao();
+  const d = esquemaMetadados.safeParse(entrada);
+  if (!d.success) return INVALIDO;
+  if (emDemo()) return { aviso: AVISO_DEMO };
+  const sb = await clienteSessao();
+  if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
+  const { error } = await sb.rpc("salvar_metadados_arquivo", {
+    p_arquivo: d.data.arquivo, p_titulo: d.data.titulo, p_assunto: d.data.assunto, p_autor: d.data.autor, p_local: d.data.local, p_genero: d.data.genero, p_selo: d.data.selo,
+  });
+  if (error) return { erro: error.code === "42501" ? "Você não tem permissão para esta ação." : "Não foi possível salvar. Tente de novo." };
+  atualizar();
+  return { aviso: "Metadados salvos." };
 }
 
 // Miniatura da 1ª página (link de 5 minutos).

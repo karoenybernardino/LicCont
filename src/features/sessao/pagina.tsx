@@ -27,6 +27,7 @@ const ESTRUTURA: ItemMenu = { href: "/estrutura", rotulo: "Estrutura física", d
 export const AJUSTES: ItemMenu[] = [
   { href: "/usuarios", rotulo: "Usuários e perfis", dica: "Quem acessa o sistema e com qual perfil.", icone: "usuarios" },
   { href: "/secretarias", rotulo: "Secretarias", dica: "Cadastro das secretarias da prefeitura.", icone: "secretarias" },
+  { href: "/configuracoes/grupos", rotulo: "Grupos documentais", dica: "Grupos, tipologias e quem vê cada grupo.", icone: "secretarias" },
   { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" },
   { href: "/configuracoes/tce", rotulo: "Importação do TCE", dica: "Liga e acompanha a importação do TCE-CE.", icone: "importados" },
   { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", dica: "Libera ou encerra o acesso da equipe LicCONT.", icone: "configuracoes" },

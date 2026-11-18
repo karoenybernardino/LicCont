@@ -5,7 +5,7 @@ import { emDemo } from "@/features/demo/dados";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import type { Modalidade, Tipo } from "@/features/documentos/tipos";
 import { NUMERO_SO_POR_ENDERECO_DEMO, REGRAS_EDITAVEIS_DEMO, termosDemo } from "@/features/demo/temporalidade";
-import { classeDocumento, estadoDoPrazo, hojeSaoPaulo, type Classe, type Destinacao, type Regra } from "./regras";
+import { estadoDoPrazo, hojeSaoPaulo, type Destinacao, type Regra, type TipoPrazo } from "./regras";
 import { MODELO_EMPRESTIMO_PADRAO, MODELO_PADRAO, type ModeloTermo } from "./termo";
 import type { ItemTermo, Termo, TermoCompleto } from "./tipos";
 
@@ -23,9 +23,15 @@ export async function lerRegras(): Promise<Regra[]> {
   if (emDemo()) return REGRAS_EDITAVEIS_DEMO;
   const sb = await clienteSessao();
   if (!sb) return [];
-  const { data } = await sb.from("tabela_temporalidade").select("classe, prazo_corrente_anos, prazo_intermediaria_anos, destinacao").order("classe");
-  return (data ?? []).map((r) => ({
-    classe: r.classe as Classe, corrente: r.prazo_corrente_anos, intermediaria: r.prazo_intermediaria_anos, destinacao: r.destinacao as Destinacao,
+  const { data } = await sb
+    .from("classes_documentais")
+    .select("id, codigo, nome, grupo_id, prazo_corrente_anos, prazo_intermediaria_anos, tipo_prazo, evento, destinacao, observacao, ativa, grupos_documentais(nome)")
+    .order("codigo");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data ?? []) as any[]).map((r) => ({
+    id: r.id, codigo: r.codigo, classe: r.nome, grupoId: r.grupo_id, grupo: r.grupos_documentais?.nome ?? "",
+    corrente: r.prazo_corrente_anos, intermediaria: r.prazo_intermediaria_anos, tipoPrazo: r.tipo_prazo as TipoPrazo,
+    evento: r.evento, destinacao: r.destinacao as Destinacao, observacao: r.observacao, ativa: r.ativa,
   }));
 }
 
@@ -41,7 +47,7 @@ export async function lerModelo(tipo: "eliminacao" | "emprestimo" = "eliminacao"
 
 type LinhaDoc = {
   id: string; tipo: Tipo; modalidade: Modalidade | null; numero: string; ano: number; secretaria_id: string;
-  vigencia_fim: string | null; encerrado_em: string | null;
+  vigencia_fim: string | null; encerrado_em: string | null; classe_id: string | null; data_producao: string | null; evento_em: string | null;
   caixas: { numero: number; niveis: { numero: number; modulos: { numero: number; ruas: { codigo: string } } } } | null;
 };
 
@@ -55,9 +61,9 @@ async function documentosComData() {
   for (let p = 0; p < MAX_PAGINAS; p++) {
     const { data, error } = await sb
       .from("documentos")
-      .select("id, tipo, modalidade, numero, ano, secretaria_id, vigencia_fim, encerrado_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
+      .select("id, tipo, modalidade, numero, ano, secretaria_id, vigencia_fim, encerrado_em, classe_id, data_producao, evento_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
       .eq("ativo", true)
-      .or("vigencia_fim.not.is.null,encerrado_em.not.is.null")
+      .not("classe_id", "is", null)
       .order("id")
       .range(p * PAGINA, (p + 1) * PAGINA - 1);
     if (error) throw new Error("Não foi possível ler os documentos.");
@@ -88,7 +94,7 @@ export async function lerTemporalidadeReal(): Promise<LeituraTemporalidade> {
   let permanentes = 0;
   let vencem90 = 0;
   for (const d of docs) {
-    const e = estadoDoPrazo({ tipo: d.tipo, modalidade: d.modalidade, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em }, regras, hoje);
+    const e = estadoDoPrazo(d, regras, hoje);
     if (e.estado === "permanente") permanentes++;
     if (e.estado !== "pronto" && e.estado !== "vence") continue;
     const item = { id: d.id, titulo: tituloDocumento(d), caixa: codigoCaixa(d.caixas), secretariaId: d.secretaria_id, vencimento: e.vencimento, emDias: e.emDias };
@@ -129,7 +135,7 @@ export async function obterTermo(id: string): Promise<TermoCompleto | null> {
   const { data, error } = await sb
     .from("descartes")
     .select(
-      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, vigencia_inicio, vigencia_fim, encerrado_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
+      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, vigencia_inicio, vigencia_fim, encerrado_em, classe_id, data_producao, evento_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -145,7 +151,7 @@ export async function obterTermo(id: string): Promise<TermoCompleto | null> {
     const contrato = d.tipo === "contrato";
     const fim = contrato ? d.vigencia_fim : d.encerrado_em;
     return {
-      titulo: tituloDocumento(d), objeto: d.objeto, caixa: codigoCaixa(d.caixas), classe: classeDocumento(d.tipo, d.modalidade),
+      titulo: tituloDocumento(d), objeto: d.objeto, caixa: codigoCaixa(d.caixas), classe: regras.find((r) => r.id === d.classe_id)?.classe ?? "—",
       inicio: contrato ? d.vigencia_inicio : null, fim,
       extremos: `${contrato ? ano(d.vigencia_inicio) : d.ano} – ${ano(fim)}`,
       vencimento: "vencimento" in prazo ? prazo.vencimento : null,

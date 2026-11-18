@@ -2,7 +2,7 @@
 
 Plano completo: "LicCONT — Integração TCE-CE e painel de relatórios" — https://claude.ai/artifact/XfUMpMFjH2HYKV2NWL6LJ8
 Uma fase só, em tarefas ordenadas, uma branch e um PR por tarefa, com aprovação do responsável a cada PR.
-Não depende da Fase 8 (conferência geral, que fica por último). O gerador de PDF no timbrado e o registro dos relatórios baixados nascem na tarefa 9.15 e a Fase 8 os reaproveita.
+Não depende da Fase 8 (conferência geral, que fica por último). O gerador de PDF no timbrado e o registro dos relatórios baixados nascem na tarefa 9.14 e a Fase 8 os reaproveita.
 
 ## Três partes
 1. **Importação** do acervo existente: planilha (.xlsx ou CSV) e PDFs em zip. O GED do piloto não é conhecido, então o importador é genérico. Integração direta com um GED específico seria serviço externo novo e vira fase própria.
@@ -19,13 +19,13 @@ Documento que entra sem endereço, por planilha ou pelo TCE, usa a mesma situaç
 - Relatórios: lista à esquerda, filtros e prévia da 1ª página à direita. Fila do TCE: lista + painel lateral.
 - Quadros e seed com dados fictícios. Nunca dado real de prefeitura.
 
-## Decisões das perguntas em aberto (respondidas em 2026-11-15)
-1. **Espaço dos PDFs**: na venda, o responsável assina os planos pagos (Pro). Até lá, o sistema mede o espaço usado e avisa **só a equipe LicCONT** (painel da equipe) ao chegar perto do limite. A prefeitura não vê esse aviso. Nenhum plano pago sem aprovação do responsável.
-2. **Duplicadas na importação**: aparecem na tela Conferir, marcadas como "pular". O administrador pode trocar para "importar" linha por linha. Nada é sobrescrito.
-3. **Cobrança**: tudo entra na mensalidade. Nada é cobrado à parte, então não há módulo nem item escondido na barra por plano.
-4. **Anos do TCE**: o administrador escolhe quais anos e o que importar (licitações, contratos ou ambos) na configuração. O que já foi importado não é trazido de novo. A atualização automática traz só registros novos ou alterados desde a última importação, nunca a base inteira.
-5. **PDFs do PNCP**: entram nesta fase (tarefa 9.12). É serviço externo novo: registrar em `docs/decisoes/` e na LGPD antes do código. Os PDFs contam no espaço do item 1.
-6. **Relatórios**: os cinco são inventário por secretaria, documentos sem endereço, empréstimos em atraso, descartes previstos no período e contratos por vigência.
+## Em aberto (perguntar antes de começar)
+1. Espaço dos PDFs no plano gratuito do banco: medir e avisar antes de qualquer plano pago.
+2. Duplicadas na importação: mostrar na conferência e escolher pular ou importar por linha (proposta).
+3. Funções entram na mensalidade ou módulo à parte.
+4. TCE: só dados novos ou também anos anteriores (até que ano).
+5. Busca de PDFs no PNCP: agora tem quadro (PncpBusca), entra na tarefa 9.11. Confirmar se só administrador anexa.
+6. Quais relatórios as prefeituras mais pedem (confirmar com o sócio).
 
 ## Regras
 - Toda tabela nova com RLS, GRANT explícito e teste pgTAP de isolamento entre prefeituras. Campos novos em `prefeituras` (código do município, liga/desliga) e `documentos` (origem, lote, id no TCE, data da importação, situação). Tabelas: lotes de importação, importações do TCE, relatórios gerados.
@@ -38,9 +38,9 @@ Documento que entra sem endereço, por planilha ou pelo TCE, usa a mesma situaç
 - Tudo na auditoria: importar, desfazer, localizar, importar do TCE e cada relatório baixado.
 - Modo demonstração: dados de `src/features/demo/`; gravações devolvem `AVISO_DEMO`.
 
-## Quadros (`docs/telas/`, ver `telas.json`)
+## Quadros (`docs/telas/`, ver `telas-novas.json`)
 Importação: ImportarEnviar, ImportarMapear, ImportarPrevia, ImportarResultado, ImportarLocalizar.
-TCE-CE: FilaTce, ConfigTce, PesquisaOrigem (selo "Importado do TCE" na lista e no painel do documento; filtro "Origem").
+TCE-CE: FilaTce, ConfigTce, PncpBusca (Buscar PDF no PNCP: dados do documento, CNPJ/ano/número, arquivos encontrados com escolha, prévia e Anexar ao documento), PesquisaOrigem (selo "Importado do TCE" na lista e no painel do documento; filtro "Origem").
 Painel e relatórios: Painel, Relatorios. Todos em escuro e claro.
 
 ## Tarefas
@@ -52,22 +52,22 @@ Painel e relatórios: Painel, Relatorios. Todos em escuro e claro.
 9.6 Resultado, lista de lotes e Desfazer.
 9.7 Fila Localizar documentos sem endereço.
 9.8 Cliente da API do TCE com validação e testes com respostas fictícias.
-9.9 Rotina agendada (só registros novos desde a última importação), Importar agora, histórico e configuração da integração (anos e tipos escolhidos pelo administrador).
+9.9 Rotina agendada, Importar agora, histórico e configuração da integração.
 9.10 Fila Importados do TCE a conferir, com aviso de duplicado e juntar.
-9.11 Selo e filtro Origem na pesquisa.
-9.12 Busca e ligação de PDFs no PNCP (quadros `PncpBuscaEscuro` e `PncpBuscaClaro`; registro em `docs/decisoes/` e na LGPD antes do código).
+9.11 Buscar PDF no PNCP: botão na fila e no documento, consulta ao portal público, escolha dos arquivos e anexo ao documento (PNCP entra em docs/decisoes/ e docs/lgpd/ como fonte pública de dados).
+9.12 Selo e filtro Origem na pesquisa.
 9.13 Visões agregadas do banco com teste de isolamento.
 9.14 Painel inicial com cartões clicáveis e gráficos nos dois temas.
 9.15 Relatórios: gerador de PDF no timbrado, registro dos baixados, cinco relatórios em PDF e planilha, prévia.
 9.16 Revisão de segurança e teste de carga do painel.
 
-## Sistema da equipe LicCONT (quadros `Equipe*`, ver `telas-novas.json`)
-Área só da equipe LicCONT, com menu próprio (Início, Prefeituras, Demonstrações, Integrações, Uso, Auditoria). A equipe nunca vê o conteúdo do acervo: só quantidades, datas e situações. Vem depois do painel (9.14 a 9.16). Já existiam antes: Uso do mês (`/equipe/uso`), pedidos gravados pelo site (`pedidos_demonstracao`), suporte autorizado e o cliente do TCE.
-
-Tarefas (um PR cada; cada uma parte da anterior):
-- **9.17 Início da equipe e Prefeituras reformulada.** Início (`/equipe`): cartões, "Precisa de atenção", pedidos recentes, últimas ações. Prefeituras (`/equipe/prefeituras`): lista com Situação, TCE-CE e Docs e painel lateral (plano, contrato, uso, alerta do TCE, Importar agora). Migração: contrato em `prefeituras` (plano, início, valores), andamento do pedido (situação, data, responsável), `equipe_integracoes()` e `equipe_auditoria()`.
-- **9.18 Nova prefeitura em passos e Prefeitura com abas.** Passos Órgão, Contrato e TCE-CE, Administrador, Conferir. Prefeitura com abas Resumo, Administradores, Integração TCE-CE, Uso, Auditoria; editar dados e contrato.
-- **9.19 Integrações e Auditoria da equipe.** Integrações: TCE-CE por prefeitura e lotes de importação (só números e datas; CSV do histórico). Auditoria da equipe: filtros por período, quem, prefeitura e ação; exportar em PDF.
-- **9.20 Demonstrações no menu da equipe.** Lista e detalhe dos pedidos do site (situação, data, responsável, descartar) e "Criar prefeitura a partir do pedido". Contato é dado pessoal: mínimo necessário, RLS só da equipe, nada em log. Registrar o pedido recebido na auditoria.
-
-Tabelas e funções novas seguem a regra: RLS, GRANT explícito e pgTAP de isolamento. Quadros: EquipeInicio, EquipePrefeituras, EquipeNovaPrefeitura, EquipePrefeituraDetalhe, EquipeIntegracoes, EquipeAuditoria, EquipeDemos, EquipeUso (todos em escuro e claro).
+## Sistema da equipe LicCONT (quadros Equipe*, ver telas-novas.json)
+Área só da equipe LicCONT, com menu próprio (Início, Prefeituras, Demonstrações, Integrações, Uso, Auditoria). A equipe nunca vê o conteúdo do acervo: só quantidades, datas e situações.
+- Início: pendências, integrações com erro, pedidos novos, últimas ações.
+- Prefeituras (reformulada): lista com Situação, TCE-CE e Docs, com painel lateral da prefeitura selecionada (plano, contrato, uso, alerta de TCE).
+- Nova prefeitura (reformulada): passos Órgão, Contrato e TCE-CE, Administrador, Conferir. O quadro mostra o passo 2; os passos 1, 3 e 4 reaproveitam os campos do desenho antigo.
+- Prefeitura (reformulada): abas Resumo, Administradores, Integração TCE-CE, Uso, Auditoria; o quadro mostra a aba Resumo.
+- Pedidos de demonstração: recebe o formulário do site; situação, data, responsável, "Criar prefeitura a partir do pedido". Dados de contato são pessoais: mínimo necessário, RLS só para a equipe, nada em log.
+- Integrações: TCE-CE e lotes de importação de todas as prefeituras, só números e datas.
+- Auditoria da equipe: quem, quando, o quê e prefeitura; exportar em PDF.
+Tabelas novas (pedidos de demonstração, auditoria da equipe) seguem a regra: RLS, GRANT explícito e pgTAP de isolamento. Tarefa sugerida: 9.17 a 9.20, depois do painel. Confirmar com o responsável antes de começar.

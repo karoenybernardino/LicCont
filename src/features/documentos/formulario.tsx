@@ -2,6 +2,7 @@
 
 import { PrazoDeGuarda } from "@/features/temporalidade/prazo-guarda";
 import type { Regra } from "@/features/temporalidade/regras";
+import type { GrupoDoc, TipologiaDoc } from "@/features/demo/classificacao";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -20,7 +21,7 @@ import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
-import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Modalidade, type Tipo } from "./tipos";
+import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Tipo } from "./tipos";
 
 export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
@@ -41,6 +42,13 @@ export type Inicial = {
   vigencia_inicio: string | null;
   vigencia_fim: string | null;
   encerrado_em: string | null;
+  classeId: string | null;
+  grupoId: string | null;
+  tipologiaId: string | null;
+  dataProducao: string | null;
+  observacao: string | null;
+  volume: number;
+  eventoEm: string | null;
   secretariaId: string;
   caixaId: string;
   ruaId: string;
@@ -92,6 +100,8 @@ export function FormularioDocumento({
   limiteMb,
   inicial,
   regras = [],
+  grupos = [],
+  tipologias = [],
 }: {
   secretarias: { id: string; nome: string }[];
   secretariaPadrao: string;
@@ -100,12 +110,25 @@ export function FormularioDocumento({
   limiteMb: number;
   inicial?: Inicial;
   regras?: Regra[];
+  grupos?: GrupoDoc[];
+  tipologias?: TipologiaDoc[];
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [tipo, setTipo] = useState<Tipo>(inicial?.tipo ?? "licitacao");
   const [modalidade, setModalidade] = useState(inicial?.modalidade ?? "");
   const [encerrado, setEncerrado] = useState(inicial?.encerrado_em ?? "");
+  const [vigFim, setVigFim] = useState(inicial?.vigencia_fim ?? "");
+  const grupoPadrao = grupos.find((g) => g.chave === "licitacoes_contratos")?.id ?? grupos[0]?.id ?? "";
+  const [grupoId, setGrupoId] = useState(inicial?.grupoId ?? grupoPadrao);
+  const [classeId, setClasseId] = useState(inicial?.classeId ?? "");
+  const [dataProducao, setDataProducao] = useState(inicial?.dataProducao ?? "");
+  const [eventoEm, setEventoEm] = useState(inicial?.eventoEm ?? "");
+  const grupoLic = grupos.find((g) => g.id === grupoId)?.chave === "licitacoes_contratos";
+  const classesDoGrupo = regras.filter((r) => r.grupoId === grupoId && (r.ativa || r.id === classeId));
+  const regraAtual = regras.find((r) => r.id === classeId);
+  const tipologiasDoGrupo = tipologias.filter((t) => t.grupoId === grupoId);
+  const tipoEfetivo: Tipo = grupoLic ? tipo : "outro";
   const [rua, setRua] = useState(inicial?.ruaId ?? "");
   const [modulo, setModulo] = useState(inicial?.moduloId ?? "");
   const [nivel, setNivel] = useState(inicial?.nivelId ?? "");
@@ -180,7 +203,8 @@ export function FormularioDocumento({
     setErro(null);
     setAviso(null);
     dados.set("caixa", caixa);
-    dados.set("tipo", tipo);
+    dados.set("tipo", tipoEfetivo);
+    if (tipoEfetivo === "outro") dados.set("situacao", "arquivado");
     if (inicial) dados.set("id", inicial.id);
     iniciar(async () => {
       setEtapa("Salvando…");
@@ -233,6 +257,7 @@ export function FormularioDocumento({
   }
 
   const situacoes = tipo === "licitacao" ? SITUACOES_LICITACAO : SITUACOES_CONTRATO;
+  const inicioPrazo = regraAtual?.tipoPrazo === "apos_evento" ? (tipoEfetivo === "licitacao" ? encerrado : tipoEfetivo === "contrato" ? vigFim || eventoEm : eventoEm) : dataProducao;
 
   return (
     <form
@@ -243,7 +268,38 @@ export function FormularioDocumento({
       <div className="flex min-w-0 flex-col gap-3.5">
         <section className={secao} aria-labelledby="t1">
           <div id="t1"><Titulo n={1}>Dados do documento</Titulo></div>
+          <div className="grid gap-3.5 sm:grid-cols-3">
+            <Campo rotulo="Grupo documental">
+              {(id) => (
+                <select id={id} value={grupoId} disabled={!!inicial} onChange={(e) => { setGrupoId(e.target.value); setClasseId(""); }} className={caixaCampo}>
+                  {grupos.filter((g) => g.ativo || g.id === grupoId).map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
+                </select>
+              )}
+            </Campo>
+            <Campo rotulo="Classe (tabela de temporalidade)">
+              {(id) => (
+                <select id={id} name="classe" required value={classeId} onChange={(e) => setClasseId(e.target.value)} className={caixaCampo}>
+                  <option value="">Escolha…</option>
+                  {classesDoGrupo.map((r) => <option key={r.id} value={r.id}>{r.codigo} · {r.classe}</option>)}
+                </select>
+              )}
+            </Campo>
+            <Campo rotulo="Tipologia documental (opcional)">
+              {(id) => (
+                <select id={id} name="tipologia" defaultValue={inicial?.tipologiaId ?? ""} key={grupoId} className={caixaCampo}>
+                  <option value="">Sem tipologia</option>
+                  {tipologiasDoGrupo.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                </select>
+              )}
+            </Campo>
+          </div>
+          {classesDoGrupo.length === 0 && (
+            <p role="status" className="text-[13px] text-[#b45309] dark:text-[#fbbf24]">
+              Este grupo ainda não tem classe na tabela de temporalidade. Peça ao administrador ou à equipe LicCONT para cadastrar.
+            </p>
+          )}
           <div className="flex flex-wrap items-end gap-3.5">
+            {grupoLic && (
             <div role="radiogroup" aria-label="Tipo" className="inline-flex shrink-0 gap-[3px] rounded-[22px] border border-linha bg-campo p-[3px]">
               {(["licitacao", "contrato"] as const).map((t) => (
                 <button
@@ -268,6 +324,8 @@ export function FormularioDocumento({
                 </button>
               ))}
             </div>
+            )}
+            {grupoLic && (
             <Campo rotulo={tipo === "licitacao" ? "Modalidade" : "Modalidade (opcional)"} className="min-w-48 flex-1">
               {(id) => (
                 <select id={id} name="modalidade" value={modalidade} onChange={(e) => setModalidade(e.target.value)} className={caixaCampo}>
@@ -278,9 +336,10 @@ export function FormularioDocumento({
                 </select>
               )}
             </Campo>
+            )}
           </div>
           <div className="grid gap-3.5 sm:grid-cols-[1fr_1.4fr]">
-            <Campo rotulo="Título do processo">
+            <Campo rotulo={grupoLic ? "Título do processo" : "Número ou protocolo"}>
               {(id) => (
                 <input id={id} name="numero" required maxLength={30} defaultValue={inicial?.numero} onChange={(e) => setResumo((s) => ({ ...s, numero: e.target.value }))} placeholder="015/2023" className={caixaCampo} />
               )}
@@ -292,9 +351,11 @@ export function FormularioDocumento({
             </Campo>
           </div>
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_.6fr_.9fr_1fr]">
+            {grupoLic && (
             <Campo rotulo={tipo === "licitacao" ? "Empresa vencedora" : "Empresa contratada"}>
               {(id) => <input id={id} name="empresa" maxLength={200} defaultValue={inicial?.empresa ?? ""} onChange={(e) => setResumo((s) => ({ ...s, empresa: e.target.value }))} className={caixaCampo} />}
             </Campo>
+            )}
             <Campo rotulo="Secretaria">
               {(id) => (
                 <>
@@ -312,6 +373,8 @@ export function FormularioDocumento({
                 <input id={id} name="ano" inputMode="numeric" required maxLength={4} defaultValue={resumo.ano} onChange={(e) => setResumo((s) => ({ ...s, ano: e.target.value }))} className={caixaCampo} />
               )}
             </Campo>
+            {grupoLic && (
+            <>
             <Campo rotulo="Valor (R$)">
               {(id) => (
                 <input id={id} name="valor" inputMode="decimal" defaultValue={inicial?.valor === null || inicial?.valor === undefined ? "" : String(inicial.valor).replace(".", ",")} placeholder="50.000,00" className={caixaCampo} />
@@ -326,23 +389,44 @@ export function FormularioDocumento({
                 </select>
               )}
             </Campo>
+            </>
+            )}
           </div>
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            {grupoLic && (
             <Campo rotulo="CNPJ ou CPF do credor (opcional)">
               {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="CNPJ ou CPF" className={caixaCampo} />}
             </Campo>
-            {tipo === "contrato" && (
+            )}
+            {grupoLic && tipo === "contrato" && (
               <>
                 <Campo rotulo="Vigência · início">
                   {(id) => <input id={id} name="vigencia_inicio" type="date" defaultValue={inicial?.vigencia_inicio ?? ""} className={caixaCampo} />}
                 </Campo>
                 <Campo rotulo="Vigência · fim">
-                  {(id) => <input id={id} name="vigencia_fim" type="date" defaultValue={inicial?.vigencia_fim ?? ""} className={caixaCampo} />}
+                  {(id) => <input id={id} name="vigencia_fim" type="date" value={vigFim} onChange={(e) => setVigFim(e.target.value)} className={caixaCampo} />}
                 </Campo>
               </>
             )}
           </div>
-          {tipo === "licitacao" && (
+          <div className="grid items-start gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            <Campo rotulo="Data do documento">
+              {(id) => <input id={id} name="data_producao" type="date" required value={dataProducao} onChange={(e) => setDataProducao(e.target.value)} className={`${caixaCampo} font-mono font-medium`} />}
+            </Campo>
+            <Campo rotulo="Volume">
+              {(id) => <input id={id} name="volume" type="number" min={1} max={99} defaultValue={inicial?.volume ?? 1} className={`${caixaCampo} font-mono`} />}
+            </Campo>
+            {tipoEfetivo === "outro" && regraAtual?.tipoPrazo === "apos_evento" && (
+              <Campo rotulo={`Data do evento (${regraAtual.evento ?? "início da contagem"})`}>
+                {(id) => <input id={id} name="evento_em" type="date" value={eventoEm} onChange={(e) => setEventoEm(e.target.value)} className={`${caixaCampo} font-mono`} />}
+              </Campo>
+            )}
+            <Campo rotulo="Observação (opcional)" className="sm:col-span-2">
+              {(id) => <input id={id} name="observacao" maxLength={300} defaultValue={inicial?.observacao ?? ""} placeholder="Sai na etiqueta do documento" className={caixaCampo} />}
+            </Campo>
+          </div>
+          <PrazoDeGuarda regra={regraAtual} inicio={inicioPrazo} />
+          {tipo === "licitacao" && grupoLic && (
             <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,2fr)]">
               <Campo rotulo="Encerramento do processo">
                 {(id) => (
@@ -352,7 +436,6 @@ export function FormularioDocumento({
                   </>
                 )}
               </Campo>
-              <PrazoDeGuarda regras={regras} tipo={tipo} modalidade={(modalidade || null) as Modalidade | null} encerrado={encerrado} />
             </div>
           )}
         </section>

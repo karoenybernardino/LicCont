@@ -1,4 +1,3 @@
-import type { Classe } from "./regras";
 
 export type SituacaoTermo = "rascunho" | "em_ciencia" | "aprovado" | "cancelado";
 
@@ -9,7 +8,7 @@ export type Termo = {
 };
 
 export type ItemTermo = {
-  titulo: string; objeto: string; caixa: string; classe: Classe;
+  titulo: string; objeto: string; caixa: string; classe: string;
   inicio: string | null; fim: string | null; // datas do documento (termo em PDF e Word)
   extremos: string; // "2016 – 2019", como no quadro
   vencimento: string | null; // "AAAA-MM-DD" pela regra; null sem regra ou sem data

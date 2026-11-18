@@ -10,12 +10,38 @@ const base = {
   tipo: "licitacao", modalidade: "pregao_eletronico", numero: "015/2023", ano: "2023",
   objeto: "Aquisição de equipamentos", empresa: "", cnpj: "", valor: "", secretaria: U, caixa: U,
   situacao: "concluida", vigencia_inicio: "", vigencia_fim: "",
+  classe: U, data_producao: "2023-03-01",
 };
 
 describe("título", () => {
   it("monta modalidade e número", () => {
     expect(tituloDocumento({ tipo: "licitacao", modalidade: "pregao_eletronico", numero: "015/2023", ano: 2023 })).toBe("Pregão Eletrônico 015/2023");
     expect(tituloDocumento({ tipo: "contrato", modalidade: null, numero: "041", ano: 2022 })).toBe("Contrato 041/2022");
+  });
+});
+
+describe("classificação", () => {
+  it("exige classe e data do documento; tipologia, observação e evento são opcionais", () => {
+    expect(esquemaDocumento.safeParse(base).success).toBe(true);
+    expect(esquemaDocumento.safeParse({ ...base, classe: "" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, data_producao: "" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, data_producao: "2999-01-01" }).success).toBe(false);
+    const r = esquemaDocumento.safeParse({ ...base, tipologia: "", observacao: "", volume: "" });
+    expect(r.success && [r.data.tipologia, r.data.observacao, r.data.volume]).toEqual([null, null, 1]);
+  });
+  it("observação não leva CPF", () => {
+    expect(esquemaDocumento.safeParse({ ...base, observacao: "Servidor 123.456.789-09" }).success).toBe(false);
+  });
+  it("documento de outro grupo: tipo outro, situação arquivado, sem modalidade nem vigência", () => {
+    const outro = { ...base, tipo: "outro", modalidade: "", situacao: "arquivado" };
+    expect(esquemaDocumento.safeParse(outro).success).toBe(true);
+    expect(esquemaDocumento.safeParse({ ...outro, situacao: "vigente" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...outro, modalidade: "dispensa" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...outro, vigencia_fim: "2024-01-01" }).success).toBe(false);
+  });
+  it("título do documento de outro grupo usa a tipologia", () => {
+    expect(tituloDocumento({ tipo: "outro", modalidade: null, numero: "12", ano: 2020, tipologia: "Ofício" })).toBe("Ofício 12/2020");
+    expect(tituloDocumento({ tipo: "outro", modalidade: null, numero: "12", ano: 2020 })).toBe("Documento 12/2020");
   });
 });
 

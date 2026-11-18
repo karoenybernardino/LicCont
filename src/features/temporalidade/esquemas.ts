@@ -1,19 +1,4 @@
 import { z } from "zod";
-import { CLASSES_LISTA } from "./regras";
-
-const anos = (rotulo: string) =>
-  z.preprocess((v) => (v === "" || v === undefined || v === null ? NaN : Number(v)), z.number(`Informe o prazo (${rotulo}).`).int(`O prazo (${rotulo}) é em anos inteiros.`).min(0, `O prazo (${rotulo}) não pode ser negativo.`).max(50, `O prazo (${rotulo}) é de no máximo 50 anos.`));
-
-const regra = z.object({
-  classe: z.enum(CLASSES_LISTA as [string, ...string[]], "Escolha o tipo de documento."),
-  corrente: anos("fase corrente"),
-  intermediaria: anos("fase intermediária"),
-  destinacao: z.enum(["eliminacao", "guarda_permanente"], "Escolha a destinação final."),
-});
-
-export function lerRegra(f: FormData) {
-  return regra.safeParse(Object.fromEntries(f.entries()));
-}
 
 export const esquemaTermo = z.object({
   documentos: z.array(z.uuid()).min(1, "Marque pelo menos um documento.").max(500, "No máximo 500 documentos por termo."),

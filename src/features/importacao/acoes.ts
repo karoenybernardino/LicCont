@@ -11,6 +11,8 @@ import { errosParaLinhasCsv, validarLinhas, type ErroLinha } from "./validar";
 import { ErroPlanilha, LIMITE_BYTES_PLANILHA, lerPlanilha, paraCsv } from "./planilha";
 import { faltando, mapaSeguro, sugerirMapa, type Mapa } from "./colunas";
 import { processosExistentes } from "./dados";
+import { lerRegras } from "@/features/temporalidade/dados";
+import { listarTipologias } from "@/features/classificacao/dados";
 
 // Só administrador importa. O arquivo é lido de novo a cada etapa (nada fica
 // guardado no servidor entre etapas). Nunca vai nome de arquivo nem conteúdo
@@ -77,7 +79,11 @@ export async function processarPlanilha(formData: FormData): Promise<RetornoImpo
   if (falta.length) return { faltando: falta, erro: "Falta casar colunas obrigatórias." };
 
   const anos = [...new Set(planilha.linhas.map((l) => Number(mapa.ano === undefined ? NaN : l[mapa.ano])).filter((n) => Number.isInteger(n)))];
-  const conf = validarLinhas(planilha.linhas, mapa, permitidas.map((s) => ({ id: s.id, nome: s.nome })), await processosExistentes(anos), destino);
+  const [classes, tipologias] = await Promise.all([lerRegras(), listarTipologias()]);
+  const conf = validarLinhas(
+    planilha.linhas, mapa, permitidas.map((s) => ({ id: s.id, nome: s.nome })), await processosExistentes(anos), destino,
+    { classes: classes.filter((c) => c.ativa).map((c) => ({ id: c.id, codigo: c.codigo, nome: c.classe })), tipologias: tipologias.filter((t) => t.ativa).map((t) => ({ id: t.id, nome: t.nome })) },
+  );
   const resumo = {
     total: conf.total,
     prontas: conf.validas.length,

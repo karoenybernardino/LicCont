@@ -10,7 +10,7 @@ import { tituloDocumento } from "@/features/documentos/titulo";
 import { posicaoLegivel } from "@/features/inicio/resumo";
 import { quando } from "@/features/estrutura/alteracoes";
 import type { ItemPesquisa } from "@/features/documentos/tipos";
-import { CLASSES, somarDias } from "@/features/temporalidade/regras";
+import { somarDias } from "@/features/temporalidade/regras";
 import type { EmprestimoParaTermo } from "./termo-emprestimo";
 import { lerRegras, lerTemporalidadeReal } from "@/features/temporalidade/dados";
 import { situacaoEmprestimo } from "./situacao";
@@ -149,7 +149,7 @@ export async function lerTemporalidade(): Promise<Temporalidade> {
   const anos = (n: number) => `${n} ${n === 1 ? "ano" : "anos"}`;
   return {
     resumo: real.resumo,
-    regras: regras.map((r) => ({ tipo: CLASSES[r.classe], corrente: anos(r.corrente), intermediaria: anos(r.intermediaria), permanente: r.destinacao === "guarda_permanente" })),
+    regras: regras.map((r) => ({ tipo: r.classe, corrente: anos(r.corrente), intermediaria: anos(r.intermediaria), permanente: r.destinacao === "guarda_permanente" })),
     prontos: real.prontos.slice(0, 200).map((p) => ({ id: p.id, titulo: p.titulo, caixa: p.caixa, venceu: `${p.vencimento.slice(5, 7)}/${p.vencimento.slice(0, 4)}`, marcado: false, secretariaId: p.secretariaId })),
     aVencer: real.aVencer.slice(0, 4).map((p) => ({ titulo: p.titulo, posicao: posicaoLegivel(p.posicao), emDias: p.emDias })),
   };

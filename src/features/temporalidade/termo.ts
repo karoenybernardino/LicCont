@@ -6,7 +6,7 @@
 // (edital, prazo, aprovação) não são editáveis, para o termo nunca dizer o que
 // não aconteceu. Sem CPF, sem nome de pessoa: assinaturas são linhas em branco.
 import type { TermoCompleto } from "./tipos";
-import { CLASSES, PRAZO_CIENCIA_DIAS, dataBR } from "./regras";
+import { PRAZO_CIENCIA_DIAS, dataBR } from "./regras";
 
 export type ConteudoTermo = {
   arquivo: string;
@@ -56,7 +56,7 @@ export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situaca
       colunas: ["Item", "Documento", "Objeto", "Tipo", "Caixa", "Período"],
       larguras: [0.06, 0.2, 0.3, 0.14, 0.12, 0.18],
       linhas: t.documentos.map((d, i) => [
-        String(i + 1), d.titulo, corta(d.objeto, 110), CLASSES[d.classe], d.caixa,
+        String(i + 1), d.titulo, corta(d.objeto, 110), d.classe, d.caixa,
         d.inicio ? `${data(d.inicio)} a ${data(d.fim)}` : `até ${data(d.fim)}`,
       ]),
     },
