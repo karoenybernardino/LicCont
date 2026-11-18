@@ -905,3 +905,7 @@ as $$
 $$;
 revoke execute on function public.equipe_grupos(uuid) from public, anon;
 grant execute on function public.equipe_grupos(uuid) to authenticated;
+
+-- service_role não ganha privilégio nas tabelas de dado de cliente (só por função); o Supabase concede por padrão.
+revoke all on public.parceiras, public.grupos_documentais, public.grupo_papeis, public.tipologias, public.classes_documentais,
+  public.caixa_contador, public.etiqueta_impressoes from service_role;

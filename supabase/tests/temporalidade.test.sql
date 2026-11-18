@@ -120,8 +120,9 @@ select is_empty($$select 1 from public.classes_documentais$$, 'B não lê classe
 select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"ZZ","nome":"Invasão","grupo":"Licitações e Contratos"}]'::jsonb)$$,
   '42501', null, 'B não cria classe em A');
 
--- Liga os documentos às classes (como postgres).
+-- Liga os documentos às classes (como postgres, sem sessão de usuário: os gatilhos de documentos conferem o JWT).
 reset role;
+select set_config('request.jwt.claims', '', true);
 update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'CT')
   where id in ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000005',
                'd1000000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000009');

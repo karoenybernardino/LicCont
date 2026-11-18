@@ -91,7 +91,9 @@ insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo,
 insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por, situacao, ativo, sha256, paginas, conferido_em)
 values ('f1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000',
         'd1000000-0000-0000-0000-000000000002', 'ficha.pdf', 1000, '0a000000-0000-0000-0000-000000000003',
-        'pronto', true, repeat('a', 64), 1, now());
+        'enviando', false, null, null, null);
+-- O insert nasce "enviando"; a conferência (feita pelo servidor) deixa pronto e ativo.
+update public.arquivos set situacao = 'pronto', ativo = true, sha256 = repeat('a', 64), paginas = 1, conferido_em = now();
 
 -- ---------------------------------------------------------------------------
 -- 0. Estrutura (como postgres)
@@ -100,8 +102,8 @@ select results_eq($$select count(*)::int from public.grupos_documentais where pr
   array[7], 'órgão novo nasce com os sete grupos');
 select results_eq($$select chave from public.grupos_documentais where prefeitura_id = '11111111-1111-1111-1111-111111111111' and restrito order by chave$$,
   array['juridico', 'rh'], 'RH e jurídico nascem restritos');
-select results_eq($$select array_agg(sequencial order by sequencial) from public.caixas where prefeitura_id = '11111111-1111-1111-1111-111111111111'$$,
-  array[array[1, 2]], 'caixas de A numeradas 1 e 2');
+select is((select array_agg(sequencial order by sequencial) from public.caixas where prefeitura_id = '11111111-1111-1111-1111-111111111111'),
+  array[1, 2], 'caixas de A numeradas 1 e 2');
 select results_eq($$select sequencial from public.caixas where prefeitura_id = '22222222-2222-2222-2222-222222222222'$$,
   array[1], 'a numeração de B começa de novo');
 select results_eq($$select grupo_id = (select id from public.grupos_documentais where prefeitura_id = d.prefeitura_id and chave = 'rh')
@@ -189,7 +191,7 @@ select throws_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
 select lives_ok($$select public.equipe_parceira_salvar('e1000000-0000-0000-0000-000000000001', 'Parceira Fictícia', '12345678000195',
   'parceiras/e1000000-0000-0000-0000-000000000001/logo.png', array['11111111-1111-1111-1111-111111111111']::uuid[])$$, 'equipe cadastra e liga a parceira');
-select results_eq($$select prefeituras::int from public.equipe_parceiras()$$, array[1], 'a parceira atende um órgão');
+select results_eq($$select prefeituras::int from public.equipe_parceiras() where nome = 'Parceira Fictícia'$$, array[1], 'a parceira atende um órgão');
 select lives_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111111111111', 'camara', 'Câmara de Teste', 'orgaos/11111111-1111-1111-1111-111111111111/logo.png', false,
   'e1000000-0000-0000-0000-000000000001')$$, 'equipe define tipo, nome e logo do órgão');
 select throws_ok($$select public.equipe_parceira_salvar(gen_random_uuid(), 'Outra', '12345678000195', null, array[]::uuid[])$$,
@@ -220,12 +222,14 @@ select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000
 select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000002')$$, array['digitalizado_sem_icp'], 'digitalizado sem ICP não é apto');
 select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000003')$$, array['aguardando_evento'], 'prazo por evento sem evento informado aguarda');
 reset role;
+select set_config('request.jwt.claims', '', true);
 update public.documentos set evento_em = app.hoje() where id = 'd1000000-0000-0000-0000-000000000003';
 update public.arquivos set assinatura_icp = false;
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000003')$$, array['prazo_nao_cumprido'], 'com o evento informado conta o prazo a partir dele');
 reset role;
+select set_config('request.jwt.claims', '', true);
 update public.arquivos set assinatura_icp = true, assinatura_certificado = 'cert fictício', assinatura_em = now();
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
