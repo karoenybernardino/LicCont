@@ -111,7 +111,7 @@ h3 {
 /* Telas do sistema: a página tem o tamanho da janela (faixa da demonstração incluída); só os quadros rolam. */
 @media (min-width: 768px) {
   body:has([data-moldura]) {
-    height: 100dvh;
+    height: 100vh;
     min-height: 0;
     overflow: hidden;
   }

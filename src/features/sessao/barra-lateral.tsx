@@ -34,6 +34,7 @@ const ICONES = {
       <path d="M14 3v5h5M8 13h8M8 17h6" />
     </>
   ),
+  etiquetas: <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM7.5 7.5h.01" />,
   auditoria: <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2M14 18h2v2M18 18h2v2" />,
   configuracoes: (
     <>
