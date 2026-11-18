@@ -20,6 +20,7 @@ const ACERVO: ItemMenu[] = [
   { href: "/temporalidade", rotulo: "Temporalidade", dica: "Prazos de guarda e eliminação de documentos.", icone: "temporalidade" },
 ];
 const CADASTRO: ItemMenu = { href: "/documentos/novo", rotulo: "Cadastrar documento", dica: "Registra um documento novo no acervo.", icone: "cadastro" };
+const ETIQUETAS: ItemMenu = { href: "/etiquetas", rotulo: "Etiquetas", dica: "Imprime etiquetas de caixa e documento com QR.", icone: "etiquetas" };
 const PAINEL: ItemMenu = { href: "/painel", rotulo: "Painel", dica: "Números do acervo em gráficos.", icone: "painel" };
 const AUDITORIA: ItemMenu = { rotulo: "Auditoria", dica: "Histórico de quem fez o quê.", icone: "auditoria" };
 const ESTRUTURA: ItemMenu = { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" };
@@ -79,7 +80,7 @@ export async function PaginaSistema({
     // Administrador acha a estrutura em Configurações; os demais seguem com o item solto.
     ...(usuario.administrador ? [] : [ESTRUTURA]),
   ];
-  const grupos = [[INICIO], [...ACERVO.slice(0, 2), ...(cadastra ? [CADASTRO] : []), ...ACERVO.slice(2)], gestao];
+  const grupos = [[INICIO], [...ACERVO.slice(0, 2), ...(cadastra ? [CADASTRO, ETIQUETAS] : []), ...ACERVO.slice(2)], gestao];
   return (
     <div data-moldura className="flex min-h-screen flex-1 gap-4 p-4 max-md:flex-col md:min-h-0 md:overflow-hidden dark:bg-black">
       <BarraLateral

@@ -14,6 +14,7 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
             { href: "/equipe", rotulo: "Início", dica: "Mostra o que precisa de atenção hoje.", icone: "inicio" },
             { href: "/equipe/prefeituras", rotulo: "Prefeituras", dica: "Lista as prefeituras clientes.", icone: "secretarias" },
             { href: "/equipe/demonstracoes", rotulo: "Demonstrações", dica: "Mostra os pedidos de demonstração do site.", icone: "usuarios" },
+            { href: "/equipe/prefeituras/parceiras", rotulo: "Empresas parceiras", dica: "Cadastra empresas parceiras e o logo delas nas etiquetas.", icone: "etiquetas" },
             { href: "/equipe/integracoes", rotulo: "Integrações", dica: "Mostra o TCE-CE e os lotes de importação.", icone: "importados" },
             { href: "/equipe/uso", rotulo: "Uso do mês", dica: "Mostra o uso de cada prefeitura no mês.", icone: "painel" },
             { href: "/equipe/auditoria", rotulo: "Auditoria", dica: "Mostra o que a equipe fez nas prefeituras.", icone: "auditoria" },
