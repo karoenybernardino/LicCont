@@ -49,7 +49,7 @@ test("editor: acrescentar e remover um pilar", async ({ page }) => {
 });
 
 test("mover em lote: marca documentos, escolhe a caixa de destino e confirma", async ({ page }) => {
-  await page.goto("/mapa?vista=planta");
+  await page.goto("/mapa");
   await page.getByLabel("Ir para caixa, rua ou documento").fill("B-M3-N3-C02");
   await page.getByRole("button", { name: "Ir", exact: true }).click();
   await expect(page.getByRole("region", { name: "Caixa selecionada" })).toContainText("B-M3-N3-C02");

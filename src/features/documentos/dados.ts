@@ -333,14 +333,55 @@ export async function classePorCodigo(codigo: string): Promise<ClasseDoCodigo | 
   return r ? { classeId: r.classe_id, grupoId: r.grupo_id, codigo: r.codigo, nome: r.nome, prazoAnos: r.prazo_anos, permanente: r.permanente } : null;
 }
 
+// Caixas ativas de um nível para o cadastro de caixa (de qualquer tipo): número no nível, número do
+// órgão (sequencial) e se já foi cadastrada como geral ou detalhada.
+export type CaixaDoNivel = { id: string; numero: number; sequencial: number; orgao: Orgao; tipo: "geral" | "detalhada"; documentos: number };
+
+export async function caixasParaCadastro(nivelId: string): Promise<CaixaDoNivel[]> {
+  if (emDemo()) {
+    const nivel = ESTRUTURA_DEMO.niveis.find((n) => n.id === nivelId);
+    if (!nivel) return [];
+    return Array.from({ length: nivel.caixas }, (_, i) => {
+      const id = idCaixaDemo(nivel.id, i + 1);
+      return { id, numero: i + 1, sequencial: i + 1, orgao: "prefeitura" as Orgao, tipo: "detalhada" as const, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length };
+    });
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data } = await sb.from("caixas").select("id, numero, sequencial, orgao, tipo").eq("nivel_id", nivelId).eq("ativo", true).order("numero");
+  const ids = (data ?? []).map((c) => c.id as string);
+  if (!ids.length) return [];
+  const { data: oc } = await sb.rpc("ocupacao_caixas", { p_caixas: ids });
+  const mapa = new Map<string, number>((oc ?? []).map((o: { caixa_id: string; documentos: number }) => [o.caixa_id, o.documentos]));
+  return (data ?? []).map((c) => ({ id: c.id as string, numero: c.numero as number, sequencial: c.sequencial as number, orgao: c.orgao as Orgao, tipo: c.tipo as "geral" | "detalhada", documentos: mapa.get(c.id as string) ?? 0 }));
+}
+
 // Pesquisa de caixas (gerais e detalhadas) pelos mesmos filtros de órgão, fundo, setor, mês e ano.
 export type CaixaPesquisa = {
   id: string; orgao: Orgao; sequencial: number; tipo: "geral" | "detalhada"; fundo: string | null; setor: string | null; meses: number[];
   anoLimite: number | null; digitalizada: boolean; codigoClassificacao: string | null; prazoAnos: number | null; etiquetaGeral: boolean; endereco: string;
 };
 
-export async function pesquisarCaixas(f: Pick<Filtros, "orgao" | "fundo" | "setor" | "mes"> & { ano?: number | null; tipo?: "geral" | "detalhada" | null }): Promise<CaixaPesquisa[]> {
-  if (emDemo()) return [];
+// Caixas gerais fictícias da demonstração (nada aqui é dado real).
+const CAIXAS_GERAIS_DEMO: CaixaPesquisa[] = [
+  { id: "de430000-0000-0000-0000-000000000001", orgao: "prefeitura", sequencial: 1, tipo: "geral", fundo: "Fundo Municipal de Saúde", setor: "Contabilidade", meses: [1, 2, 3], anoLimite: 2019, digitalizada: false, codigoClassificacao: "031", prazoAnos: 12, etiquetaGeral: true, endereco: "A-M1-N1-C01" },
+  { id: "de430000-0000-0000-0000-000000000002", orgao: "prefeitura", sequencial: 2, tipo: "geral", fundo: "Fundo Municipal de Educação", setor: "Tesouraria", meses: [6], anoLimite: 2020, digitalizada: true, codigoClassificacao: "032", prazoAnos: 10, etiquetaGeral: true, endereco: "A-M1-N1-C02" },
+  { id: "de430000-0000-0000-0000-000000000003", orgao: "camara", sequencial: 1, tipo: "geral", fundo: "Câmara Municipal", setor: "Secretaria Legislativa", meses: [11, 12], anoLimite: 2021, digitalizada: false, codigoClassificacao: "034", prazoAnos: 5, etiquetaGeral: false, endereco: "B-M1-N1-C01" },
+];
+
+export async function pesquisarCaixas(f: Pick<Filtros, "orgao" | "fundo" | "setor" | "mes" | "ano"> & { ano?: number | null; tipo?: "geral" | "detalhada" | null }): Promise<CaixaPesquisa[]> {
+  if (emDemo()) {
+    const sem = (t: string | null | undefined) => (t ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+    return CAIXAS_GERAIS_DEMO.filter(
+      (c) =>
+        (!f.tipo || c.tipo === f.tipo) &&
+        (!f.orgao || c.orgao === f.orgao) &&
+        (!f.fundo || sem(c.fundo).includes(sem(f.fundo))) &&
+        (!f.setor || sem(c.setor).includes(sem(f.setor))) &&
+        (!f.mes || c.meses.includes(f.mes)) &&
+        (!f.ano || c.anoLimite === f.ano),
+    );
+  }
   const sb = await clienteSessao();
   if (!sb) return [];
   const { data, error } = await sb.rpc("pesquisar_caixas", { p_orgao: f.orgao, p_tipo: f.tipo ?? null, p_fundo: f.fundo, p_setor: f.setor, p_mes: f.mes, p_ano: f.ano ?? null });

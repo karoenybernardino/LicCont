@@ -2,7 +2,7 @@ import { MODALIDADES, ORGAOS, type Orgao } from "./tipos";
 
 // Filtros da pesquisa: vivem na URL (?q=&aba=&de=&ate=...) para voltar,
 // recarregar e copiar o link manterem a pesquisa.
-export type Aba = "todos" | "licitacao" | "contrato";
+export type Aba = "todos" | "licitacao" | "contrato" | "caixas";
 export type Filtros = {
   q: string;
   aba: Aba;
@@ -16,6 +16,8 @@ export type Filtros = {
   fundo: string | null;
   setor: string | null;
   mes: number | null;
+  // Ano limite da caixa (só para caixas gerais).
+  ano: number | null;
   ordem: "recentes" | "antigos";
   cursor: string | null;
 };
@@ -40,7 +42,7 @@ export function lerFiltros(p: Params): Filtros {
   const ordem = um(p, "ordem");
   const f: Filtros = {
     q: (um(p, "q") ?? "").slice(0, 100),
-    aba: aba === "licitacao" || aba === "contrato" ? aba : "todos",
+    aba: aba === "licitacao" || aba === "contrato" || aba === "caixas" ? aba : "todos",
     de: inteiro(um(p, "de"), 1950, 2100),
     ate: inteiro(um(p, "ate"), 1950, 2100),
     modalidade: modalidade && modalidade in MODALIDADES ? modalidade : null,
@@ -50,6 +52,7 @@ export function lerFiltros(p: Params): Filtros {
     fundo: um(p, "fundo")?.slice(0, 120) ?? null,
     setor: um(p, "setor")?.slice(0, 120) ?? null,
     mes: inteiro(um(p, "mes"), 1, 12),
+    ano: inteiro(um(p, "ano"), 1900, 2100),
     ordem: ordem === "antigos" ? "antigos" : "recentes",
     cursor: um(p, "cursor"),
   };
@@ -73,6 +76,7 @@ export function paraQuery(f: Partial<Filtros>) {
   poe("fundo", f.fundo);
   poe("setor", f.setor);
   poe("mes", f.mes);
+  poe("ano", f.ano);
   if (f.ordem && f.ordem !== "recentes") poe("ordem", f.ordem);
   poe("cursor", f.cursor);
   return q.toString();
@@ -80,5 +84,5 @@ export function paraQuery(f: Partial<Filtros>) {
 
 // Quantos filtros (fora a busca e a aba) estão ligados, para o "Limpar".
 export function filtrosAtivos(f: Filtros) {
-  return [f.de, f.ate, f.modalidade, f.secretaria, f.origem, f.orgao, f.fundo, f.setor, f.mes].filter((v) => v !== null).length;
+  return [f.de, f.ate, f.modalidade, f.secretaria, f.origem, f.orgao, f.fundo, f.setor, f.mes, f.ano].filter((v) => v !== null).length;
 }

@@ -16,6 +16,7 @@ import {
 import type { CaixaOcupada } from "./dados";
 import { MOTIVOS } from "./conferencia";
 import { EscolhaRua } from "./escolha-rua";
+import { EscolhaOrgao } from "./escolha-orgao";
 import { useOrigem } from "@/features/etiquetas/origem";
 import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
@@ -50,10 +51,10 @@ export type Inicial = {
   arquivo: string | null;
 };
 
-const caixaCampo =
+export const caixaCampo =
   "min-h-10 w-full rounded-lg border border-borda-campo bg-campo px-3 text-sm text-texto focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foco disabled:opacity-60";
-const secao = "flex flex-col gap-3.5 rounded-2xl border border-linha bg-superficie px-5 py-[18px]";
-const botaoBase =
+export const secao = "flex flex-col gap-3.5 rounded-2xl border border-linha bg-superficie px-5 py-[18px]";
+export const botaoBase =
   "inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:opacity-60";
 
 function Rotulo({ id, children }: { id: string; children: React.ReactNode }) {
@@ -64,7 +65,7 @@ function Rotulo({ id, children }: { id: string; children: React.ReactNode }) {
   );
 }
 
-function Campo({ rotulo, children, className = "" }: { rotulo: string; children: (id: string) => React.ReactNode; className?: string }) {
+export function Campo({ rotulo, children, className = "" }: { rotulo: string; children: (id: string) => React.ReactNode; className?: string }) {
   const id = useId();
   return (
     <div className={`flex min-w-0 flex-col gap-[5px] ${className}`}>
@@ -74,7 +75,7 @@ function Campo({ rotulo, children, className = "" }: { rotulo: string; children:
   );
 }
 
-function Titulo({ n, children }: { n: number; children: React.ReactNode }) {
+export function Titulo({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <span aria-hidden className="flex size-[26px] items-center justify-center rounded-full bg-aqua font-titulo text-[13px] font-bold text-petroleo">
@@ -114,7 +115,7 @@ export function FormularioDocumento({
   const [grupoId, setGrupoId] = useState(inicial?.grupoId ?? grupoPadrao);
   const [classeId, setClasseId] = useState(inicial?.classeId ?? "");
   // Órgão do documento: vem da caixa escolhida, mas o cadastro pode trocar (documento da Câmara em caixa da Prefeitura).
-  const [orgao, setOrgao] = useState<Orgao | "">(inicial?.orgao ?? "");
+  const [orgao, setOrgao] = useState<Orgao | "">(inicial?.orgao ?? "prefeitura");
   const [orgaoManual, setOrgaoManual] = useState(!!inicial);
   const grupoLic = grupos.find((g) => g.id === grupoId)?.chave === "licitacoes_contratos";
   const classesDoGrupo = regras.filter((r) => r.grupoId === grupoId && (r.ativa || r.id === classeId));
@@ -366,20 +367,7 @@ export function FormularioDocumento({
             </Campo>
             <Campo rotulo="Órgão">
               {(id) => (
-                <div id={id} role="radiogroup" aria-label="Órgão" className="inline-flex shrink-0 gap-[3px] rounded-[22px] border border-linha bg-campo p-[3px]">
-                  {(Object.keys(ORGAOS) as Orgao[]).map((o) => (
-                    <button
-                      key={o}
-                      type="button"
-                      role="radio"
-                      aria-checked={orgaoAtual === o}
-                      onClick={() => { setOrgao(o); setOrgaoManual(true); }}
-                      className={`min-h-[34px] rounded-[18px] px-[18px] text-[13px] focus-visible:outline-2 focus-visible:outline-foco ${orgaoAtual === o ? "bg-aqua font-semibold text-petroleo" : "text-texto-suave"}`}
-                    >
-                      {ORGAOS[o]}
-                    </button>
-                  ))}
-                </div>
+                <EscolhaOrgao id={id} valor={orgaoAtual} aoEscolher={(o) => { setOrgao(o); setOrgaoManual(true); }} />
               )}
             </Campo>
           </div>

@@ -33,7 +33,10 @@ export default async function NovoDocumento({ searchParams }: { searchParams: Pr
               Importar do GED ou planilha
             </Link>
           )}
-          <Link href="/documentos/lote" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">
+          <Link href="/caixas/nova" className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">
+            Cadastrar caixa
+          </Link>
+          <Link href="/documentos/lote"className="inline-flex min-h-10 items-center rounded-lg border border-linha px-5 text-sm font-medium text-texto">
             Enviar vários PDFs
           </Link>
         </>
