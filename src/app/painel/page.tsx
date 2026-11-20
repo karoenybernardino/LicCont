@@ -9,7 +9,6 @@ import { lerPainel, porcento } from "@/features/painel/dados";
 export const metadata: Metadata = { title: "Painel · LicCONT" };
 
 const num = (n: number) => n.toLocaleString("pt-BR");
-const real = (v: number | null) => (v === null ? "" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const ver = "text-[13px] font-medium text-destaque underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-foco";
 
 function Cartao({ rotulo, valor, legenda, href, acao }: { rotulo: string; valor: string; legenda: string; href: string; acao: string }) {
@@ -70,7 +69,8 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
   const p = await searchParams;
   const pedida = typeof p.secretaria === "string" ? p.secretaria : "";
   const filtro = secretarias.some((s) => s.id === pedida) ? pedida : null;
-  const d = await lerPainel(filtro);
+  const orgao = p.orgao === "prefeitura" || p.orgao === "camara" ? p.orgao : null;
+  const d = await lerPainel(filtro, orgao);
   const { documentos: doc, emprestimos: emp, tce } = d.resumo;
   const pdf = porcento(doc.com_pdf, doc.total);
   const ocupadas = porcento(d.caixas.com_documento, d.caixas.total);
@@ -88,6 +88,14 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
               {s.nome}
             </option>
           ))}
+        </select>
+        <label htmlFor="orgao" className="text-texto-suave">
+          Órgão
+        </label>
+        <select id="orgao" name="orgao" defaultValue={orgao ?? ""} className="min-h-10 rounded-lg border border-linha bg-campo px-3">
+          <option value="">Prefeitura e Câmara</option>
+          <option value="prefeitura">Prefeitura</option>
+          <option value="camara">Câmara</option>
         </select>
         <button type="submit" className="min-h-10 rounded-lg border border-linha px-3 hover:border-destaque">
           Aplicar
@@ -149,7 +157,7 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
         </Painel>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Painel>
           <TituloPainel>Empréstimos atrasados · {emp.atrasados}</TituloPainel>
           <ul className="text-sm">
@@ -183,26 +191,6 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
           </ul>
           <Link href="/temporalidade" className={ver}>
             Abrir a fila de descarte
-          </Link>
-        </Painel>
-        <Painel>
-          <TituloPainel>Contratos vencendo em 60 dias · {d.contratos.total}</TituloPainel>
-          <ul className="text-sm">
-            {d.contratos.itens.map((a) => (
-              <li key={a.titulo} className="flex justify-between gap-2 border-t border-linha py-2">
-                <span>
-                  {a.titulo}
-                  <span className="block text-xs text-texto-suave">
-                    {a.empresa ?? "—"} {a.valor !== null && `· ${real(a.valor)}`}
-                  </span>
-                </span>
-                <span className="text-texto-suave">em {a.emDias} dias</span>
-              </li>
-            ))}
-            {!d.contratos.itens.length && <li className="py-2 text-texto-suave">Nenhum contrato vence em 60 dias.</li>}
-          </ul>
-          <Link href="/pesquisa?vigencia=vencem_30" className={ver}>
-            Ver na pesquisa
           </Link>
         </Painel>
       </div>

@@ -41,9 +41,8 @@ export default async function EditarDocumento({ params }: { params: Promise<{ id
         tipologias={tipologias}
         inicial={{
           id: doc.id, tipo: doc.tipo, modalidade: doc.modalidade, numero: doc.numero, ano: doc.ano, objeto: doc.objeto,
-          empresa: doc.empresa, cnpj: doc.cnpj ?? doc.cpf_credor, valor: doc.valor, situacao: doc.situacao,
-          vigencia_inicio: doc.vigencia_inicio, vigencia_fim: doc.vigencia_fim, encerrado_em: doc.encerrado_em, secretariaId: doc.secretariaId,
-          classeId: doc.classeId, grupoId: doc.grupoId, tipologiaId: doc.tipologiaId, dataProducao: doc.dataProducao, observacao: doc.observacao, volume: doc.volume, eventoEm: doc.eventoEm,
+          tituloProcesso: doc.tituloProcesso, orgao: doc.orgao, secretariaId: doc.secretariaId,
+          classeId: doc.classeId, grupoId: doc.grupoId, tipologiaId: doc.tipologiaId, observacao: doc.observacao, volume: doc.volume,
           caixaId: doc.caixaId, ruaId: pos?.ruaId ?? "", moduloId: pos?.moduloId ?? "", nivelId: pos?.nivelId ?? "",
           arquivo: doc.arquivo?.nome ?? null,
         }}

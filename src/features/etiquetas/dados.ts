@@ -60,11 +60,10 @@ const PAGINA = 1000;
 
 export const numeroCaixa = (n: number) => String(n).padStart(4, "0");
 export const localizacaoPorExtenso = (rua: string, modulo: number, nivel: number) => `Rua ${rua} · Módulo ${modulo} · Nível ${nivel}`;
-const dataBR = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "");
 
 type DocBruto = {
   id: string; tipo: Tipo; modalidade: Modalidade | null; numero: string; ano: number; objeto: string; secretariaId: string; secretaria: string;
-  volume: number; classeId: string | null; tipologia: string | null; dataProducao: string | null; observacao: string | null; caixaId: string;
+  volume: number; classeId: string | null; tipologia: string | null; observacao: string | null; caixaId: string;
 };
 type CaixaBruta = { id: string; sequencial: number; rua: string; modulo: number; nivel: number; volume: number | null; volumesTotal: number | null; classeId: string | null };
 
@@ -112,7 +111,7 @@ function montarBase(caixas: CaixaBruta[], docs: DocBruto[], regras: Regra[], sec
       const c = lugar.get(d.caixaId)!;
       const r = d.classeId ? regra.get(d.classeId) : undefined;
       return {
-        id: d.id, titulo: tituloDocumento({ ...d }), secretariaId: d.secretariaId, secretaria: d.secretaria, objeto: d.objeto, data: dataBR(d.dataProducao),
+        id: d.id, titulo: tituloDocumento({ ...d }), secretariaId: d.secretariaId, secretaria: d.secretaria, objeto: d.objeto, data: String(d.ano),
         observacao: d.observacao, classeId: d.classeId, classe: r?.classe ?? "Sem classe", codigo: r?.codigo ?? "—", caixaNumero: numeroCaixa(c.sequencial),
         localizacao: localizacaoPorExtenso(c.rua, c.modulo, c.nivel), ano: d.ano, impressa: impressoes.get(`documento:${d.id}`) ?? null,
       };
@@ -137,7 +136,7 @@ export async function lerBaseEtiquetas(): Promise<BaseEtiquetas> {
       docs.push({
         id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto, secretariaId: d.secretaria_id,
         secretaria: SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "", volume: i % 17 === 0 ? 2 : 1,
-        classeId: CLASSES_DEMO[d.tipo === "contrato" ? 1 : 0].id, tipologia: null, dataProducao: `${d.ano}-02-12`, observacao: i === 0 ? "Falta o termo aditivo" : null, caixaId: d.caixa_id,
+        classeId: CLASSES_DEMO[d.tipo === "contrato" ? 1 : 0].id, tipologia: null, observacao: i === 0 ? "Falta o termo aditivo" : null, caixaId: d.caixa_id,
       });
     });
     return montarBase([...caixas.values()], docs, CLASSES_DEMO, SECRETARIAS_DEMO.map((s) => ({ id: s.id, nome: s.nome })), new Map());
@@ -167,7 +166,7 @@ export async function lerBaseEtiquetas(): Promise<BaseEtiquetas> {
   for (let p = 0; p * PAGINA < LIMITE_DOCUMENTOS; p++) {
     const { data, error } = await sb
       .from("documentos")
-      .select("id, tipo, modalidade, numero, ano, objeto, secretaria_id, secretarias(nome), volume, classe_id, tipologias(nome), data_producao, observacao, caixa_id")
+      .select("id, tipo, modalidade, numero, ano, objeto, secretaria_id, secretarias(nome), volume, classe_id, tipologias(nome), observacao, caixa_id")
       .eq("ativo", true)
       .not("caixa_id", "is", null)
       .order("id")
@@ -177,7 +176,7 @@ export async function lerBaseEtiquetas(): Promise<BaseEtiquetas> {
     for (const d of (data ?? []) as any[]) {
       docs.push({
         id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto, secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "",
-        volume: d.volume ?? 1, classeId: d.classe_id, tipologia: d.tipologias?.nome ?? null, dataProducao: d.data_producao, observacao: d.observacao, caixaId: d.caixa_id,
+        volume: d.volume ?? 1, classeId: d.classe_id, tipologia: d.tipologias?.nome ?? null, observacao: d.observacao, caixaId: d.caixa_id,
       });
     }
     if (!data || data.length < PAGINA) break;

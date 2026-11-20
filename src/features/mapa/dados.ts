@@ -5,7 +5,7 @@ import { SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { CAPACIDADE_CAIXA_DEMO, DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
 import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
-import type { Modalidade, Tipo } from "@/features/documentos/tipos";
+import type { Modalidade, Orgao, Tipo } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { documentosEmprestados } from "@/features/movimento/dados";
 import { todas } from "@/features/estrutura/dados";
@@ -92,10 +92,10 @@ export const PLANTA_DEMO: Planta = { ...PLANTA_VAZIA, metrosCelula: 1.2, largura
 export type LinhaDocumento = {
   id: string;
   titulo: string;
-  empresa: string | null;
+  tituloProcesso: string | null;
   secretaria: string;
   ano: number;
-  situacao: string;
+  orgao: Orgao;
   conferido: boolean;
   marcavel: boolean;
   emprestado: boolean;
@@ -136,10 +136,10 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
         .map((d) => ({
           id: d.id,
           titulo: tituloDocumento({ tipo: d.tipo as Tipo, modalidade: d.modalidade as Modalidade | null, numero: d.numero, ano: d.ano }),
-          empresa: d.empresa,
+          tituloProcesso: d.titulo_processo,
           secretaria: SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "",
           ano: d.ano,
-          situacao: d.situacao,
+          orgao: d.orgao,
           conferido: d.conferido,
           marcavel: cadastra.has(d.secretaria_id),
           emprestado: false,
@@ -153,7 +153,7 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
     sb.from("caixas").select("id, numero, ativo, niveis(numero, modulos(numero, ruas(codigo)))").eq("id", caixaId).maybeSingle(),
     sb
       .from("documentos")
-      .select("id, tipo, modalidade, numero, ano, empresa, situacao, conferido_em, secretaria_id, secretarias(nome)")
+      .select("id, tipo, modalidade, numero, ano, titulo_processo, orgao, conferido_em, secretaria_id, secretarias(nome)")
       .eq("caixa_id", caixaId)
       .eq("ativo", true)
       .order("criado_em", { ascending: false })
@@ -179,10 +179,10 @@ export async function detalheDaCaixa(u: Usuario, caixaId: string): Promise<Detal
     documentos: (docs.data as any[]).map((d) => ({
       id: d.id,
       titulo: tituloDocumento(d),
-      empresa: d.empresa,
+      tituloProcesso: d.titulo_processo,
       secretaria: d.secretarias?.nome ?? "",
       ano: d.ano,
-      situacao: d.situacao,
+      orgao: d.orgao,
       conferido: !!d.conferido_em,
       marcavel: cadastra.has(d.secretaria_id) && !emprestados.has(d.id),
       emprestado: emprestados.has(d.id),

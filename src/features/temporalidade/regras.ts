@@ -1,17 +1,15 @@
 // Regras puras da temporalidade (sem banco): o banco repete a mesma conta em
 // app.motivo_inelegivel, e os dois precisam concordar (ver regras.test.ts).
 // Datas são "AAAA-MM-DD" no fuso de São Paulo, nunca Date solto.
-import type { Tipo } from "@/features/documentos/tipos";
-
 export type Destinacao = "eliminacao" | "guarda_permanente";
-// fixo: conta da data do documento; apos_evento: conta do evento informado; permanente: nunca elimina.
-export type TipoPrazo = "fixo" | "apos_evento" | "permanente";
-export const TIPOS_PRAZO: Record<TipoPrazo, string> = { fixo: "Prazo fixo", apos_evento: "Após um evento", permanente: "Guarda permanente" };
+// fixo: conta do fim do ano do documento; permanente: nunca elimina (fora da fila).
+export type TipoPrazo = "fixo" | "permanente";
+export const TIPOS_PRAZO: Record<TipoPrazo, string> = { fixo: "Prazo fixo", permanente: "Guarda permanente" };
 
 // Uma linha da tabela de temporalidade do órgão (classe documental).
 export type Regra = {
   id: string; codigo: string; classe: string; grupoId: string; grupo: string;
-  corrente: number; intermediaria: number; tipoPrazo: TipoPrazo; evento: string | null;
+  corrente: number; intermediaria: number; tipoPrazo: TipoPrazo;
   destinacao: Destinacao; observacao: string | null; ativa: boolean;
 };
 
@@ -56,27 +54,20 @@ export function somarDias(iso: string, dias: number) {
   return paraIso(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
 }
 
-export type DocumentoPrazo = {
-  tipo: Tipo; classe_id: string | null; data_producao: string | null; evento_em: string | null;
-  vigencia_fim: string | null; encerrado_em: string | null;
-};
+export type DocumentoPrazo = { classe_id: string | null; ano: number };
 export type EstadoPrazo =
-  | { estado: "sem_regra" | "sem_data" | "aguardando_evento" | "permanente" }
+  | { estado: "sem_regra" | "permanente" }
   | { estado: "vigente" | "vence" | "pronto"; vencimento: string; emDias: number };
 
-// Evento do prazo "após evento": o informado, ou o fim da vigência (contrato) / encerramento (licitação).
-export function dataDoEvento(d: DocumentoPrazo) {
-  return d.evento_em ?? (d.tipo === "contrato" ? d.vigencia_fim : d.tipo === "licitacao" ? d.encerrado_em : null);
-}
+// Primeiro dia em que o documento pode ser eliminado: o prazo conta do fim do ano do
+// documento (ano 2025 + 5 anos = 31/12/2030, liberado em 01/01/2031). Igual a app.motivo_inelegivel.
+export const vencimentoDoPrazo = (ano: number, anos: number) => paraIso(ano + anos + 1, 1, 1);
 
-// Mesma conta de app.motivo_inelegivel: prazo fixo conta da data do documento.
 export function estadoDoPrazo(d: DocumentoPrazo, regras: Regra[], hoje: string): EstadoPrazo {
   const regra = d.classe_id ? regras.find((r) => r.id === d.classe_id) : undefined;
   if (!regra) return { estado: "sem_regra" };
   if (regra.destinacao === "guarda_permanente") return { estado: "permanente" };
-  const inicio = regra.tipoPrazo === "apos_evento" ? dataDoEvento(d) : d.data_producao;
-  if (!inicio) return { estado: regra.tipoPrazo === "apos_evento" ? "aguardando_evento" : "sem_data" };
-  const vencimento = somarAnos(inicio, regra.corrente + regra.intermediaria);
+  const vencimento = vencimentoDoPrazo(d.ano, regra.corrente + regra.intermediaria);
   const emDias = diasEntre(hoje, vencimento);
   return { estado: emDias <= 0 ? "pronto" : emDias <= AVISO_DIAS ? "vence" : "vigente", vencimento, emDias };
 }
@@ -103,8 +94,6 @@ export const MOTIVOS: Record<string, string> = {
   inativo: "O documento está desativado.",
   sem_regra: "O documento não tem classe na tabela de temporalidade.",
   guarda_permanente: "Documento de guarda permanente não pode ser eliminado.",
-  sem_data: "Falta a data do documento, de onde o prazo começa a contar.",
-  aguardando_evento: "Falta informar o evento que inicia o prazo de guarda.",
   digitalizado_sem_icp: "Documento digitalizado só pode ser eliminado com assinatura ICP-Brasil.",
   prazo_nao_cumprido: "O prazo de guarda ainda não foi cumprido.",
   emprestado: "O documento está emprestado.",

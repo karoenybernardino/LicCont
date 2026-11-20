@@ -13,8 +13,7 @@ import { codigoPosicao, numeroBR, percentual, resumir } from "@/features/estrutu
 import { BotaoAcao } from "@/features/estrutura/botao-acao";
 import { LegendaFrente, VistaFrente } from "@/features/estrutura/vista-frente";
 import { detalheDaCaixa, idDaCaixaPorPosicao } from "@/features/mapa/dados";
-import { SITUACOES } from "@/features/documentos/tipos";
-import { tomSituacao } from "@/features/documentos/painel";
+import { ORGAOS } from "@/features/documentos/tipos";
 import { Pilula } from "@/ui/canvas";
 import {
   BarraOcupacao,
@@ -177,9 +176,9 @@ export default async function RuaDoGalpao({
                         <Link href={`/documentos/${d.id}`} className="flex items-center gap-2 rounded-[10px] border border-linha bg-superficie-2 px-2.5 py-2 hover:border-destaque focus-visible:outline-2 focus-visible:outline-foco">
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-titulo text-[13px] font-semibold">{d.titulo}</span>
-                            <span className="block truncate text-[11px] text-texto-suave">{[d.empresa, d.secretaria, d.ano].filter(Boolean).join(" · ")}</span>
+                            <span className="block truncate text-[11px] text-texto-suave">{[d.tituloProcesso, d.secretaria, d.ano].filter(Boolean).join(" · ")}</span>
                           </span>
-                          <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                          {d.orgao === "camara" && <Pilula tom="aviso">{ORGAOS.camara}</Pilula>}
                         </Link>
                       </li>
                     ))}

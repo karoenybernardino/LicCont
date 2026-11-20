@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
-import { Pilula } from "@/ui/canvas";
+
 import { linkDoPdf } from "./acoes";
 import { BotaoBaixar } from "./botoes";
 import { abrirPdf } from "./pdf-navegador";
@@ -22,7 +22,6 @@ export type InfoPdf = {
   /** SHA-256 abreviado; null se o banco não tem (demonstração). */
   sha: string | null;
   campos: { rotulo: string; valor: string }[];
-  situacao: { texto: string; tom: "ok" | "aviso" | "erro" };
   posicao: string | null;
   verNoMapa: string | null;
 };
@@ -255,9 +254,6 @@ export function VisualizadorPdf({ documentoId, voltar, info }: { documentoId: st
             {info.campos.map((c) => (
               <Linha key={c.rotulo} rotulo={c.rotulo}>{c.valor}</Linha>
             ))}
-            <Linha rotulo="Situação">
-              <Pilula tom={info.situacao.tom}>{info.situacao.texto}</Pilula>
-            </Linha>
           </section>
           <section className={cartao} aria-label="Arquivo">
             <span className={rotulo}>Arquivo</span>

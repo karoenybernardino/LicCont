@@ -72,7 +72,7 @@ export async function fila(): Promise<{ itens: ItemFila[]; duplicados: ItemFila[
   const [docs, dups] = await Promise.all([
     sb
       .from("documentos")
-      .select("id, tipo, modalidade, numero, ano, objeto, valor, secretaria_id")
+      .select("id, tipo, modalidade, numero, ano, objeto, secretaria_id")
       .eq("tce_a_conferir", true)
       .eq("ativo", true)
       .order("criado_em", { ascending: false })
@@ -85,7 +85,7 @@ export async function fila(): Promise<{ itens: ItemFila[]; duplicados: ItemFila[
       titulo: tituloDocumento({ tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano }),
       tipo: d.tipo,
       objeto: d.objeto,
-      valor: d.valor,
+      valor: null,
       secretariaId: d.secretaria_id,
       duplicado: null,
     })),

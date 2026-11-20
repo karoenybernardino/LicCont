@@ -237,7 +237,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
             <Painel>
               <CabecalhoPainel
                 icone={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h10l4 4v14H5zM14 3v5h5" /></svg>}
-                titulo="Logo do órgão"
+                titulo="Logos da Prefeitura e da Câmara"
                 subtitulo="Sai no topo das etiquetas, da folha de conteúdo e dos relatórios."
               />
               {marca && <FormMarca id={id} marca={marca} parceiras={parceiras} />}

@@ -13,22 +13,10 @@ import {
   type DocumentoDetalhe,
   type Posicao,
 } from "./dados";
-import { descreverArquivo, formatarData, formatarValor } from "./formato";
-import { MODALIDADES, SITUACOES, TIPOS } from "./tipos";
+import { descreverArquivo } from "./formato";
+import { MODALIDADES, ORGAOS, TIPOS } from "./tipos";
 import { tituloDocumento } from "./titulo";
 import { documentosEmprestados } from "@/features/movimento/dados";
-
-export const tomSituacao = (s: string) =>
-  [
-    "em_andamento",
-    "deserta",
-    "fracassada",
-    "revogada",
-    "anulada",
-    "rescindido",
-  ].includes(s)
-    ? ("aviso" as const)
-    : ("ok" as const);
 
 const ROT =
   "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
@@ -268,20 +256,10 @@ export async function PainelDocumento({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Dado rotulo="Empresa" valor={doc.empresa ?? "—"} />
+          <Dado rotulo="Órgão" valor={ORGAOS[doc.orgao]} />
           <Dado rotulo="Secretaria" valor={doc.secretaria || "—"} />
           <Dado rotulo="Ano" valor={String(doc.ano)} />
-          <Dado rotulo="Valor" valor={formatarValor(doc.valor)} />
-          <Dado
-            rotulo="Situação"
-            valor={SITUACOES[doc.situacao] ?? doc.situacao}
-          />
-          {doc.tipo === "contrato" && (
-            <Dado
-              rotulo="Vigência"
-              valor={`${formatarData(doc.vigencia_inicio)} a ${formatarData(doc.vigencia_fim)}`}
-            />
-          )}
+          {doc.tituloProcesso && <Dado rotulo="Título do processo" valor={doc.tituloProcesso} />}
         </div>
       </div>
 
@@ -290,7 +268,7 @@ export async function PainelDocumento({
           d={{
             documentoId: doc.id, arquivoId: a.id, classe: regraDoc?.classe ?? "Sem classe", codigo: regraDoc?.codigo ?? "—", grupo: regraDoc?.grupo ?? "—",
             prazo: regraDoc ? prazoDeGuarda(regraDoc) : "—", destinacao: regraDoc?.destinacao === "guarda_permanente" ? "guarda permanente" : "eliminação",
-            dataProducao: formatarData(doc.dataProducao), tipologia: doc.tipologia, titulo: a.titulo, assunto: a.assunto, autor: a.autor, local: a.local, genero: a.genero,
+            anoDocumento: String(doc.ano), tipologia: doc.tipologia, titulo: a.titulo, assunto: a.assunto, autor: a.autor, local: a.local, genero: a.genero,
             selo: a.selo, assinaturaIcp: a.assinaturaIcp, enviadoEm: a.enviadoEm, sha256: a.sha256, paginas: a.paginas, avisos: a.avisos, temTexto: a.temTexto, podeEditar: cadastra,
           }}
         />

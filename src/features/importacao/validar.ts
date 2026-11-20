@@ -1,9 +1,9 @@
 import { esquemaDocumento } from "@/features/documentos/esquemas";
-import { MODALIDADE_POR_TEXTO, SITUACAO_POR_TEXTO, TIPO_POR_TEXTO, CAMPOS, semAcento, type ChaveCampo, type Mapa } from "./colunas";
+import { MODALIDADE_POR_TEXTO, ORGAO_POR_TEXTO, TIPO_POR_TEXTO, CAMPOS, semAcento, type ChaveCampo, type Mapa } from "./colunas";
 
 // Valida cada linha da planilha com o mesmo esquema do cadastro manual.
 // Os erros dizem só a linha, o campo e um motivo fixo: nunca o conteúdo da
-// célula (pode ter nome de empresa ou de pessoa).
+// célula (pode ter nome de pessoa).
 
 export type Secretaria = { id: string; nome: string };
 // Tabela de temporalidade e tipologias do órgão, para ligar a linha à classe pelo código ou nome.
@@ -16,16 +16,10 @@ export type DadosImportacao = {
   numero: string;
   ano: number;
   objeto: string;
-  empresa: string | null;
-  cnpj: string | null;
-  cpf_credor: string | null;
-  valor: number | null;
-  situacao: string;
-  vigencia_inicio: string | null;
-  vigencia_fim: string | null;
+  titulo_processo: string | null;
+  orgao: "prefeitura" | "camara";
   classe_id: string | null;
   tipologia_id: string | null;
-  data_producao: string | null;
   volume: number;
 };
 export type LinhaValida = { linha: number; dados: DadosImportacao; chave: string };
@@ -102,14 +96,10 @@ export function validarLinhas(
     const modalidade = modTexto ? (MODALIDADE_POR_TEXTO[semAcento(modTexto)] ?? "") : null;
     if (modalidade === "") erro("modalidade", "Modalidade desconhecida.");
 
-    const sitTexto = semAcento(pega("situacao"));
-    const situacao = SITUACAO_POR_TEXTO[sitTexto];
-    if (!situacao) erro("situacao", "Situação desconhecida.");
-
-    const ini = lerData(pega("vigencia_inicio"));
-    const fim = lerData(pega("vigencia_fim"));
-    if (ini === undefined) erro("vigencia_inicio", "Data inválida. Use dd/mm/aaaa.");
-    if (fim === undefined) erro("vigencia_fim", "Data inválida. Use dd/mm/aaaa.");
+    // Sem a coluna ou com a célula vazia, o documento é da Prefeitura.
+    const orgaoTxt = pega("orgao");
+    const orgao = orgaoTxt ? ORGAO_POR_TEXTO[semAcento(orgaoTxt)] : "prefeitura";
+    if (!orgao) erro("orgao", "Use Prefeitura ou Câmara.");
 
     const classeTxt = pega("classe");
     const classeId = classeTxt ? (classePor.get(semAcento(classeTxt)) ?? null) : null;
@@ -117,8 +107,6 @@ export function validarLinhas(
     const tipologiaTxt = pega("tipologia");
     const tipologiaId = tipologiaTxt ? (tipologiaPor.get(semAcento(tipologiaTxt)) ?? null) : null;
     if (tipologiaTxt && !tipologiaId) erro("tipologia", "Tipologia não cadastrada.");
-    const dataProducao = lerData(pega("data_producao"));
-    if (dataProducao === undefined) erro("data_producao", "Data inválida. Use dd/mm/aaaa.");
     const volumeTxt = pega("volume");
     const volume = volumeTxt ? Number(volumeTxt) : 1;
     if (!Number.isInteger(volume) || volume < 1 || volume > 99) erro("volume", "Volume inválido (de 1 a 99).");
@@ -134,21 +122,14 @@ export function validarLinhas(
       numero: pega("numero"),
       ano: pega("ano"),
       objeto: pega("objeto"),
-      empresa: pega("empresa"),
-      cnpj: pega("cnpj"),
-      valor: pega("valor"),
+      titulo_processo: pega("titulo_processo"),
+      orgao,
       secretaria: secretariaId,
       caixa: CAIXA_FALSA,
-      situacao,
-      vigencia_inicio: ini ?? "",
-      vigencia_fim: fim ?? "",
-      encerrado_em: "",
       classe: classeId ?? CAIXA_FALSA,
       tipologia: tipologiaId ?? "",
-      data_producao: dataProducao ?? "2000-01-01",
       volume,
       observacao: "",
-      evento_em: "",
     });
     if (!r.success) {
       for (const p of r.error.issues) {
@@ -165,16 +146,10 @@ export function validarLinhas(
       numero: d.numero,
       ano: d.ano,
       objeto: d.objeto,
-      empresa: d.empresa,
-      cnpj: d.cnpj,
-      cpf_credor: d.cpf_credor,
-      valor: d.valor,
-      situacao: d.situacao,
-      vigencia_inicio: d.vigencia_inicio,
-      vigencia_fim: d.vigencia_fim,
+      titulo_processo: d.titulo_processo,
+      orgao: d.orgao,
       classe_id: classeId,
       tipologia_id: tipologiaId,
-      data_producao: dataProducao ?? null,
       volume,
     };
     const chave = chaveProcesso(dados);

@@ -64,10 +64,10 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_docum
   ('c4b00000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'c3b00000-0000-0000-0000-000000000000', 1, 5);
 
 -- Documentos: um da Saúde (A), um de Obras (A), um da B. Como dono do banco.
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, empresa, situacao) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Aquisição de equipamentos médico-hospitalares', 'TecnoMed Fictícia', 'concluida'),
-  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação de vias', 'Construtora Fictícia', 'concluida'),
-  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material de escritório', null, 'concluida');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Aquisição de equipamentos médico-hospitalares'),
+  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação de vias'),
+  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material de escritório');
 insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por) values
   ('f0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'a.pdf', 1000, '0a000000-0000-0000-0000-000000000001'),
   ('f0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000', 'b.pdf', 1000, '0b000000-0000-0000-0000-000000000001');
@@ -105,17 +105,14 @@ select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, do
 select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
   values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10, '0a000000-0000-0000-0000-000000000001')$$,
   '23503', null, 'arquivo não aponta para documento de outra prefeitura');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '9/2024', 2024, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '9/2024', 2024, 'Objeto qualquer')$$,
   '23503', null, 'documento não entra em caixa de outra prefeitura (nem como dono)');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', '9/2024', 2024, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', '9/2024', 2024, 'Objeto qualquer')$$,
   '23514', null, 'licitação exige modalidade');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'contrato', '9/2024', 2024, 'Objeto qualquer', 'concluida')$$,
-  '23514', null, 'situação de licitação não vale em contrato');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Mesmo processo', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Mesmo processo')$$,
   '23505', null, 'o mesmo processo não entra duas vezes');
 select is(app.sem_acento('Pregão Eletrônico 015/2023 Ação'), 'pregao eletronico 015/2023 acao', 'sem_acento tira acento e põe minúsculas');
 
@@ -126,8 +123,8 @@ set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
 select results_eq('select numero from public.documentos', array['003/2022'], 'consulta A lê só os documentos de Obras');
 select is_empty('select 1 from public.arquivos', 'consulta A não lê arquivo da Saúde nem da B');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '7/2020', 2020, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '7/2020', 2020, 'Objeto qualquer')$$,
   '42501', null, 'consulta A não cadastra');
 select is_empty($$update public.documentos set objeto = 'Alterado' returning id$$, 'consulta A não altera');
 select throws_ok($$delete from public.documentos$$, '42501', null, 'consulta A não apaga');
@@ -137,20 +134,20 @@ select throws_ok($$delete from public.documentos$$, '42501', null, 'consulta A n
 -- ---------------------------------------------------------------------------
 select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal1');
 select results_eq('select numero from public.documentos', array['003/2022'], 'operador A não lê a Saúde');
-select lives_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '7/2020', 2020, 'Reforma de escola', 'concluida')$$,
+select lives_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '7/2020', 2020, 'Reforma de escola')$$,
   'operador A cadastra em Obras');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '8/2020', 2020, 'Objeto da Saúde', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'convite', '8/2020', 2020, 'Objeto da Saúde')$$,
   '42501', null, 'operador A não grava documento com secretaria da Saúde');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer')$$,
   '42501', null, 'caixa da B: mesmo erro de caixa que não existe');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-0000000000ff', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-0000000000ff', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer')$$,
   '42501', null, 'caixa inexistente: o mesmo erro');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '9/2020', 2020, 'Objeto qualquer')$$,
   '42501', null, 'operador A não cadastra na prefeitura B');
 select is_empty($$update public.documentos set objeto = 'Invasão' where id in ('d0a10000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000') returning id$$,
   'operador A não altera documento da Saúde nem da B');
@@ -234,8 +231,8 @@ select lives_ok($$update public.documentos set ativo = false where id = 'd0a1000
   'coordenador A desativa documento da Saúde');
 select lives_ok($$update public.caixas set ativo = false where id = 'c4a00000-0000-0000-0000-000000000001'$$,
   'sem documento ativo a caixa se desativa');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '1/2021', 2021, 'Objeto qualquer', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'convite', '1/2021', 2021, 'Objeto qualquer')$$,
   'LC004', null, 'caixa desativada não recebe documento');
 
 -- ---------------------------------------------------------------------------

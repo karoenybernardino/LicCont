@@ -6,9 +6,6 @@ import { ESTRUTURA_DEMO } from "./estrutura";
 import { SECRETARIAS_DEMO } from "./dados";
 
 export type DocumentoDemo = ItemPesquisa & {
-  cnpj: string | null;
-  vigencia_inicio: string | null;
-  vigencia_fim: string | null;
   arquivo: { nome: string; paginas: number; tamanho: number } | null;
 };
 
@@ -35,7 +32,7 @@ export function caixaDemo(id: string) {
 
 type Linha = [Tipo, Modalidade | null, string, number, string, string, string | null, number | null, string, string, string, string];
 
-// tipo, modalidade, número, ano, secretaria, objeto, empresa, valor, situação, posição, [vigência início, fim]
+// tipo, modalidade, número, ano, secretaria, objeto, (empresa, valor, situação e vigência: sem uso desde que o cadastro os tirou), posição
 const CANVAS: Linha[] = [
   ["licitacao", "pregao_eletronico", "015/2023", 2023, "Saúde", "Aquisição de equipamentos hospitalares", "TecnoMed Fictícia Ltda.", 50000, "concluida", "B-M3-N3-C02", "", ""],
   ["licitacao", "pregao_eletronico", "009/2023", 2023, "Educação", "Material de expediente", "Papelaria Central Fictícia", 18400, "concluida", "B-M3-N3-C03", "", ""],
@@ -96,7 +93,7 @@ function montar(): DocumentoDemo[] {
     ]);
   }
   return linhas.map((l, i) => {
-    const [tipo, modalidade, numero, ano, sec, objeto, empresa, valor, situacao, codigo, vi, vf] = l;
+    const [tipo, modalidade, numero, ano, sec, objeto, , , , codigo] = l;
     const [rua, m, n, c] = codigo.split("-");
     const caixaN = Number(c.slice(1));
     const nivel = ESTRUTURA_DEMO.niveis.find(
@@ -112,18 +109,14 @@ function montar(): DocumentoDemo[] {
       modalidade,
       numero,
       ano,
-      situacao,
       objeto,
-      empresa,
-      valor,
+      titulo_processo: i % 6 === 0 ? `Processo ${numero} — ${objeto}` : null,
+      orgao: i % 5 === 4 ? "camara" : "prefeitura",
       secretaria_id: SEC[sec],
       criado_em: dia,
       conferido: i % 3 !== 2,
       codigo,
       tem_pdf: i % 5 !== 4,
-      cnpj: empresa ? "11222333000181" : null,
-      vigencia_inicio: vi || null,
-      vigencia_fim: vf || null,
       arquivo: i % 5 !== 4 ? { nome: `${tipo}-${numero.replace("/", "-")}.pdf`, paginas: 3, tamanho: 2_400_000 } : null,
       // posição como no banco: a caixa ao lado do código
       caixa_id: idCaixaDemo(nivel.id, caixaN),

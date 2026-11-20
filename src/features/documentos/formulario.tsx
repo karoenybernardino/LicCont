@@ -21,7 +21,7 @@ import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
-import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Tipo } from "./tipos";
+import { MODALIDADES, ORGAOS, type Orgao, type Tipo } from "./tipos";
 
 export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
@@ -35,20 +35,13 @@ export type Inicial = {
   numero: string;
   ano: number;
   objeto: string;
-  empresa: string | null;
-  cnpj: string | null;
-  valor: number | null;
-  situacao: string;
-  vigencia_inicio: string | null;
-  vigencia_fim: string | null;
-  encerrado_em: string | null;
+  tituloProcesso: string | null;
+  orgao: Orgao;
   classeId: string | null;
   grupoId: string | null;
   tipologiaId: string | null;
-  dataProducao: string | null;
   observacao: string | null;
   volume: number;
-  eventoEm: string | null;
   secretariaId: string;
   caixaId: string;
   ruaId: string;
@@ -117,13 +110,12 @@ export function FormularioDocumento({
   const [pendente, iniciar] = useTransition();
   const [tipo, setTipo] = useState<Tipo>(inicial?.tipo ?? "licitacao");
   const [modalidade, setModalidade] = useState(inicial?.modalidade ?? "");
-  const [encerrado, setEncerrado] = useState(inicial?.encerrado_em ?? "");
-  const [vigFim, setVigFim] = useState(inicial?.vigencia_fim ?? "");
   const grupoPadrao = grupos.find((g) => g.chave === "licitacoes_contratos")?.id ?? grupos[0]?.id ?? "";
   const [grupoId, setGrupoId] = useState(inicial?.grupoId ?? grupoPadrao);
   const [classeId, setClasseId] = useState(inicial?.classeId ?? "");
-  const [dataProducao, setDataProducao] = useState(inicial?.dataProducao ?? "");
-  const [eventoEm, setEventoEm] = useState(inicial?.eventoEm ?? "");
+  // Órgão do documento: vem da caixa escolhida, mas o cadastro pode trocar (documento da Câmara em caixa da Prefeitura).
+  const [orgao, setOrgao] = useState<Orgao | "">(inicial?.orgao ?? "");
+  const [orgaoManual, setOrgaoManual] = useState(!!inicial);
   const grupoLic = grupos.find((g) => g.id === grupoId)?.chave === "licitacoes_contratos";
   const classesDoGrupo = regras.filter((r) => r.grupoId === grupoId && (r.ativa || r.id === classeId));
   const regraAtual = regras.find((r) => r.id === classeId);
@@ -142,13 +134,15 @@ export function FormularioDocumento({
   const [avisosPdf, setAvisosPdf] = useState<string[]>([]);
   const [arrastando, setArrastando] = useState(false);
   const entrada = useRef<HTMLInputElement>(null);
-  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()), empresa: inicial?.empresa ?? "" });
+  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()), titulo: inicial?.tituloProcesso ?? "" });
   const origem = useOrigem();
   const [secretaria, setSecretaria] = useState(inicial?.secretariaId ?? secretariaPadrao);
 
   const modulosDaRua = estrutura.modulos.filter((m) => m.ruaId === rua);
   const niveisDoModulo = estrutura.niveis.filter((n) => n.moduloId === modulo);
   const caixaEscolhida = nivel ? caixas.find((c) => c.id === caixa) : undefined;
+  // Sem escolha manual, o órgão do documento acompanha o da caixa.
+  const orgaoAtual: Orgao | "" = orgaoManual ? orgao : (caixaEscolhida?.orgao ?? orgao);
   const ruaAtual = estrutura.ruas.find((r) => r.id === rua);
   const moduloAtual = estrutura.modulos.find((m) => m.id === modulo);
   const nivelAtual = estrutura.niveis.find((n) => n.id === nivel);
@@ -204,7 +198,7 @@ export function FormularioDocumento({
     setAviso(null);
     dados.set("caixa", caixa);
     dados.set("tipo", tipoEfetivo);
-    if (tipoEfetivo === "outro") dados.set("situacao", "arquivado");
+    dados.set("orgao", orgaoAtual);
     if (inicial) dados.set("id", inicial.id);
     iniciar(async () => {
       setEtapa("Salvando…");
@@ -255,9 +249,6 @@ export function FormularioDocumento({
       router.refresh();
     });
   }
-
-  const situacoes = tipo === "licitacao" ? SITUACOES_LICITACAO : SITUACOES_CONTRATO;
-  const inicioPrazo = regraAtual?.tipoPrazo === "apos_evento" ? (tipoEfetivo === "licitacao" ? encerrado : tipoEfetivo === "contrato" ? vigFim || eventoEm : eventoEm) : dataProducao;
 
   return (
     <form
@@ -339,7 +330,7 @@ export function FormularioDocumento({
             )}
           </div>
           <div className="grid gap-3.5 sm:grid-cols-[1fr_1.4fr]">
-            <Campo rotulo={grupoLic ? "Título do processo" : "Número ou protocolo"}>
+            <Campo rotulo={grupoLic ? "Número do processo" : "Número ou protocolo"}>
               {(id) => (
                 <input id={id} name="numero" required maxLength={30} defaultValue={inicial?.numero} onChange={(e) => setResumo((s) => ({ ...s, numero: e.target.value }))} placeholder="015/2023" className={caixaCampo} />
               )}
@@ -350,12 +341,12 @@ export function FormularioDocumento({
               )}
             </Campo>
           </div>
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_.6fr_.9fr_1fr]">
-            {grupoLic && (
-            <Campo rotulo={tipo === "licitacao" ? "Empresa vencedora" : "Empresa contratada"}>
-              {(id) => <input id={id} name="empresa" maxLength={200} defaultValue={inicial?.empresa ?? ""} onChange={(e) => setResumo((s) => ({ ...s, empresa: e.target.value }))} className={caixaCampo} />}
-            </Campo>
+          <Campo rotulo="Título do processo (opcional)">
+            {(id) => (
+              <input id={id} name="titulo_processo" maxLength={200} defaultValue={inicial?.tituloProcesso ?? ""} onChange={(e) => setResumo((s) => ({ ...s, titulo: e.target.value }))} className={caixaCampo} />
             )}
+          </Campo>
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_.6fr_1.2fr]">
             <Campo rotulo="Secretaria">
               {(id) => (
                 <>
@@ -373,71 +364,34 @@ export function FormularioDocumento({
                 <input id={id} name="ano" inputMode="numeric" required maxLength={4} defaultValue={resumo.ano} onChange={(e) => setResumo((s) => ({ ...s, ano: e.target.value }))} className={caixaCampo} />
               )}
             </Campo>
-            {grupoLic && (
-            <>
-            <Campo rotulo="Valor (R$)">
+            <Campo rotulo="Órgão">
               {(id) => (
-                <input id={id} name="valor" inputMode="decimal" defaultValue={inicial?.valor === null || inicial?.valor === undefined ? "" : String(inicial.valor).replace(".", ",")} placeholder="50.000,00" className={caixaCampo} />
-              )}
-            </Campo>
-            <Campo rotulo="Situação">
-              {(id) => (
-                <select id={id} name="situacao" defaultValue={inicial?.situacao ?? (tipo === "licitacao" ? "concluida" : "vigente")} key={tipo} className={caixaCampo}>
-                  {Object.entries(situacoes).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
+                <div id={id} role="radiogroup" aria-label="Órgão" className="inline-flex shrink-0 gap-[3px] rounded-[22px] border border-linha bg-campo p-[3px]">
+                  {(Object.keys(ORGAOS) as Orgao[]).map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      role="radio"
+                      aria-checked={orgaoAtual === o}
+                      onClick={() => { setOrgao(o); setOrgaoManual(true); }}
+                      className={`min-h-[34px] rounded-[18px] px-[18px] text-[13px] focus-visible:outline-2 focus-visible:outline-foco ${orgaoAtual === o ? "bg-aqua font-semibold text-petroleo" : "text-texto-suave"}`}
+                    >
+                      {ORGAOS[o]}
+                    </button>
                   ))}
-                </select>
+                </div>
               )}
             </Campo>
-            </>
-            )}
-          </div>
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            {grupoLic && (
-            <Campo rotulo="CNPJ ou CPF do credor (opcional)">
-              {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="CNPJ ou CPF" className={caixaCampo} />}
-            </Campo>
-            )}
-            {grupoLic && tipo === "contrato" && (
-              <>
-                <Campo rotulo="Vigência · início">
-                  {(id) => <input id={id} name="vigencia_inicio" type="date" defaultValue={inicial?.vigencia_inicio ?? ""} className={caixaCampo} />}
-                </Campo>
-                <Campo rotulo="Vigência · fim">
-                  {(id) => <input id={id} name="vigencia_fim" type="date" value={vigFim} onChange={(e) => setVigFim(e.target.value)} className={caixaCampo} />}
-                </Campo>
-              </>
-            )}
           </div>
           <div className="grid items-start gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            <Campo rotulo="Data do documento">
-              {(id) => <input id={id} name="data_producao" type="date" required value={dataProducao} onChange={(e) => setDataProducao(e.target.value)} className={`${caixaCampo} font-mono font-medium`} />}
-            </Campo>
             <Campo rotulo="Volume">
               {(id) => <input id={id} name="volume" type="number" min={1} max={99} defaultValue={inicial?.volume ?? 1} className={`${caixaCampo} font-mono`} />}
             </Campo>
-            {tipoEfetivo === "outro" && regraAtual?.tipoPrazo === "apos_evento" && (
-              <Campo rotulo={`Data do evento (${regraAtual.evento ?? "início da contagem"})`}>
-                {(id) => <input id={id} name="evento_em" type="date" value={eventoEm} onChange={(e) => setEventoEm(e.target.value)} className={`${caixaCampo} font-mono`} />}
-              </Campo>
-            )}
             <Campo rotulo="Observação (opcional)" className="sm:col-span-2">
               {(id) => <input id={id} name="observacao" maxLength={300} defaultValue={inicial?.observacao ?? ""} placeholder="Sai na etiqueta do documento" className={caixaCampo} />}
             </Campo>
           </div>
-          <PrazoDeGuarda regra={regraAtual} inicio={inicioPrazo} />
-          {tipo === "licitacao" && grupoLic && (
-            <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,2fr)]">
-              <Campo rotulo="Encerramento do processo">
-                {(id) => (
-                  <>
-                    <input id={id} name="encerrado_em" type="date" value={encerrado} onChange={(e) => setEncerrado(e.target.value)} className={`${caixaCampo} font-mono font-medium`} aria-describedby={`${id}-nota`} />
-                    <span id={`${id}-nota`} className="text-xs text-texto-suave">Data da homologação ou do último ato do processo.</span>
-                  </>
-                )}
-              </Campo>
-            </div>
-          )}
+          <PrazoDeGuarda regra={regraAtual} ano={resumo.ano} />
         </section>
 
         <section className={secao} aria-labelledby="t2">
@@ -525,7 +479,7 @@ export function FormularioDocumento({
                   <div className="mt-0.5 line-clamp-2 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
-                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Empresa", resumo.empresa || "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
+                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Órgão", orgaoAtual ? ORGAOS[orgaoAtual] : "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
                     <div key={r} className="min-w-0">
                       <dt className="text-[9px] font-semibold tracking-[.1em] text-[#3f5e66] uppercase">{r}</dt>
                       <dd className="mt-px truncate text-[13px] leading-[18px] font-medium text-petroleo">{v}</dd>

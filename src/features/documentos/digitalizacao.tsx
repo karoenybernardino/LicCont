@@ -15,7 +15,7 @@ export type DadosDigitalizacao = {
   grupo: string;
   prazo: string;
   destinacao: string;
-  dataProducao: string;
+  anoDocumento: string;
   tipologia: string | null;
   titulo: string | null;
   assunto: string | null;
@@ -103,7 +103,7 @@ export function DigitalizacaoDoc({ d }: { d: DadosDigitalizacao }) {
         <Linha r="Classe" v={`${d.codigo} · ${d.classe}`} />
         <Linha r="Grupo" v={d.grupo} />
         <Linha r="Prazo de guarda / destinação" v={`${d.prazo} · ${d.destinacao}`} />
-        <Linha r="Data do documento original" v={d.dataProducao} />
+        <Linha r="Ano do documento original" v={d.anoDocumento} />
         {d.tipologia && <Linha r="Tipo documental" v={d.tipologia} />}
       </dl>
       <p className="text-[12.5px] text-texto-suave">O responsável pela digitalização e o horário ficam na auditoria. Classe, prazo e destinação vêm da tabela de temporalidade do órgão.</p>

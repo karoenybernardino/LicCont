@@ -45,10 +45,10 @@ with sec as (
   from public.caixas c join public.niveis n on n.id = c.nivel_id join public.modulos m on m.id = n.modulo_id
   where m.rua_id = '5eed2000-0000-0000-0000-000000000001'
 )
-insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, empresa, situacao)
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
 select '5eed0000-0000-0000-0000-000000000001', sec.id, cx.id, 'licitacao', 'pregao_eletronico',
        lpad(g::text, 3, '0') || '/' || (2015 + g % 10), 2015 + g % 10,
-       'Objeto fictício número ' || g, 'Empresa Fictícia ' || g, 'concluida'
+       'Objeto fictício número ' || g
 from generate_series(1, 30) g
 join sec on sec.rn = 1 + g % 4
 join cx on cx.rn = 1 + g % (select count(*) from cx);
@@ -61,9 +61,9 @@ with sec as (
   from public.caixas c join public.niveis n on n.id = c.nivel_id join public.modulos m on m.id = n.modulo_id
   where m.rua_id = '5eed2000-0000-0000-0000-000000000003'
 )
-insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao)
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
 select '5eed0000-0000-0000-0000-000000000002', sec.id, cx.id, 'licitacao', 'dispensa',
-       lpad(g::text, 3, '0') || '/2024', 2024, 'Objeto fictício da prefeitura de teste ' || g, 'concluida'
+       lpad(g::text, 3, '0') || '/2024', 2024, 'Objeto fictício da prefeitura de teste ' || g
 from generate_series(1, 6) g
 join sec on sec.rn = 1 + g % 2
 join cx on cx.rn = 1 + g % (select count(*) from cx);
@@ -82,22 +82,21 @@ insert into public.planta_elementos (prefeitura_id, galpao_id, tipo, rotulo, x, 
   ('5eed0000-0000-0000-0000-000000000001', '5eed1000-0000-0000-0000-000000000001', 'porta', 'Porta lateral', 15.6, 4.8, 1.2, 2.4);
 
 -- Classificação documental e etiquetas (fictícias): os sete grupos já nascem com a prefeitura.
--- Classes: duas de licitações e contratos (uma por evento, uma de prazo fixo), uma administrativa e uma de RH.
-insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, prazo_corrente_anos, tipo_prazo, evento, destinacao)
-select g.prefeitura_id, g.id, x.codigo, x.nome, x.anos, x.tipo_prazo, x.evento, 'eliminacao'
+-- Classes (prazo fixo, conta do fim do ano do documento): duas de licitações e contratos, uma administrativa e uma de RH.
+insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, prazo_corrente_anos, tipo_prazo, destinacao)
+select g.prefeitura_id, g.id, x.codigo, x.nome, x.anos, x.tipo_prazo, 'eliminacao'
 from public.grupos_documentais g
 join (values
-  ('licitacoes_contratos', '031', 'Licitações e Contratos', 12, 'apos_evento', 'Término do contrato'),
-  ('licitacoes_contratos', '035', 'Dispensas e inexigibilidades', 5, 'fixo', null),
-  ('administrativo', '010', 'Ofícios e memorandos', 2, 'fixo', null),
-  ('rh', '060', 'Fichas funcionais', 50, 'fixo', null)
-) as x(chave, codigo, nome, anos, tipo_prazo, evento) on x.chave = g.chave
+  ('licitacoes_contratos', '031', 'Licitações e Contratos', 12, 'fixo'),
+  ('licitacoes_contratos', '035', 'Dispensas e inexigibilidades', 5, 'fixo'),
+  ('administrativo', '010', 'Ofícios e memorandos', 2, 'fixo'),
+  ('rh', '060', 'Fichas funcionais', 50, 'fixo')
+) as x(chave, codigo, nome, anos, tipo_prazo) on x.chave = g.chave
 where g.prefeitura_id in ('5eed0000-0000-0000-0000-000000000001', '5eed0000-0000-0000-0000-000000000002');
 
--- Os documentos fictícios de licitação ficam na classe 031, com a data do documento no começo do ano.
+-- Os documentos fictícios de licitação ficam na classe 031.
 update public.documentos d set
-  classe_id = (select c.id from public.classes_documentais c where c.prefeitura_id = d.prefeitura_id and c.codigo = '031'),
-  data_producao = make_date(d.ano, 3, 1)
+  classe_id = (select c.id from public.classes_documentais c where c.prefeitura_id = d.prefeitura_id and c.codigo = '031')
 where d.classe_id is null;
 
 -- Uma caixa com mais de 4 itens (a etiqueta mostra 4 e a linha "+ N itens") e volume 1/2.
@@ -108,9 +107,9 @@ update public.caixas set volume = 1, volumes_total = 2
 where id = (select id from public.caixas where prefeitura_id = '5eed0000-0000-0000-0000-000000000001' order by sequencial limit 1);
 
 -- Um documento de RH (grupo restrito: só o administrador vê) e uma observação que sai na etiqueta.
-insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto, situacao, classe_id, data_producao)
-select '5eed0000-0000-0000-0000-000000000001', s.id, c.id, 'outro', '001', 2010, 'Ficha funcional fictícia', 'arquivado',
-       (select id from public.classes_documentais where prefeitura_id = '5eed0000-0000-0000-0000-000000000001' and codigo = '060'), '2010-05-10'
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto, classe_id)
+select '5eed0000-0000-0000-0000-000000000001', s.id, c.id, 'outro', '001', 2010, 'Ficha funcional fictícia',
+       (select id from public.classes_documentais where prefeitura_id = '5eed0000-0000-0000-0000-000000000001' and codigo = '060')
 from (select id from public.secretarias where prefeitura_id = '5eed0000-0000-0000-0000-000000000001' and nome = 'Administração') s,
      (select id from public.caixas where prefeitura_id = '5eed0000-0000-0000-0000-000000000001' order by sequencial limit 1 offset 1) c;
 update public.documentos set observacao = 'Falta o termo aditivo'

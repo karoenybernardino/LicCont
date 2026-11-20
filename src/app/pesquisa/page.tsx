@@ -7,10 +7,10 @@ import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { cursorDoBanco, obterDocumento, pesquisar } from "@/features/documentos/dados";
 import { esquemaId } from "@/features/documentos/esquemas";
-import { FAIXAS_VALOR, faixaDeValor, lerFiltros, paraQuery, filtrosAtivos, type Aba, type Filtros } from "@/features/documentos/filtros";
+import { lerFiltros, paraQuery, filtrosAtivos, type Aba, type Filtros } from "@/features/documentos/filtros";
 import { EscolhaCompacta } from "@/features/documentos/escolha-compacta";
-import { PainelDocumento, tomSituacao } from "@/features/documentos/painel";
-import { MODALIDADES, SITUACOES, SITUACOES_CONTRATO } from "@/features/documentos/tipos";
+import { PainelDocumento } from "@/features/documentos/painel";
+import { MESES, MODALIDADES, ORGAOS } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { documentosEmprestados } from "@/features/movimento/dados";
 
@@ -61,6 +61,21 @@ function Escolha({ nome, rotulo: r, valor, opcoes, vazio, icone }: { nome: strin
   );
 }
 
+// Campo de texto do filtro (fundo e setor da caixa), no mesmo tamanho dos campos de escolha.
+function Texto({ nome, rotulo: r, valor }: { nome: string; rotulo: string; valor: string | null }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className={rotulo}>{r}</span>
+      <input
+        name={nome}
+        defaultValue={valor ?? ""}
+        maxLength={120}
+        className="h-9 w-full rounded-lg border border-borda-campo bg-campo px-2.5 text-[13px] font-medium text-texto shadow-[0_1px_2px_rgba(11,46,58,.06)] hover:border-[#0e7490] focus-visible:outline-2 focus-visible:outline-foco dark:shadow-none"
+      />
+    </label>
+  );
+}
+
 export default async function Pesquisa({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { usuario, secretaria } = await exigirSessao();
   const params = await searchParams;
@@ -84,9 +99,8 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
   const proximo = cursorDoBanco(r.proximo);
   const anoAtual = new Date().getFullYear();
   const anos: [string, string][] = Array.from({ length: anoAtual - 1999 }, (_, i) => String(anoAtual - i)).map((a) => [a, a]);
-  const valorAtual = faixaDeValor(f.vmin, f.vmax);
-  const faixasValor = FAIXAS_VALOR.some(([k]) => k === valorAtual) || !valorAtual ? FAIXAS_VALOR : [...FAIXAS_VALOR, [valorAtual, "Faixa personalizada"] as [string, string]];
-  const ordens = [["recentes", "Mais recentes"], ["antigos", "Mais antigos"], ["maior_valor", "Maior valor"]] as const;
+  const meses: [string, string][] = MESES.map((m, i) => [String(i + 1), m]);
+  const ordens = [["recentes", "Mais recentes"], ["antigos", "Mais antigos"]] as const;
   const ordemAtual = ordens.find(([k]) => k === f.ordem)?.[1] ?? "Mais recentes";
   const mapa = r.itens.length > 0 ? `/mapa?codigos=${r.itens.filter((i) => i.codigo).slice(0, 50).map((i) => i.codigo).join(",")}` : "/mapa";
 
@@ -104,7 +118,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
           <label className="flex h-10 min-w-60 flex-1 items-center gap-2.5 rounded-[10px] border border-borda-campo bg-campo px-3.5 shadow-[0_1px_2px_rgba(11,46,58,.06)] hover:border-[#0e7490] focus-within:outline-2 focus-within:outline-foco dark:shadow-none">
             <Ico tam={18}><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Ico>
             <span className="sr-only">Buscar</span>
-            <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número do processo, objeto, credor ou CNPJ" className="min-w-0 flex-1 bg-transparent text-sm outline-0" />
+            <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número do processo, título ou objeto" className="min-w-0 flex-1 bg-transparent text-sm outline-0" />
             <kbd className="rounded-[5px] border border-borda-campo px-1.5 py-px font-mono text-[10.5px] text-texto-suave max-md:hidden">Enter</kbd>
           </label>
           <nav aria-label="Tipo de documento" className="flex max-w-full gap-0.5 overflow-x-auto rounded-[11px] border border-linha bg-superficie-2 p-[3px]">
@@ -162,15 +176,16 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             </div>
           </fieldset>
           <fieldset className={grupo}>
-            <legend className="sr-only">Contratos</legend>
+            <legend className="sr-only">Órgão e caixa</legend>
             <span className="flex items-center gap-[7px] font-titulo text-[12.5px] font-semibold">
-              <Ico><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></Ico>
-              Contratos
+              <Ico><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></Ico>
+              Órgão e caixa
             </span>
-            <div className="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
-              <Escolha nome="situacao" rotulo="Situação" valor={f.situacao} vazio="Todas" opcoes={Object.entries(SITUACOES_CONTRATO)} icone={<Ico><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></Ico>} />
-              <Escolha nome="valor" rotulo="Valor" valor={valorAtual} vazio="Qualquer valor" opcoes={faixasValor} icone={<Ico><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 10v4M18 10v4" /></Ico>} />
-              <Escolha nome="vigencia" rotulo="Vigência" valor={f.vigencia} vazio="Todos" opcoes={[["vigentes", "Vigentes"], ["vencidos", "Vencidos"], ["vencem_30", "Vencem em 30 dias"]]} icone={<Ico><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></Ico>} />
+            <div className="grid grid-cols-4 gap-2 max-sm:grid-cols-1">
+              <Escolha nome="orgao" rotulo="Órgão" valor={f.orgao} vazio="Todos" opcoes={Object.entries(ORGAOS)} icone={<Ico><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></Ico>} />
+              <Texto nome="fundo" rotulo="Fundo" valor={f.fundo} />
+              <Texto nome="setor" rotulo="Setor" valor={f.setor} />
+              <Escolha nome="mes" rotulo="Mês" valor={f.mes === null ? null : String(f.mes)} vazio="Todos" opcoes={meses} icone={<Ico><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></Ico>} />
             </div>
           </fieldset>
         </div>
@@ -201,14 +216,14 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
               <input type="hidden" name="aba" value={f.aba} />
               <input type="hidden" name="doc" value={idDoc ?? ""} />
               {f.de === null && f.ate !== null && <input type="hidden" name="ate" value={f.ate} />}
-              {f.vmin !== null && <input type="hidden" name="vmin" value={f.vmin} />}
-              {f.vmax !== null && <input type="hidden" name="vmax" value={f.vmax} />}
-              {f.vigencia && <input type="hidden" name="vigencia" value={f.vigencia} />}
+              {f.fundo && <input type="hidden" name="fundo" value={f.fundo} />}
+              {f.setor && <input type="hidden" name="setor" value={f.setor} />}
+              {f.mes !== null && <input type="hidden" name="mes" value={f.mes} />}
               {f.ordem !== "recentes" && <input type="hidden" name="ordem" value={f.ordem} />}
               <label className="flex min-h-11 items-center gap-2.5 rounded-lg border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco">
                 <Ico tam={18} cor="currentColor"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Ico>
                 <span className="sr-only">Buscar</span>
-                <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número, objeto ou empresa" className="min-w-0 flex-1 bg-transparent text-[15px] outline-0" />
+                <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número, título ou objeto" className="min-w-0 flex-1 bg-transparent text-[15px] outline-0" />
               </label>
               <nav aria-label="Tipo de documento" className="flex gap-1 rounded-[13px] border border-linha bg-superficie-2 p-[3px]">
                 {abas.map(([k, nome, n]) => {
@@ -235,7 +250,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                 )}
                 {f.de === null && <EscolhaCompacta nome="de" rotulo="Ano" valor={null} opcoes={anos} />}
                 <EscolhaCompacta nome="secretaria" rotulo="Secretaria" valor={f.secretaria} opcoes={[...nomes.entries()]} />
-                <EscolhaCompacta nome="situacao" rotulo="Situação" valor={f.situacao} opcoes={Object.entries(SITUACOES_CONTRATO)} />
+                <EscolhaCompacta nome="orgao" rotulo="Órgão" valor={f.orgao} opcoes={Object.entries(ORGAOS)} />
                 <EscolhaCompacta nome="modalidade" rotulo="Modalidade" valor={f.modalidade} opcoes={Object.entries(MODALIDADES)} />
                 <noscript>
                   <button type="submit">Aplicar</button>
@@ -285,12 +300,12 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                         <span className="font-titulo text-[15px] font-semibold">{tituloDocumento(d)}</span>
                         <span className="flex items-center gap-1.5">
                           {emprestados.has(d.id) && <Pilula tom="aviso">Emprestado</Pilula>}
-                          <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                          {d.orgao === "camara" && <Pilula tom="aviso">{ORGAOS.camara}</Pilula>}
                         </span>
                       </span>
                       <span className="text-[13px] text-texto-suave">
                         {d.objeto}
-                        {d.empresa ? ` · ${d.empresa}` : ""}
+                        {d.titulo_processo ? ` · ${d.titulo_processo}` : ""}
                       </span>
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs font-medium text-texto-suave">{d.codigo ?? "Sem endereço"}</span>

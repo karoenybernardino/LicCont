@@ -12,7 +12,7 @@ import { esquemaDocumento, esquemaEnvio, esquemaId, mensagemDocumento } from "./
 
 // Toda ação confere a permissão aqui e grava pela sessão da pessoa: o RLS e
 // os gatilhos do banco conferem de novo prefeitura, secretaria e papel.
-// Nunca vai nome de arquivo, empresa nem conteúdo para log.
+// Nunca vai nome de arquivo nem conteúdo para log.
 
 export type Retorno = { erro?: string; aviso?: string; id?: string; campo?: string };
 
@@ -47,20 +47,12 @@ export async function salvarDocumento(formData: FormData): Promise<Retorno> {
     numero: d.numero,
     ano: d.ano,
     objeto: d.objeto,
-    empresa: d.empresa,
-    cnpj: d.cnpj,
-    cpf_credor: d.cpf_credor,
-    valor: d.valor,
-    situacao: d.situacao,
-    vigencia_inicio: d.vigencia_inicio,
-    vigencia_fim: d.vigencia_fim,
-    encerrado_em: d.encerrado_em,
+    titulo_processo: d.titulo_processo,
+    orgao: d.orgao,
     classe_id: d.classe,
     tipologia_id: d.tipologia,
-    data_producao: d.data_producao,
     observacao: d.observacao,
     volume: d.volume,
-    evento_em: d.evento_em,
   };
   if (editar) {
     const { data, error } = await sb.from("documentos").update(campos).eq("id", idEdicao as string).select("id");

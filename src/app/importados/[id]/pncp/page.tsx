@@ -33,7 +33,7 @@ export default async function PncpPagina({ params }: { params: Promise<{ id: str
       <p className="mb-3 text-sm">
         <strong>{tituloDocumento(doc)}</strong> · {doc.objeto}
       </p>
-      <BuscaPncp documento={id} cnpjInicial={doc.cnpj ?? ""} anoInicial={doc.ano} />
+      <BuscaPncp documento={id} cnpjInicial="" anoInicial={doc.ano} />
     </PaginaSistema>
   );
 }

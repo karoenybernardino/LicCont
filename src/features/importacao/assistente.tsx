@@ -12,8 +12,8 @@ const PASSOS = ["Enviar arquivos", "Casar colunas", "Conferir", "Resultado"];
 
 // Modelo de planilha para baixar (dados fictícios, só os títulos e uma linha de exemplo).
 const MODELO =
-  "﻿Tipo;Número;Ano;Objeto;Secretaria;Situação;Modalidade;Empresa;CNPJ;Valor;Início da vigência;Fim da vigência\r\n" +
-  "Licitação;001/2024;2024;Exemplo de objeto;Saúde;Concluída;Pregão Eletrônico;;;;;\r\n";
+  "﻿Tipo;Número;Ano;Objeto;Secretaria;Modalidade;Título do processo;Prefeitura ou Câmara\r\n" +
+  "Licitação;001/2024;2024;Exemplo de objeto;Saúde;Pregão Eletrônico;;Prefeitura\r\n";
 
 function baixar(nome: string, texto: string, tipo = "text/csv;charset=utf-8") {
   const url = URL.createObjectURL(new Blob([texto], { type: tipo }));

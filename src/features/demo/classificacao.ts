@@ -22,14 +22,14 @@ export const TIPOLOGIAS_DEMO: TipologiaDoc[] = [
   { id: "de810000-0000-0000-0000-000000000004", grupoId: g(6), nome: "Alvará" },
 ];
 
-const c = (n: number, codigo: string, classe: string, anos: number, tipoPrazo: Regra["tipoPrazo"], evento: string | null): Regra => ({
+const c = (n: number, codigo: string, classe: string, anos: number, tipoPrazo: Regra["tipoPrazo"]): Regra => ({
   id: `de820000-0000-0000-0000-${String(n).padStart(12, "0")}`, codigo, classe, grupoId: g(2), grupo: "Licitações e Contratos",
-  corrente: anos, intermediaria: 0, tipoPrazo, evento, destinacao: "eliminacao", observacao: null, ativa: true,
+  corrente: anos, intermediaria: 0, tipoPrazo, destinacao: "eliminacao", observacao: null, ativa: true,
 });
 export const CLASSES_DEMO: Regra[] = [
-  c(1, "031", "Licitações e Contratos", 12, "apos_evento", "Término do contrato"),
-  c(2, "032", "Contratos e aditivos", 10, "apos_evento", "Término do contrato"),
-  c(3, "033", "Convênios", 10, "apos_evento", "Prestação de contas"),
-  c(4, "034", "Atas de registro de preços", 5, "apos_evento", "Fim da vigência"),
-  c(5, "035", "Dispensas e inexigibilidades", 5, "fixo", null),
+  c(1, "031", "Licitações e Contratos", 12, "fixo"),
+  c(2, "032", "Contratos e aditivos", 10, "fixo"),
+  c(3, "033", "Convênios", 10, "fixo"),
+  c(4, "034", "Atas de registro de preços", 5, "fixo"),
+  c(5, "035", "Dispensas e inexigibilidades", 5, "fixo"),
 ];

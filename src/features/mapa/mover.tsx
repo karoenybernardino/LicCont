@@ -140,7 +140,7 @@ export function MoverDocumentos({
         {marcados.map((d) => (
           <li key={d.id} className="truncate">
             {d.titulo}
-            <span className="text-texto-suave"> · {d.empresa ?? d.secretaria}</span>
+            <span className="text-texto-suave"> · {d.tituloProcesso ?? d.secretaria}</span>
           </li>
         ))}
       </ul>

@@ -33,7 +33,6 @@ export async function salvarMarcaOrgao(formData: FormData): Promise<void> {
   const dados = z
     .object({
       id: uuid,
-      tipo: z.enum(["prefeitura", "camara"]),
       nome_etiqueta: z.string().trim().max(120),
       parceira: z.union([uuid, z.literal("")]),
     })
@@ -44,14 +43,19 @@ export async function salvarMarcaOrgao(formData: FormData): Promise<void> {
   if (emDemo()) return volta("demo", d.id);
   if (d.nome_etiqueta && d.nome_etiqueta.length < 2) return volta("erro", d.id);
   const logo = await lerLogo(formData.get("logo"));
-  if (logo === "invalido") return volta("logo", d.id);
+  const logoCamara = await lerLogo(formData.get("logo_camara"));
+  if (logo === "invalido" || logoCamara === "invalido") return volta("logo", d.id);
   const sb = await clienteSessao();
   if (!sb) return volta("erro", d.id);
   const caminho = `orgaos/${d.id}/logo.png`;
+  const caminhoCamara = `orgaos/${d.id}/logo-camara.png`;
   if (logo && !(await enviarLogo(sb, caminho, logo))) return volta("logo", d.id);
+  if (logoCamara && !(await enviarLogo(sb, caminhoCamara, logoCamara))) return volta("logo", d.id);
   const { error } = await sb.rpc("equipe_orgao_marca", {
-    p_prefeitura: d.id, p_tipo: d.tipo, p_nome_etiqueta: d.nome_etiqueta, p_logo: logo ? caminho : null,
-    p_remover_logo: formData.get("remover_logo") === "on" && !logo, p_parceira: d.parceira || null,
+    p_prefeitura: d.id, p_nome_etiqueta: d.nome_etiqueta,
+    p_logo: logo ? caminho : null, p_remover_logo: formData.get("remover_logo") === "on" && !logo,
+    p_logo_camara: logoCamara ? caminhoCamara : null, p_remover_logo_camara: formData.get("remover_logo_camara") === "on" && !logoCamara,
+    p_parceira: d.parceira || null,
   });
   revalidatePath("/equipe", "layout");
   return volta(error ? "erro" : "ok", d.id);
