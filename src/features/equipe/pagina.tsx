@@ -48,7 +48,7 @@ export function PaginaEquipe({ titulo, trilha, children }: { titulo: string; tri
             <SeletorTema />
           </div>
         </header>
-        <main className="sc flex min-w-0 flex-1 flex-col gap-4 pr-2 md:min-h-0 md:overflow-y-auto">{children}</main>
+        <main className="sc relative flex min-w-0 flex-1 flex-col gap-4 pr-2 md:min-h-0 md:overflow-y-auto">{children}</main>
       </div>
     </div>
   );

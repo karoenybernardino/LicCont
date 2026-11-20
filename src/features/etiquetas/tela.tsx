@@ -198,7 +198,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
           <p className="text-[13px] text-texto-suave">Marque um ou mais tipos. Cada um sai no seu próprio PDF.</p>
           <div className="flex flex-col gap-2.5">
             {TIPOS.map((t) => (
-              <label key={t.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${tipos.has(t.id) ? `border-[#0e7490] ${SELECIONADO}` : "border-linha"}`}>
+              <label key={t.id} className={`relative flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${tipos.has(t.id) ? `border-[#0e7490] ${SELECIONADO}` : "border-linha"}`}>
                 <Caixa marcada={tipos.has(t.id)} aoMudar={() => alternar(tipos, t.id, setTipos)} rotulo={t.titulo} />
                 <span><b className="block text-[15px]">{t.titulo}</b><span className="text-[13px] text-texto-suave">{t.texto}</span></span>
               </label>
@@ -228,7 +228,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
             <label className="flex flex-col gap-1"><span className={rotuloMaiusculo}>Etiqueta</span>
               <select value={situacao} onChange={(e) => setSituacao(e.target.value as typeof situacao)} className={campoFiltro}><option value="">Todas</option><option value="nunca">Ainda não impressa</option><option value="impressa">Já impressa</option></select></label>
           </div>
-          <label className="flex items-center gap-3 px-3 py-1 text-[12px] font-medium tracking-wider text-texto-suave uppercase">
+          <label className="relative flex items-center gap-3 px-3 py-1 text-[12px] font-medium tracking-wider text-texto-suave uppercase">
             <Caixa marcada={todasMarcadas} aoMudar={marcarTodas} rotulo="Marcar todas as que aparecem" />
             {emCaixas ? "Caixa" : "Documento"}
             <span className="ml-auto">Etiqueta</span>
@@ -236,7 +236,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
           <ul className="flex max-h-[340px] flex-col gap-1 overflow-auto pr-1.5">
             {emCaixas && caixasVisiveis.map((c) => (
               <li key={c.id}>
-                <label className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selCaixas.has(c.id) ? SELECIONADO : ""}`}>
+                <label className={`relative flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selCaixas.has(c.id) ? SELECIONADO : ""}`}>
                   <Caixa marcada={selCaixas.has(c.id)} aoMudar={() => alternar(selCaixas, c.id, setSelCaixas)} rotulo={`Caixa ${c.numero}`} />
                   <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">CX - {c.numero}</b><span className="text-[13px] text-texto-suave"> · {c.titulo}{c.volume ? ` · Vol. ${c.volume.n}/${c.volume.total}` : ""}</span><span className="block text-[12px] text-texto-suave">{c.localizacao}</span></span>
                   <Impressa em={c.impressa} />
@@ -245,7 +245,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
             ))}
             {!emCaixas && docsVisiveis.map((d) => (
               <li key={d.id}>
-                <label className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selDocs.has(d.id) ? SELECIONADO : ""}`}>
+                <label className={`relative flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selDocs.has(d.id) ? SELECIONADO : ""}`}>
                   <Caixa marcada={selDocs.has(d.id)} aoMudar={() => alternar(selDocs, d.id, setSelDocs)} rotulo={d.titulo} />
                   <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">{d.titulo}</b><span className="block truncate text-[12px] text-texto-suave">{d.secretaria} · CX - {d.caixaNumero}</span></span>
                   <Impressa em={d.impressa} />
