@@ -24,6 +24,22 @@ Decisão 0012.
 | API de Dados Abertos do TCE-CE (SIM) | Importar licitações e contratos da prefeitura | Código do município, ano e tipo | Dados públicos de processos e contratos; CPF descartado antes de gravar (só nome e CNPJ) | Brasil (só aceita IP brasileiro) |
 | PNCP (Portal Nacional de Contratações Públicas) | Buscar PDFs públicos de uma compra | CNPJ do órgão, ano e número da compra | Arquivos públicos da compra | Brasil |
 
+## Empresa parceira (operadora, sem serviço externo novo)
+
+A empresa parceira que presta o serviço de arquivo à prefeitura (cadastrada em
+`public.parceiras`) acessa o LicCONT pelo próprio sistema, com conta e senha
+individuais. Como pode consultar documentos e abrir PDF das prefeituras
+vinculadas, atua como **operadora** da prefeitura (controladora). Não há
+serviço de terceiros novo: o acesso vai pelo mesmo Supabase e pela mesma
+Vercel.
+
+- O **dono** vê as prefeituras vinculadas à empresa; cada **funcionário**, só
+  as que lhe foram alocadas. A regra vale no banco (RLS e funções `app.*`).
+- Alocação, bloqueio e acesso ficam na auditoria (quem alocou, quando).
+- A empresa lê números, caixas e documentos, nunca CPF ou e-mail de servidores.
+- Pendência: prever cláusula de operador no contrato com a prefeitura e validar
+  com o advogado antes do piloto.
+
 ## Pendências
 
 - Transferência internacional: a rede de borda da Vercel passa por fora do
