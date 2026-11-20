@@ -29,7 +29,7 @@ export type Secretaria = { id: string | null; nome: string };
 export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
   if (emDemo()) {
     const perfil = await perfilDemo();
-    if (!perfil || perfil === "equipe") return null;
+    if (!perfil || perfil === "equipe" || perfil.startsWith("parceira_")) return null;
     return {
       id: "de200000-0000-0000-0000-000000000099",
       prefeituraId: PREFEITURA_DEMO,

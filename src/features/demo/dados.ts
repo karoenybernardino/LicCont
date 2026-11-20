@@ -17,6 +17,8 @@ export const PERFIS_DEMO = {
   operador: "Operador",
   consulta: "Consulta",
   equipe: "Equipe LicCONT",
+  parceira_dono: "Parceira (dono)",
+  parceira_func: "Parceira (funcionário)",
 } as const;
 export type PerfilDemo = keyof typeof PERFIS_DEMO;
 

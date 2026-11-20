@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { COOKIE_PERFIL_DEMO, emDemo } from "@/features/demo/dados";
+import { euParceira } from "@/features/parceira/dados";
 import { prefeiturasParaLogin } from "./listas";
 import {
   COOKIE_ATIVIDADE,
@@ -199,7 +200,60 @@ export async function entrarEquipe(_: EstadoFormulario, formData: FormData): Pro
   redirect((await segundoFatorObrigatorio()) ? "/segundo-fator" : "/equipe");
 }
 
-const MENSAGEM_VAZADA = "Esta senha aparece em vazamentos conhecidos na internet. Escolha outra.";
+// Entrada da empresa parceira (dono e funcionários): sem prefeitura nem secretaria. Mesma mensagem de falha.
+export async function entrarParceira(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
+  const inicio = Date.now();
+  const dados = esquemaLoginEquipe.safeParse({ email: formData.get("email"), senha: formData.get("senha") });
+  if (!dados.success) return falhar(inicio);
+  if (emDemo()) {
+    (await cookies()).set(COOKIE_PERFIL_DEMO, "parceira_dono", { ...opcoesCookie, maxAge: 8 * 60 * 60 });
+    redirect("/parceira");
+  }
+
+  const sessao = await autenticar(dados.data.email, dados.data.senha, null, async (servico, id) => {
+    const { data } = await servico.from("parceira_pessoas").select("ativa").eq("usuario_id", id).maybeSingle();
+    return !!data?.ativa;
+  });
+  if (sessao === "indisponivel") return { erro: MENSAGEM_INDISPONIVEL };
+  if (!sessao) return falhar(inicio);
+
+  await sessao.servico.rpc("registrar_auditoria_sistema", {
+    p_prefeitura: null,
+    p_usuario: sessao.usuarioId,
+    p_acao: "sessao.entrada",
+    p_ip: sessao.ip,
+    p_aparelho: sessao.aparelho,
+  });
+  await marcarAtividade();
+  redirect("/parceira");
+}
+
+export async function trocarSenhaParceira(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
+  const supabase = await clienteSessao();
+  const servico = clienteServico();
+  if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
+  const eu = await euParceira();
+  if (!eu) redirect("/parceira/entrar");
+  if (!eu.trocaSenha) redirect("/parceira");
+
+  const dados = esquemaNovaSenha.safeParse({ senha: formData.get("senha"), confirmacao: formData.get("confirmacao") });
+  if (!dados.success) return { erro: dados.error.issues[0].message };
+  const vazamento = await verificarSenhaVazada(dados.data.senha);
+  if (vazamento === "vazada") return { erro: "Esta senha aparece em vazamentos conhecidos na internet. Escolha outra." };
+
+  const { error } = await supabase.auth.updateUser({ password: dados.data.senha });
+  if (error) {
+    return { erro: error.code === "same_password" ? "A nova senha precisa ser diferente da atual." : "Não foi possível salvar a senha. Tente de novo." };
+  }
+  const { data: user } = await supabase.auth.getUser();
+  const dispensar = () => servico.from("parceira_pessoas").update({ troca_senha_obrigatoria: false }).eq("usuario_id", user.user?.id ?? "");
+  const { error: erroTroca } = (await dispensar()).error ? await dispensar() : { error: null };
+  if (erroTroca) return { erro: "Senha salva, mas não foi possível concluir. Saia e entre com a senha nova." };
+  await supabase.auth.signOut({ scope: "others" });
+  redirect("/parceira");
+}
+
+const MENSAGEM_VAZADA ="Esta senha aparece em vazamentos conhecidos na internet. Escolha outra.";
 
 export async function trocarSenha(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
   const supabase = await clienteSessao();

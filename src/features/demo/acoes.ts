@@ -13,5 +13,5 @@ export async function trocarPerfilDemo(formData: FormData) {
   const loja = await cookies();
   loja.set(COOKIE_PERFIL_DEMO, perfil, { ...opcoesCookie, maxAge: 8 * 60 * 60 });
   loja.set(COOKIE_SECRETARIA, perfil === "administrador" ? "todas" : "de100000-0000-0000-0000-000000000004", opcoesCookie);
-  redirect(perfil === "equipe" ? "/equipe" : "/inicio");
+  redirect(perfil === "equipe" ? "/equipe" : perfil.startsWith("parceira_") ? "/parceira" : "/inicio");
 }

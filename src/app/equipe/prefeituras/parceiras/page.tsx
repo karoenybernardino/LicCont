@@ -85,6 +85,7 @@ export default async function Parceiras({ searchParams }: { searchParams: Promis
           <div>
             <h2 className="text-base font-bold">{nova ? "Nova empresa parceira" : (sel?.nome ?? "Empresa parceira")}</h2>
             <p className="text-[12.5px] text-texto-suave">Dados e logo que saem nas etiquetas.</p>
+            {sel && <Link href={`/equipe/parceiras/${sel.id}`} className="text-[12.5px] text-destaque hover:underline">Funcionários e alocação</Link>}
           </div>
           <FormParceira parceira={sel} orgaos={orgaos} />
         </Painel>
