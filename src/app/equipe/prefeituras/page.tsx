@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { Busca, CartaoResumo, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { BotaoEnviar } from "@/ui/botao-enviar";
@@ -95,7 +96,7 @@ export default async function Prefeituras({ searchParams }: { searchParams: Prom
                   </tr>
                 ))}
                 {lista.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-texto-suave">Nenhuma prefeitura encontrada.</td></tr>
+                  <tr><td colSpan={MODULOS.tce ? 4 : 3} className="px-4 py-6 text-center text-sm text-texto-suave">Nenhuma prefeitura encontrada.</td></tr>
                 )}
               </tbody>
             </table>
@@ -129,14 +130,14 @@ export default async function Prefeituras({ searchParams }: { searchParams: Prom
                 </div>
               ))}
             </dl>
-            {integSel?.situacao === "erro" && (
+            {MODULOS.tce && integSel?.situacao === "erro" && (
               <p className="rounded-lg border-l-[3px] border-[#ef4444] bg-[#ef4444]/10 px-3 py-2.5 text-[12.5px] leading-[18px]">
                 <b>TCE-CE com erro.</b> Última rodada falhou {quando(integSel.ultimaEm)}.
               </p>
             )}
             <div className="flex gap-2.5">
               <Link href={`/equipe/${sel.id}`} className={`${botaoPrimario} flex-1`}>Abrir prefeitura</Link>
-              {integSel?.ativo && (
+              {MODULOS.tce && integSel?.ativo && (
                 <form action={importarPelaEquipe}>
                   <input type="hidden" name="id" value={sel.id} />
                   <BotaoEnviar className={`${botaoContorno} h-10 px-5 text-sm`}>Importar agora</BotaoEnviar>

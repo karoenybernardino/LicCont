@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { Painel, Rotulo, TituloPainel } from "@/features/estrutura/componentes";
 import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
@@ -95,7 +96,7 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Cartao rotulo="Documentos no acervo" valor={num(doc.total)} legenda={`${num(doc.licitacoes)} licitações · ${num(doc.contratos)} contratos`} href="/pesquisa" acao="Abrir na pesquisa" />
-        <Cartao rotulo="Importados do TCE a conferir" valor={num(tce.a_conferir)} legenda={`ainda sem caixa · ${tce.duplicados} possíveis duplicados`} href="/importados" acao="Abrir a fila" />
+        {MODULOS.tce && <Cartao rotulo="Importados do TCE a conferir" valor={num(tce.a_conferir)} legenda={`ainda sem caixa · ${tce.duplicados} possíveis duplicados`} href="/importados" acao="Abrir a fila" />}
         <Cartao
           rotulo="Empréstimos abertos"
           valor={num(emp.abertos)}

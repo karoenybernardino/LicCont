@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Pilula } from "@/ui/canvas";
@@ -156,7 +157,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             </span>
             <div className="grid grid-cols-2 gap-2">
               <Escolha nome="modalidade" rotulo="Modalidade" valor={f.modalidade} vazio="Todas" opcoes={Object.entries(MODALIDADES)} icone={<Ico><circle cx="12" cy="9" r="5" /><path d="M9 13.5L8 21l4-2 4 2-1-7.5" /></Ico>} />
-              <Escolha nome="origem" rotulo="Origem" valor={f.origem} vazio="Todas as origens" opcoes={[["manual", "Cadastrado à mão"], ["planilha", "Importado de planilha"], ["tce", "Importado do TCE"]]} icone={<Ico><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Ico>} />
+              <Escolha nome="origem" rotulo="Origem" valor={f.origem} vazio="Todas as origens" opcoes={[["manual", "Cadastrado à mão"], ["planilha", "Importado de planilha"], ...(MODULOS.tce ? ([["tce", "Importado do TCE"]] as [string, string][]) : [])]} icone={<Ico><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Ico>} />
               <Escolha nome="secretaria" rotulo="Secretaria" valor={f.secretaria} vazio="Todas" opcoes={[...nomes.entries()]} icone={<Ico><rect x="9" y="3" width="6" height="5" rx="1" /><rect x="3" y="16" width="6" height="5" rx="1" /><rect x="15" y="16" width="6" height="5" rx="1" /><path d="M12 8v4M6 16v-4h12v4" /></Ico>} />
             </div>
           </fieldset>

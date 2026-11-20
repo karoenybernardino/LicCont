@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Formulario } from "@/ui/formulario";
@@ -27,7 +28,7 @@ export const metadata: Metadata = { title: "Prefeitura · LicCONT" };
 const SITUACOES = { implantacao: "Em implantação", ativa: "Ativa", suspensa: "Suspensa" } as const;
 const TONS = { implantacao: "aviso", ativa: "ok", suspensa: "erro" } as const;
 const entrada = "!min-h-10 !rounded-lg !text-sm";
-const ABAS = [
+const TODAS_ABAS = [
   ["resumo", "Resumo"],
   ["administradores", "Administradores"],
   ["tce", "Integração TCE-CE"],
@@ -35,6 +36,7 @@ const ABAS = [
   ["uso", "Uso"],
   ["auditoria", "Auditoria"],
 ] as const;
+const ABAS = TODAS_ABAS.filter(([v]) => v !== "tce" || MODULOS.tce);
 const reais = (c: number | null) => (c === null ? "" : (c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }));
 const rotuloMini = "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
 
@@ -119,7 +121,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
             {uso && <ResumoUso uso={uso} suporte={suporte} />}
             {editar && (
               <Painel>
-                <CabecalhoPainel icone={<span>✎</span>} titulo="Editar dados" subtitulo="Nome, CNPJ, contrato e integração com o TCE-CE" />
+                <CabecalhoPainel icone={<span>✎</span>} titulo="Editar dados" subtitulo={MODULOS.tce ? "Nome, CNPJ, contrato e integração com o TCE-CE" : "Nome, CNPJ e contrato"} />
                 <Formulario acao={atualizarPrefeitura} botao="Salvar dados" enviando="Salvando…" className="gap-3.5">
                   <input type="hidden" name="id" value={p.id} />
                   <input type="hidden" name="plano" value="completo" />
@@ -129,12 +131,12 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                     <Campo rotulo="Implantação (R$)" name="valor_implantacao" inputMode="decimal" defaultValue={reais(p.implantacaoCentavos)} className={entrada} />
                     <Campo rotulo="Mensalidade (R$)" name="valor_mensalidade" inputMode="decimal" defaultValue={reais(p.mensalidadeCentavos)} className={entrada} />
                     <Campo rotulo="Início do contrato" name="contrato_inicio" type="date" defaultValue={p.contratoInicio ?? ""} className={entrada} />
-                    <Campo rotulo="Código do município no TCE" name="tce_codigo_municipio" inputMode="numeric" defaultValue={p.tceCodigo ?? ""} className={entrada} />
+                    {MODULOS.tce && <Campo rotulo="Código do município no TCE" name="tce_codigo_municipio" inputMode="numeric" defaultValue={p.tceCodigo ?? ""} className={entrada} />}
                   </div>
-                  <label className="flex items-center gap-2.5 text-sm font-medium">
+                  {MODULOS.tce && <label className="flex items-center gap-2.5 text-sm font-medium">
                     <input type="checkbox" name="tce_ativo" defaultChecked={i?.ativo ?? false} className="size-4 accent-[#0e7490]" />
                     Integração com o TCE-CE ligada
-                  </label>
+                  </label>}
                 </Formulario>
               </Painel>
             )}
@@ -196,7 +198,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
         </Painel>
       )}
 
-      {aba === "tce" && (
+      {aba === "tce" && MODULOS.tce && (
         <Painel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>

@@ -8,6 +8,7 @@ import {
   opcoesCookie,
 } from "@/features/sessao/cookies";
 import { ipDaRequisicao } from "@/features/login/seguranca";
+import { rotaOculta } from "@/features/modulos/ocultos";
 
 // CSP com nonce por requisição. Só o hash do script de tema não basta: o Next
 // injeta scripts inline próprios, que o navegador bloquearia.
@@ -39,6 +40,8 @@ function politica(nonce: string) {
 }
 
 export async function proxy(req: NextRequest) {
+  // Módulos escondidos (relatórios, TCE, PNCP): 404 antes de qualquer outra coisa.
+  if (rotaOculta(req.nextUrl.pathname)) return new NextResponse(null, { status: 404 });
   const nonce = btoa(crypto.randomUUID());
   const csp = politica(nonce);
   const seguir = () => {

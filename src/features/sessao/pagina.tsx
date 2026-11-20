@@ -6,6 +6,7 @@ import { BarraLateral, Icone, type ItemMenu } from "./barra-lateral";
 import { podeCadastrar, secretariasParaCadastro } from "@/features/documentos/dados";
 import { ehCoordenador } from "@/features/estrutura/dados";
 import { contarFila } from "@/features/tce/dados";
+import { MODULOS } from "@/features/modulos/ocultos";
 import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
 
@@ -30,7 +31,7 @@ export const AJUSTES: ItemMenu[] = [
   { href: "/secretarias", rotulo: "Secretarias", dica: "Cadastro das secretarias da prefeitura.", icone: "secretarias" },
   { href: "/configuracoes/grupos", rotulo: "Grupos documentais", dica: "Grupos, tipologias e quem vê cada grupo.", icone: "secretarias" },
   { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" },
-  { href: "/configuracoes/tce", rotulo: "Importação do TCE", dica: "Liga e acompanha a importação do TCE-CE.", icone: "importados" },
+  ...(MODULOS.tce ? [{ href: "/configuracoes/tce", rotulo: "Importação do TCE", dica: "Liga e acompanha a importação do TCE-CE.", icone: "importados" as const }] : []),
   { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", dica: "Libera ou encerra o acesso da equipe LicCONT.", icone: "configuracoes" },
   { href: "/configuracoes/exportar", rotulo: "Exportar dados", dica: "Baixa uma cópia dos dados da prefeitura.", icone: "relatorios" },
 ];
@@ -73,8 +74,8 @@ export async function PaginaSistema({
   const exporta = usuario.administrador || (await secretariasParaCadastro(usuario)).length > 0;
   const gestao: ItemMenu[] = [
     PAINEL,
-    ...(confere ? [{ href: "/importados", rotulo: "Importados do TCE", dica: "Documentos vindos do TCE-CE para conferir.", icone: "importados" as const, prefixos: ["/importados"], contagem: await contarFila() }] : []),
-    ...(exporta ? [{ href: "/relatorios", rotulo: "Relatórios", dica: "Relatórios do acervo para imprimir ou baixar.", icone: "relatorios" as const }] : []),
+    ...(confere && MODULOS.tce ? [{ href: "/importados", rotulo: "Importados do TCE", dica: "Documentos vindos do TCE-CE para conferir.", icone: "importados" as const, prefixos: ["/importados"], contagem: MODULOS.tce ? await contarFila() : 0 }] : []),
+    ...(exporta && MODULOS.relatorios ? [{ href: "/relatorios", rotulo: "Relatórios", dica: "Relatórios do acervo para imprimir ou baixar.", icone: "relatorios" as const }] : []),
     // Auditoria: só o administrador lê (RLS); para os outros fica apagada, em breve.
     usuario.administrador ? { ...AUDITORIA, href: "/auditoria" } : AUDITORIA,
     // Administrador acha a estrutura em Configurações; os demais seguem com o item solto.
