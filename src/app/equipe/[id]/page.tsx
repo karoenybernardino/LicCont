@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Formulario } from "@/ui/formulario";
 import { Campo } from "@/ui/campo";
 import { Selecao } from "@/ui/selecao";
+import { OPCOES_CAIXAS_POR_MODULO } from "@/features/estrutura/capacidade";
 import { BotaoEnviar } from "@/ui/botao-enviar";
 import { CabecalhoPainel, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { BotaoConfirmar } from "@/features/equipe/botao-confirmar";
@@ -134,6 +135,9 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                     <Campo rotulo="Implantação (R$)" name="valor_implantacao" inputMode="decimal" defaultValue={reais(p.implantacaoCentavos)} className={entrada} />
                     <Campo rotulo="Mensalidade (R$)" name="valor_mensalidade" inputMode="decimal" defaultValue={reais(p.mensalidadeCentavos)} className={entrada} />
                     <Campo rotulo="Início do contrato" name="contrato_inicio" type="date" defaultValue={p.contratoInicio ?? ""} className={entrada} />
+                    <Selecao rotulo="Caixas por módulo" name="caixas_por_modulo" defaultValue={String(p.caixasPorModulo ?? 36)} className={entrada}>
+                      {OPCOES_CAIXAS_POR_MODULO.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </Selecao>
                     {MODULOS.tce && <Campo rotulo="Código do município no TCE" name="tce_codigo_municipio" inputMode="numeric" defaultValue={p.tceCodigo ?? ""} className={entrada} />}
                   </div>
                   {MODULOS.tce && <label className="flex items-center gap-2.5 text-sm font-medium">

@@ -10,6 +10,7 @@ import type { EstadoAcao } from "@/ui/formulario";
 import { MODULOS } from "@/features/modulos/ocultos";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
 import { criarPrefeitura } from "@/features/prefeituras/acoes";
+import { OPCOES_CAIXAS_POR_MODULO } from "@/features/estrutura/capacidade";
 
 const campo = "!min-h-10 !rounded-lg !text-sm";
 const botaoContornoGrande = "inline-flex min-h-10 items-center justify-center rounded-lg border border-linha px-5 text-sm font-medium hover:border-destaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco";
@@ -73,6 +74,9 @@ export function NovaPrefeitura({ nomeInicial }: { nomeInicial?: string }) {
                 <Campo rotulo="Implantação (R$)" name="valor_implantacao" inputMode="decimal" placeholder="0,00" className={campo} />
                 <Campo rotulo="Mensalidade (R$)" name="valor_mensalidade" inputMode="decimal" placeholder="0,00" className={campo} />
                 <Campo rotulo="Início do contrato" name="contrato_inicio" type="date" className={campo} />
+                <Selecao rotulo="Caixas por módulo" name="caixas_por_modulo" defaultValue="36" className={campo}>
+                  {OPCOES_CAIXAS_POR_MODULO.map((n) => <option key={n} value={n}>{n}</option>)}
+                </Selecao>
               </div>
               {MODULOS.tce && (<>
               <TituloPainel>Integração com o TCE-CE</TituloPainel>
@@ -106,7 +110,7 @@ export function NovaPrefeitura({ nomeInicial }: { nomeInicial?: string }) {
                 {([
                   ["Órgão", resumo.nome], ["CNPJ", resumo.cnpj], ["Plano", "Completo"], ["Situação inicial", SITUACOES[resumo.status ?? "implantacao"]],
                   ["Implantação (R$)", resumo.valor_implantacao || "—"], ["Mensalidade (R$)", resumo.valor_mensalidade || "—"],
-                  ["Início do contrato", resumo.contrato_inicio || "—"],
+                  ["Início do contrato", resumo.contrato_inicio || "—"], ["Caixas por módulo", resumo.caixas_por_modulo || "36"],
                   ...(MODULOS.tce ? ([["TCE-CE", resumo.tce_ativo ? `Ligado · município ${resumo.tce_codigo_municipio}` : "Desligado"]] as const) : []),
                   ["Administrador", resumo.admin_nome ? `${resumo.admin_nome}` : "Depois"],
                 ] as const).map(([r, v]) => (

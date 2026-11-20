@@ -5,6 +5,7 @@ import { Painel, Rotulo, TituloPainel } from "@/features/estrutura/componentes";
 import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { lerPainel, porcento } from "@/features/painel/dados";
+import { emAlerta, textoCaixasLivres, type Barra } from "@/features/estrutura/capacidade";
 
 export const metadata: Metadata = { title: "Painel · LicCONT" };
 
@@ -21,6 +22,27 @@ function Cartao({ rotulo, valor, legenda, href, acao }: { rotulo: string; valor:
         {acao}
       </Link>
     </Painel>
+  );
+}
+
+// Barras simples de ocupação (rótulo, barra, percentual). Acima de 90% a barra muda de cor.
+function BarrasOcupacao({ titulo, barras }: { titulo: string; barras: Barra[] }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-xs font-medium tracking-[.05em] text-texto-suave uppercase">{titulo}</h3>
+      <ul className="flex max-h-52 flex-col gap-1.5 overflow-y-auto pr-1 text-xs">
+        {barras.map((b) => (
+          <li key={b.rotulo} className="grid grid-cols-[4.5rem_1fr_2.75rem] items-center gap-2">
+            <span className="truncate font-mono">{b.rotulo}</span>
+            <div role="img" aria-label={`${b.rotulo}: ${b.percentual}% ocupado`} className="h-2.5 overflow-hidden rounded-full bg-linha">
+              <div className={`h-full ${emAlerta(b.percentual) ? "bg-[#b45309] dark:bg-[#fbbf24]" : "bg-[#0e7490] dark:bg-[#2dd4bf]"}`} style={{ width: `${Math.min(b.percentual, 100)}%` }} />
+            </div>
+            <span className="text-right font-mono">{b.percentual}%</span>
+          </li>
+        ))}
+        {!barras.length && <li className="text-texto-suave">Sem dados.</li>}
+      </ul>
+    </div>
   );
 }
 
@@ -74,6 +96,7 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
   const { documentos: doc, emprestimos: emp, tce } = d.resumo;
   const pdf = porcento(doc.com_pdf, doc.total);
   const ocupadas = porcento(d.caixas.com_documento, d.caixas.total);
+  const cap = d.capacidade;
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Painel" trilha="Acervo · Painel">
@@ -113,6 +136,31 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
           acao="Ver empréstimos"
         />
         <Cartao rotulo="Caixas ocupadas" valor={`${ocupadas}%`} legenda={`${num(d.caixas.com_documento)} de ${num(d.caixas.total)} com algum documento`} href="/mapa" acao="Abrir o mapa 3D" />
+      </div>
+
+      <div className="mt-4">
+        <Painel>
+          <TituloPainel>Capacidade do arquivo</TituloPainel>
+          <div className="flex flex-wrap items-baseline gap-x-8 gap-y-1">
+            <p data-testid="capacidade-percentual" className={`text-3xl font-bold ${cap.alerta ? "text-[#b45309] dark:text-[#fbbf24]" : ""}`}>{cap.percentual}%</p>
+            <p className="text-sm">
+              {num(cap.ocupadas)} de {num(cap.total)} caixas ocupadas · {textoCaixasLivres(cap.livres)}
+            </p>
+            <p className="text-xs text-texto-suave">
+              {num(cap.modulos)} módulos × {cap.caixasPorModulo} caixas por módulo · 6 caixas por nível
+            </p>
+          </div>
+          {cap.alerta && (
+            <p role="status" className="text-sm font-semibold text-[#b45309] dark:text-[#fbbf24]">
+              Atenção: o arquivo passou de 90% da capacidade.
+            </p>
+          )}
+          <div className="grid gap-5 md:grid-cols-3">
+            <BarrasOcupacao titulo="Por rua" barras={cap.porRua} />
+            <BarrasOcupacao titulo="Por nível" barras={cap.porNivel} />
+            <BarrasOcupacao titulo="Por módulo" barras={cap.porModulo} />
+          </div>
+        </Painel>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[2fr_1fr_1fr]">

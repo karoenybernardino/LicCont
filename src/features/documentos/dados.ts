@@ -6,7 +6,7 @@ import { SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 import { CAPACIDADE_CAIXA_DEMO, DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
 import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
-import { carregarEstrutura } from "@/features/estrutura/dados";
+import { carregarEstrutura, lerCaixasPorModulo } from "@/features/estrutura/dados";
 import { resumir } from "@/features/estrutura/ocupacao";
 import { REGRAS_EDITAVEIS_DEMO } from "@/features/demo/temporalidade";
 import { aplicarFiltros } from "./aplicar";
@@ -299,10 +299,11 @@ export async function limitePdfMb(u: Usuario) {
 
 // Ruas, módulos e níveis ativos para as listas do cadastro.
 export async function opcoesEstrutura() {
-  const e = await carregarEstrutura();
+  const [e, caixasPorModulo] = await Promise.all([carregarEstrutura(), lerCaixasPorModulo()]);
   const ruas = e.ruas.filter((r) => r.ativo);
   const modulos = e.modulos.filter((m) => m.ativo && ruas.some((r) => r.id === m.ruaId));
   return {
+    caixasPorModulo,
     ruas: ruas.map((r) => ({
       id: r.id,
       codigo: r.codigo,

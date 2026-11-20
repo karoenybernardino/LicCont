@@ -4,6 +4,8 @@ import { emDemo } from "@/features/demo/dados";
 import type { Orgao } from "@/features/documentos/tipos";
 import { listarEmprestimos, lerTemporalidade } from "@/features/movimento/dados";
 import { situacaoEmprestimo } from "@/features/movimento/situacao";
+import { montarCapacidade, type Capacidade, type CapacidadeBruta } from "@/features/estrutura/capacidade";
+import { CAPACIDADE_DEMO } from "@/features/demo/capacidade";
 
 export type Resumo = {
   documentos: { total: number; licitacoes: number; contratos: number; sem_endereco: number; com_pdf: number; sem_pdf: number };
@@ -15,6 +17,7 @@ export type Caixas = { total: number; com_documento: number; cheias: number; com
 export type Painel = {
   resumo: Resumo;
   caixas: Caixas;
+  capacidade: Capacidade;
   atrasados: { titulo: string; quem: string; setor: string; dias: number }[];
   descarte: { total: number; itens: { titulo: string; emDias: number }[] };
 };
@@ -27,6 +30,7 @@ const DEMO: Painel = {
     emprestimos: { abertos: 27, atrasados: 6, mais_antigo_dias: 41 },
   },
   caixas: { total: 412, com_documento: 377, cheias: 214, com_espaco: 163, vazias: 35 },
+  capacidade: CAPACIDADE_DEMO,
   atrasados: [{ titulo: "Contrato 041/2022", quem: "Mário S.", setor: "Obras", dias: 41 }],
   descarte: { total: 18, itens: [{ titulo: "Dispensa 011/2016", emDias: 17 }] },
 };
@@ -40,13 +44,14 @@ export async function lerPainel(secretaria: string | null, orgao: Orgao | null =
   const sb = await clienteSessao();
   if (!sb) throw new Error("Não foi possível ler o painel.");
   const inicio = hoje();
-  const [resumo, caixas, emprestimos, temporalidade] = await Promise.all([
+  const [resumo, caixas, emprestimos, temporalidade, capacidade] = await Promise.all([
     sb.rpc("painel_resumo", { p_secretaria: secretaria, p_orgao: orgao }),
     sb.rpc("painel_caixas", { p_orgao: orgao }),
     listarEmprestimos(),
     lerTemporalidade(),
+    sb.rpc("capacidade_arquivo"),
   ]);
-  if (resumo.error || caixas.error || !resumo.data || !caixas.data) throw new Error("Não foi possível ler o painel.");
+  if (resumo.error || caixas.error || capacidade.error || !resumo.data || !caixas.data || !capacidade.data) throw new Error("Não foi possível ler o painel.");
   const atrasados = emprestimos
     .filter((e) => !e.devolvido && situacaoEmprestimo(e.prazo).atrasado)
     .map((e) => ({ titulo: e.titulo, quem: e.quem, setor: e.setor, dias: Math.round((Date.parse(`${inicio}T00:00:00Z`) - Date.parse(`${e.prazo}T00:00:00Z`)) / 86_400_000) }))
@@ -55,6 +60,7 @@ export async function lerPainel(secretaria: string | null, orgao: Orgao | null =
   return {
     resumo: resumo.data as Resumo,
     caixas: caixas.data as Caixas,
+    capacidade: montarCapacidade(capacidade.data as CapacidadeBruta),
     atrasados,
     descarte: { total: temporalidade.resumo.vencem90, itens: temporalidade.aVencer.slice(0, 3).map((p) => ({ titulo: p.titulo, emDias: p.emDias })) },
   };

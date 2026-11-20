@@ -41,6 +41,7 @@ const esquemaContrato = z.object({
   valor_implantacao_centavos: reais,
   valor_mensalidade_centavos: reais,
   contrato_inicio: z.string().trim().transform((v) => v || null).pipe(z.iso.date("Data do contrato inválida.").nullable()),
+  caixas_por_modulo: z.preprocess((v) => Number(v), z.number().refine((n) => n === 30 || n === 36, "Escolha 30 ou 36 caixas por módulo.")),
   tce_ativo: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
   tce_codigo_municipio: z.string().trim().transform((v) => v || null).pipe(z.string().regex(/^d{1,10}$/, "O código do município tem só números.").nullable()),
 });
@@ -50,6 +51,7 @@ const lerContrato = (f: FormData) =>
     valor_implantacao_centavos: f.get("valor_implantacao") ?? "",
     valor_mensalidade_centavos: f.get("valor_mensalidade") ?? "",
     contrato_inicio: f.get("contrato_inicio") ?? "",
+    caixas_por_modulo: f.get("caixas_por_modulo") ?? "36",
     tce_ativo: f.get("tce_ativo"),
     tce_codigo_municipio: f.get("tce_codigo_municipio") ?? "",
   });

@@ -20,6 +20,7 @@ import { EscolhaOrgao } from "./escolha-orgao";
 import { useOrigem } from "@/features/etiquetas/origem";
 import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
+import { CAIXAS_POR_MODULO_PADRAO, textoCaixaNoModulo } from "@/features/estrutura/capacidade";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
 import { MODALIDADES, ORGAOS, type Orgao, type Tipo } from "./tipos";
@@ -28,6 +29,7 @@ export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
   modulos: { id: string; ruaId: string; numero: number }[];
   niveis: { id: string; moduloId: string; numero: number }[];
+  caixasPorModulo?: number;
 };
 export type Inicial = {
   id: string;
@@ -147,6 +149,7 @@ export function FormularioDocumento({
   const ruaAtual = estrutura.ruas.find((r) => r.id === rua);
   const moduloAtual = estrutura.modulos.find((m) => m.id === modulo);
   const nivelAtual = estrutura.niveis.find((n) => n.id === nivel);
+  const caixasPorModulo = estrutura.caixasPorModulo ?? CAIXAS_POR_MODULO_PADRAO;
 
   useEffect(() => {
     let vivo = true;
@@ -415,7 +418,7 @@ export function FormularioDocumento({
                 <select id={id} value={caixa} disabled={!nivel} onChange={(e) => setCaixa(e.target.value)} className={`${caixaCampo} font-mono`}>
                   <option value="">Escolha…</option>
                   {(nivel ? caixas : []).map((c) => (
-                    <option key={c.id} value={c.id}>{`Caixa ${String(c.numero).padStart(2, "0")} · ${c.documentos} de ${c.capacidade}`}</option>
+                    <option key={c.id} value={c.id}>{`${nivelAtual ? textoCaixaNoModulo(nivelAtual.numero, c.numero, caixasPorModulo) : `Caixa ${String(c.numero).padStart(2, "0")}`} · ${c.documentos} de ${c.capacidade} documentos`}</option>
                   ))}
                 </select>
               )}
@@ -426,6 +429,7 @@ export function FormularioDocumento({
               {posicao && caixaEscolhida ? (
                 <>
                   <b className="font-mono font-medium text-texto">{posicao}</b>
+                  {nivelAtual && ` · ${textoCaixaNoModulo(nivelAtual.numero, caixaEscolhida.numero, caixasPorModulo)} do módulo`}
                   {` · ${caixaEscolhida.documentos} ${caixaEscolhida.documentos === 1 ? "documento" : "documentos"}, `}
                   {caixaEscolhida.documentos >= caixaEscolhida.capacidade ? (
                     <span className="font-semibold text-[#b45309] dark:text-[#fbbf24]">a caixa está cheia (capacidade estimada: {caixaEscolhida.capacidade}). Você pode salvar.</span>

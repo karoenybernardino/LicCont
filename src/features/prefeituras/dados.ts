@@ -16,7 +16,7 @@ export async function listarPrefeituras(): Promise<PrefeituraLista[]> {
   if (emDemo()) return PREFEITURAS_DEMO.map((p, i) => ({ ...p, criadoEm: DATA_DEMO, administradores: i === 0 ? adminsDemo().length : 0, plano: "completo", contratoInicio: "2026-11-08", implantacaoCentavos: 0, mensalidadeCentavos: 0, tceCodigo: "000" }));
   const supabase = await clienteSessao();
   if (!supabase) return [];
-  const { data } = await supabase.from("prefeituras").select("id, nome, cnpj, status, criado_em, plano, contrato_inicio, valor_implantacao_centavos, valor_mensalidade_centavos, tce_codigo_municipio").order("nome");
+  const { data } = await supabase.from("prefeituras").select("id, nome, cnpj, status, criado_em, plano, contrato_inicio, valor_implantacao_centavos, valor_mensalidade_centavos, tce_codigo_municipio, caixas_por_modulo").order("nome");
   const servico = clienteServico();
   const { data: admins } = servico
     ? await servico.from("usuarios").select("prefeitura_id").eq("administrador", true).eq("ativo", true)
@@ -25,7 +25,7 @@ export async function listarPrefeituras(): Promise<PrefeituraLista[]> {
   for (const a of admins ?? []) total.set(a.prefeitura_id, (total.get(a.prefeitura_id) ?? 0) + 1);
   return (data ?? []).map((p) => ({
     id: p.id, nome: p.nome, cnpj: p.cnpj, status: p.status, criadoEm: p.criado_em, administradores: total.get(p.id) ?? 0,
-    plano: p.plano, contratoInicio: p.contrato_inicio, implantacaoCentavos: p.valor_implantacao_centavos, mensalidadeCentavos: p.valor_mensalidade_centavos, tceCodigo: p.tce_codigo_municipio,
+    plano: p.plano, contratoInicio: p.contrato_inicio, implantacaoCentavos: p.valor_implantacao_centavos, mensalidadeCentavos: p.valor_mensalidade_centavos, tceCodigo: p.tce_codigo_municipio, caixasPorModulo: p.caixas_por_modulo,
   })) as PrefeituraLista[];
 }
 

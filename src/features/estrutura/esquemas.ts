@@ -2,7 +2,8 @@ import { z } from "zod";
 import { idSchema } from "@/features/login/esquemas";
 
 // Limites iguais aos do banco (supabase/migrations/20261108200000_estrutura_fisica.sql).
-export const LIMITES = { modulos: 20, niveis: 10, caixasPorNivel: 50, capacidade: 200, caixasPorVez: 50 } as const;
+// Cada nível comporta 6 caixas (regra do arquivo); os níveis por módulo vêm de caixas_por_modulo (30 ou 36).
+export const LIMITES = { modulos: 20, niveis: 10, caixasPorNivel: 6, capacidade: 6, caixasPorVez: 6 } as const;
 
 const inteiro = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
 
@@ -15,8 +16,6 @@ export const esquemaRua = z.object({ galpao: idSchema });
 export const esquemaModulos = z.object({
   rua: idSchema,
   modulos: inteiro(1, LIMITES.modulos),
-  niveis: inteiro(1, LIMITES.niveis),
-  capacidade: inteiro(1, LIMITES.caixasPorNivel),
 });
 
 export const esquemaCapacidade = z.object({ id: idSchema, capacidade: inteiro(1, LIMITES.capacidade) });
