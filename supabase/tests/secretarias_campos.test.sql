@@ -80,19 +80,19 @@ $$;
 grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 
 -- ---------------------------------------------------------------------------
--- Administrador A grava os campos novos
+-- Campos novos e restrições da tabela (gravados como dono do banco: a escrita
+-- pelos papéis é testada em permissoes_equipe.test.sql; aqui valem as
+-- restrições de tabela, que não dependem de quem grava)
 -- ---------------------------------------------------------------------------
-set local role authenticated;
-select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select lives_ok($$update public.secretarias set sigla = 'SESAU', telefone = '(88) 0000-0000',
   email_contato = 'saude@exemplo.test', responsavel_id = '0a000000-0000-0000-0000-000000000002',
   cargo_responsavel = 'Secretária de Saúde', exige_aprovacao_emprestimo = true, prazo_emprestimo_dias = 30,
   rua_preferencial_id = 'c1a00000-0000-0000-0000-000000000000'
-  where id = 'a1000000-0000-0000-0000-000000000000'$$, 'administrador grava os campos novos');
+  where id = 'a1000000-0000-0000-0000-000000000000'$$, 'grava os campos novos');
 select results_eq($$select sigla, prazo_emprestimo_dias::int, recebe_licitacoes from public.secretarias
   where id = 'a1000000-0000-0000-0000-000000000000'$$, $$values ('SESAU', 30, true)$$, 'campos lidos de volta; padrões valem');
 select lives_ok($$insert into public.secretarias (prefeitura_id, nome, sigla, recebe_contratos)
-  values ('11111111-1111-1111-1111-111111111111', 'Cultura', 'SECULT', false)$$, 'administrador cria secretaria com campos novos');
+  values ('11111111-1111-1111-1111-111111111111', 'Cultura', 'SECULT', false)$$, 'cria secretaria com campos novos');
 
 -- Responsável e rua de outra prefeitura, ou inexistentes: mesmo erro.
 select throws_ok($$update public.secretarias set responsavel_id = '0b000000-0000-0000-0000-000000000001'
@@ -113,39 +113,42 @@ select throws_ok($$update public.secretarias set prazo_emprestimo_dias = 0 where
   '23514', null, 'prazo fora do limite é recusado');
 select throws_ok($$update public.secretarias set email_contato = 'sem-arroba' where id = 'a2000000-0000-0000-0000-000000000000'$$,
   '23514', null, 'e-mail sem arroba é recusado');
-select throws_ok($$update public.secretarias set prefeitura_id = '22222222-2222-2222-2222-222222222222'
-  where id = 'a2000000-0000-0000-0000-000000000000'$$, '42501', null, 'secretaria não muda de prefeitura');
 select isnt_empty($$select 1 from public.auditoria where acao = 'secretarias.update' and alvo_id = 'a1000000-0000-0000-0000-000000000000'$$,
   'alteração dos campos entra na auditoria');
-
--- ---------------------------------------------------------------------------
--- Administrador B: outra prefeitura não lê, não altera; a mesma sigla vale lá
--- ---------------------------------------------------------------------------
-select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
-select is_empty($$select 1 from public.secretarias where prefeitura_id = '11111111-1111-1111-1111-111111111111'$$,
-  'administrador B não lê secretarias de A');
-select is_empty($$update public.secretarias set sigla = 'HACK' where id = 'a1000000-0000-0000-0000-000000000000' returning 1$$,
-  'administrador B não altera secretaria de A');
-select throws_ok($$insert into public.secretarias (prefeitura_id, nome, sigla)
-  values ('11111111-1111-1111-1111-111111111111', 'Intrusa', 'XX')$$, '42501', null, 'administrador B não cria secretaria em A');
 select throws_ok($$update public.secretarias set responsavel_id = '0a000000-0000-0000-0000-000000000002'
   where id = 'b1000000-0000-0000-0000-000000000000'$$, '23503', null, 'B não aponta para responsável de A');
 select lives_ok($$update public.secretarias set sigla = 'SESAU' where id = 'b1000000-0000-0000-0000-000000000000'$$,
   'a mesma sigla vale em outra prefeitura');
 
 -- ---------------------------------------------------------------------------
+-- Administradores: leem a própria prefeitura, não escrevem em nenhuma
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
+select results_eq($$select sigla from public.secretarias where id = 'a1000000-0000-0000-0000-000000000000'$$, array['SESAU'], 'administrador A lê a sigla');
+select throws_ok($$update public.secretarias set sigla = 'HACK' where id = 'a1000000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'administrador A não altera a própria secretaria');
+select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
+select is_empty($$select 1 from public.secretarias where prefeitura_id = '11111111-1111-1111-1111-111111111111'$$,
+  'administrador B não lê secretarias de A');
+select throws_ok($$update public.secretarias set sigla = 'HACK' where id = 'a1000000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'administrador B não altera secretaria de A');
+select throws_ok($$insert into public.secretarias (prefeitura_id, nome, sigla)
+  values ('11111111-1111-1111-1111-111111111111', 'Intrusa', 'XX')$$, '42501', null, 'administrador B não cria secretaria em A');
+
+-- ---------------------------------------------------------------------------
 -- Coordenador, operador e consulta: leem, não escrevem
 -- ---------------------------------------------------------------------------
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
 select results_eq($$select sigla from public.secretarias where id = 'a1000000-0000-0000-0000-000000000000'$$, array['SESAU'], 'coordenador lê a sigla');
-select is_empty($$update public.secretarias set sigla = 'COORD' where id = 'a1000000-0000-0000-0000-000000000000' returning 1$$,
-  'coordenador não altera secretaria');
+select throws_ok($$update public.secretarias set sigla = 'COORD' where id = 'a1000000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'coordenador não altera secretaria');
 select tst_entrar('0a000000-0000-0000-0000-000000000003', '5a000000-0000-0000-0000-000000000003', 'aal1');
-select is_empty($$update public.secretarias set telefone = '1' where id = 'a2000000-0000-0000-0000-000000000000' returning 1$$,
-  'operador não altera secretaria');
+select throws_ok($$update public.secretarias set telefone = '1' where id = 'a2000000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'operador não altera secretaria');
 select tst_entrar('0a000000-0000-0000-0000-000000000004', '5a000000-0000-0000-0000-000000000004', 'aal1');
-select is_empty($$update public.secretarias set telefone = '1' where id = 'a2000000-0000-0000-0000-000000000000' returning 1$$,
-  'consulta não altera secretaria');
+select throws_ok($$update public.secretarias set telefone = '1' where id = 'a2000000-0000-0000-0000-000000000000'$$,
+  '42501', null, 'consulta não altera secretaria');
 
 -- ---------------------------------------------------------------------------
 -- Privilégios

@@ -62,6 +62,7 @@ export async function salvarClasses(entrada: unknown): Promise<RetornoClasses> {
     return { erro: error.code === "22023" ? "Confira o grupo, o prazo e o evento de cada linha." : error.code === "23514" || error.code === "23505" ? "Confira os dados: código repetido ou prazo incoerente." : mensagemDoBanco(error.code) };
   }
   revalidatePath("/temporalidade");
+  revalidatePath("/configuracoes/temporalidade");
   revalidatePath("/equipe", "layout");
   const r = data as { inseridas: number; atualizadas: number; removidas: number; desativadas: number };
   return { aviso: "Tabela salva.", resumo: r };
@@ -77,6 +78,7 @@ export async function excluirClasse(entrada: unknown): Promise<RetornoClasses> {
   const { data, error } = await sb.rpc("classe_excluir", { p_classe: dados.data.id });
   if (error) return { erro: mensagemDoBanco(error.code) };
   revalidatePath("/temporalidade");
+  revalidatePath("/configuracoes/temporalidade");
   revalidatePath("/equipe", "layout");
   return { aviso: data === "desativada" ? "A classe já tem caixa ou documento ligado: foi desativada, não excluída." : "Classe excluída." };
 }

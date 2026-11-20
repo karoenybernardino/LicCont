@@ -19,9 +19,10 @@ import { listarAdministradores, obterPrefeitura, suporteAutorizadoAte, usoPrefei
 import { formatarCnpj } from "@/features/prefeituras/lista";
 import { formatarData } from "@/features/documentos/formato";
 import { exigirEquipe } from "@/features/sessao/dal";
-import { classesDoOrgao, listarParceiras, marcaDoOrgao } from "@/features/equipe/marca";
+import { listarParceiras, marcaDoOrgao } from "@/features/equipe/marca";
+import { AbaSecretarias } from "@/features/equipe/aba-secretarias";
+import { AbaUsuarios } from "@/features/equipe/aba-usuarios";
 import { FormMarca } from "@/features/equipe/marca-form";
-import { EditorClasses } from "@/features/temporalidade/classes";
 
 export const metadata: Metadata = { title: "Prefeitura · LicCONT" };
 
@@ -31,6 +32,8 @@ const entrada = "!min-h-10 !rounded-lg !text-sm";
 const TODAS_ABAS = [
   ["resumo", "Resumo"],
   ["administradores", "Administradores"],
+  ["secretarias", "Secretarias"],
+  ["usuarios", "Usuários"],
   ["tce", "Integração TCE-CE"],
   ["marca", "Logo e temporalidade"],
   ["uso", "Uso"],
@@ -41,7 +44,7 @@ const reais = (c: number | null) => (c === null ? "" : (c / 100).toLocaleString(
 const rotuloMini = "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
 
 // Quadro EquipePrefeituraDetalhe: cabeçalho e abas Resumo, Administradores, Integração TCE-CE, Uso e Auditoria.
-export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; editar?: string; importou?: string; marca?: string }> }) {
+export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; item?: string; editar?: string; importou?: string; marca?: string }> }) {
   await exigirEquipe();
   const { id } = await params;
   const busca = await searchParams;
@@ -54,7 +57,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
   const uso = usoTodas.get(id);
   const i = integ.get(id);
   const aviso = busca.importou ? AVISOS_IMPORTAR[busca.importou] : undefined;
-  const [marca, parceiras, classes] = aba === "marca" ? await Promise.all([marcaDoOrgao(id), listarParceiras(), classesDoOrgao(id)]) : [null, [], { classes: [], grupos: [] }];
+  const [marca, parceiras] = aba === "marca" ? await Promise.all([marcaDoOrgao(id), listarParceiras()]) : [null, []];
   const avisoMarca = busca.marca ? ({ ok: "Marca salva.", logo: "O logo precisa ser PNG ou SVG de até 1 MB.", demo: "Modo demonstração: nada foi salvo.", erro: "Não foi possível salvar. Confira os dados." } as Record<string, string>)[busca.marca] : undefined;
   const acoes = aba === "auditoria" ? await acoesEquipe({ prefeitura: id, limite: 50 }) : [];
   const href = (a: string) => `/equipe/${id}?aba=${a}`;
@@ -198,6 +201,10 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
         </Painel>
       )}
 
+      {aba === "secretarias" && <AbaSecretarias prefeitura={id} item={busca.item} />}
+
+      {aba === "usuarios" && <AbaUsuarios prefeitura={id} item={busca.item} />}
+
       {aba === "tce" && MODULOS.tce && (
         <Painel>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -241,7 +248,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                 titulo="Tabela de temporalidade"
                 subtitulo="Código de classificação e prazo de guarda que saem nas etiquetas."
               />
-              <EditorClasses prefeitura={id} classes={classes.classes} grupos={classes.grupos} />
+              <Link href={`/equipe/${id}/temporalidade`} className={botaoContorno}>Abrir a tabela</Link>
             </Painel>
           </div>
         </>

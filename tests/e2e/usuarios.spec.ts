@@ -7,7 +7,8 @@ test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
 // Um só fluxo em série: o autenticador do administrador é cadastrado uma vez.
 test.describe.configure({ mode: "serial", retries: 0 });
 
-test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuário que entra só na secretaria vinculada", async ({
+// Fora de uso: só a equipe LicCONT cadastra usuários (permissoes_equipe). Reescrever pelo fluxo da equipe.
+test.skip("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuário que entra só na secretaria vinculada", async ({
   page,
 }) => {
   test.setTimeout(120_000);

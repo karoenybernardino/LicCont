@@ -27,15 +27,14 @@ const AUDITORIA: ItemMenu = { rotulo: "Auditoria", dica: "Histórico de quem fez
 const ESTRUTURA: ItemMenu = { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" };
 // Tudo que o administrador ajusta fica dentro de Configurações (submenu ao lado da barra).
 export const AJUSTES: ItemMenu[] = [
-  { href: "/usuarios", rotulo: "Usuários e perfis", dica: "Quem acessa o sistema e com qual perfil.", icone: "usuarios" },
-  { href: "/secretarias", rotulo: "Secretarias", dica: "Cadastro das secretarias da prefeitura.", icone: "secretarias" },
+  { href: "/configuracoes/temporalidade", rotulo: "Tabela de temporalidade", dica: "Classes, prazos de guarda e destinação dos documentos.", icone: "temporalidade" },
   { href: "/configuracoes/grupos", rotulo: "Grupos documentais", dica: "Grupos, tipologias e quem vê cada grupo.", icone: "secretarias" },
   { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" },
   ...(MODULOS.tce ? [{ href: "/configuracoes/tce", rotulo: "Importação do TCE", dica: "Liga e acompanha a importação do TCE-CE.", icone: "importados" as const }] : []),
   { href: "/configuracoes/suporte", rotulo: "Acesso de suporte", dica: "Libera ou encerra o acesso da equipe LicCONT.", icone: "configuracoes" },
   { href: "/configuracoes/exportar", rotulo: "Exportar dados", dica: "Baixa uma cópia dos dados da prefeitura.", icone: "relatorios" },
 ];
-const CONFIG: ItemMenu = { rotulo: "Configurações", dica: "Usuários, secretarias, suporte e exportação.", icone: "configuracoes" };
+const CONFIG: ItemMenu = { rotulo: "Configurações", dica: "Temporalidade, grupos, estrutura, suporte e exportação.", icone: "configuracoes" };
 
 function iniciais(nome: string) {
   return nome
