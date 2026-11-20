@@ -13,6 +13,7 @@ const entrada = z.object({
   tipos: z.array(z.enum(TIPOS_ETIQUETA as [string, ...string[]])).min(1).max(3),
   caixas: z.array(z.guid()).max(MAX_ETIQUETAS).default([]),
   documentos: z.array(z.guid()).max(MAX_ETIQUETAS).default([]),
+  dividir: z.boolean().default(false), // lista grande: partes iguais (parte 1/2, 2/2) em vez de encher a fonte mínima
 });
 const NOMES: Record<string, string> = { caixa: "etiquetas-das-caixas", conteudo: "folhas-de-conteudo", documento: "etiquetas-dos-documentos" };
 
@@ -26,9 +27,9 @@ export async function POST(req: Request) {
   if (!(await podeCadastrar(u))) return new NextResponse("Você não tem permissão para esta ação.", { status: 403 });
   const dados = entrada.safeParse(await req.json().catch(() => null));
   if (!dados.success || (!dados.data.caixas.length && !dados.data.documentos.length)) return new NextResponse("Escolha o que imprimir.", { status: 400 });
-  const { tipos, caixas, documentos } = dados.data;
+  const { tipos, caixas, documentos, dividir } = dados.data;
   try {
-    const r = await montarEtiquetas({ tipos: tipos as (typeof TIPOS_ETIQUETA)[number][], caixas, documentos, prefeitura: u.prefeituraId });
+    const r = await montarEtiquetas({ tipos: tipos as (typeof TIPOS_ETIQUETA)[number][], caixas, documentos, prefeitura: u.prefeituraId, dividir });
     if (!r.total) return new NextResponse("Nada para imprimir com essa escolha.", { status: 404 });
     if (!emDemo()) {
       const sb = await clienteSessao();

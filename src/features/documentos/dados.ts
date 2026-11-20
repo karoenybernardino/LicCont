@@ -363,7 +363,7 @@ export type CaixaPesquisa = {
 };
 
 // Caixas gerais fictícias da demonstração (nada aqui é dado real).
-const CAIXAS_GERAIS_DEMO: CaixaPesquisa[] = [
+export const CAIXAS_GERAIS_DEMO: CaixaPesquisa[] = [
   { id: "de430000-0000-0000-0000-000000000001", orgao: "prefeitura", sequencial: 1, tipo: "geral", fundo: "Fundo Municipal de Saúde", setor: "Contabilidade", meses: [1, 2, 3], anoLimite: 2019, digitalizada: false, codigoClassificacao: "031", prazoAnos: 12, etiquetaGeral: true, endereco: "A-M1-N1-C01" },
   { id: "de430000-0000-0000-0000-000000000002", orgao: "prefeitura", sequencial: 2, tipo: "geral", fundo: "Fundo Municipal de Educação", setor: "Tesouraria", meses: [6], anoLimite: 2020, digitalizada: true, codigoClassificacao: "032", prazoAnos: 10, etiquetaGeral: true, endereco: "A-M1-N1-C02" },
   { id: "de430000-0000-0000-0000-000000000003", orgao: "camara", sequencial: 1, tipo: "geral", fundo: "Câmara Municipal", setor: "Secretaria Legislativa", meses: [11, 12], anoLimite: 2021, digitalizada: false, codigoClassificacao: "034", prazoAnos: 5, etiquetaGeral: false, endereco: "B-M1-N1-C01" },
