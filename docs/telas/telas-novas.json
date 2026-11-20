@@ -588,5 +588,145 @@
   "rota": "/equipe/prefeituras/[id] (aba Logo e temporalidade)",
   "html": "html/EquipePrefeituraLogoClaro.html",
   "png": "png/EquipePrefeituraLogoClaro.png"
+ },
+ {
+  "quadro": "PartPainelDonoEscuro",
+  "titulo": "Empresa parceira · Painel do dono — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 660,
+  "rota": "/parceira (dono)",
+  "html": "html/PartPainelDonoEscuro.html",
+  "png": "png/PartPainelDonoEscuro.png"
+ },
+ {
+  "quadro": "PartPainelDonoClaro",
+  "titulo": "Empresa parceira · Painel do dono — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 660,
+  "rota": "/parceira (dono)",
+  "html": "html/PartPainelDonoClaro.html",
+  "png": "png/PartPainelDonoClaro.png"
+ },
+ {
+  "quadro": "PartPainelFuncEscuro",
+  "titulo": "Empresa parceira · Painel do funcionário — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 620,
+  "rota": "/parceira (funcionário)",
+  "html": "html/PartPainelFuncEscuro.html",
+  "png": "png/PartPainelFuncEscuro.png"
+ },
+ {
+  "quadro": "PartPainelFuncClaro",
+  "titulo": "Empresa parceira · Painel do funcionário — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 620,
+  "rota": "/parceira (funcionário)",
+  "html": "html/PartPainelFuncClaro.html",
+  "png": "png/PartPainelFuncClaro.png"
+ },
+ {
+  "quadro": "PartPesquisaEscuro",
+  "titulo": "Empresa parceira · Pesquisa — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/parceira/pesquisa",
+  "html": "html/PartPesquisaEscuro.html",
+  "png": "png/PartPesquisaEscuro.png"
+ },
+ {
+  "quadro": "PartPesquisaClaro",
+  "titulo": "Empresa parceira · Pesquisa — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1064,
+  "rota": "/parceira/pesquisa",
+  "html": "html/PartPesquisaClaro.html",
+  "png": "png/PartPesquisaClaro.png"
+ },
+ {
+  "quadro": "PartMapaEscuro",
+  "titulo": "Empresa parceira · Mapa 3D — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/parceira/mapa",
+  "html": "html/PartMapaEscuro.html",
+  "png": "png/PartMapaEscuro.png"
+ },
+ {
+  "quadro": "PartMapaClaro",
+  "titulo": "Empresa parceira · Mapa 3D — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 880,
+  "rota": "/parceira/mapa",
+  "html": "html/PartMapaClaro.html",
+  "png": "png/PartMapaClaro.png"
+ },
+ {
+  "quadro": "PartEtiquetasEscuro",
+  "titulo": "Empresa parceira · Gerar etiquetas — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 1040,
+  "rota": "/parceira/etiquetas",
+  "html": "html/PartEtiquetasEscuro.html",
+  "png": "png/PartEtiquetasEscuro.png"
+ },
+ {
+  "quadro": "PartEtiquetasClaro",
+  "titulo": "Empresa parceira · Gerar etiquetas — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 1040,
+  "rota": "/parceira/etiquetas",
+  "html": "html/PartEtiquetasClaro.html",
+  "png": "png/PartEtiquetasClaro.png"
+ },
+ {
+  "quadro": "PartEquipeEscuro",
+  "titulo": "Empresa parceira · Equipe e alocação — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 600,
+  "rota": "/parceira/equipe (só dono)",
+  "html": "html/PartEquipeEscuro.html",
+  "png": "png/PartEquipeEscuro.png"
+ },
+ {
+  "quadro": "PartEquipeClaro",
+  "titulo": "Empresa parceira · Equipe e alocação — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 600,
+  "rota": "/parceira/equipe (só dono)",
+  "html": "html/PartEquipeClaro.html",
+  "png": "png/PartEquipeClaro.png"
+ },
+ {
+  "quadro": "EquipeParceiraDetalheEscuro",
+  "titulo": "Equipe LicCONT · Empresa parceira e alocação — escuro",
+  "tema": "escuro",
+  "largura": 1280,
+  "altura": 710,
+  "rota": "/equipe/parceiras/[id]",
+  "html": "html/EquipeParceiraDetalheEscuro.html",
+  "png": "png/EquipeParceiraDetalheEscuro.png"
+ },
+ {
+  "quadro": "EquipeParceiraDetalheClaro",
+  "titulo": "Equipe LicCONT · Empresa parceira e alocação — claro",
+  "tema": "claro",
+  "largura": 1280,
+  "altura": 710,
+  "rota": "/equipe/parceiras/[id]",
+  "html": "html/EquipeParceiraDetalheClaro.html",
+  "png": "png/EquipeParceiraDetalheClaro.png"
  }
 ]
