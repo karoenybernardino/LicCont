@@ -86,6 +86,15 @@ returns void language sql as $$
     'sub', p_uid, 'role', 'authenticated', 'session_id', p_sessao, 'aal', p_aal)::text, true);
 $$;
 grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
+create function public.tst_afetadas(p_sql text)
+returns bigint language plpgsql as $$
+declare n bigint;
+begin
+  execute p_sql;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+grant execute on function public.tst_afetadas(text) to authenticated;
 
 -- (h) tabela fechada
 select table_privs_are('public', 'parceira_contexto', 'anon', array[]::text[], 'anon não acessa parceira_contexto');
@@ -147,15 +156,15 @@ select is((select public.mover_documentos(array['d2000000-0000-0000-0000-0000000
   (select id from public.caixas where prefeitura_id = '11111111-1111-1111-1111-111111111111' and numero = 2))), 1, 'move documento de A para outra caixa de A');
 
 -- (f) estrutura e temporalidade em A; B não; pessoas nunca
-select is((with u as (update public.galpoes set nome = 'Galpão A renomeado' where id = 'c0a00000-0000-0000-0000-000000000000' returning 1) select count(*) from u),
+select is(public.tst_afetadas($q$update public.galpoes set nome = 'Galpão A renomeado' where id = 'c0a00000-0000-0000-0000-000000000000'$q$),
   1::bigint, 'altera galpão de A');
-select is((with u as (update public.galpoes set nome = 'Invasão' where id = 'c0b00000-0000-0000-0000-000000000000' returning 1) select count(*) from u),
+select is(public.tst_afetadas($q$update public.galpoes set nome = 'Invasão' where id = 'c0b00000-0000-0000-0000-000000000000'$q$),
   0::bigint, 'não altera galpão de B');
 select lives_ok($$insert into public.galpoes (prefeitura_id, nome) values ('11111111-1111-1111-1111-111111111111', 'Galpão novo A')$$, 'cria galpão em A');
 select throws_ok($$insert into public.galpoes (prefeitura_id, nome) values ('22222222-2222-2222-2222-222222222222', 'Galpão novo B')$$, '42501', null, 'não cria galpão em B');
-select is((with u as (update public.niveis set capacidade = 8 where id = 'c3a00000-0000-0000-0000-000000000000' returning 1) select count(*) from u),
+select is(public.tst_afetadas($q$update public.niveis set capacidade = 8 where id = 'c3a00000-0000-0000-0000-000000000000'$q$),
   1::bigint, 'altera nível de A');
-select is((with u as (update public.ruas set planta_giro = coalesce(planta_giro, 0) where id = 'c1a00000-0000-0000-0000-000000000000' returning 1) select count(*) from u),
+select is(public.tst_afetadas($q$update public.ruas set planta_giro = coalesce(planta_giro, 0) where id = 'c1a00000-0000-0000-0000-000000000000'$q$),
   1::bigint, 'altera planta (rua) de A');
 select is((select public.classe_excluir('e2a00000-0000-0000-0000-000000000001')), 'excluida', 'altera regra de temporalidade (classe) de A');
 select throws_ok($$select public.classe_excluir('e2b00000-0000-0000-0000-000000000001')$$, '42501', null, 'não altera regra de temporalidade de B');
