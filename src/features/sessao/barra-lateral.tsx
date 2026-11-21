@@ -119,9 +119,12 @@ export function BarraLateral({
   const caminho = usePathname();
   const idDica = useId();
   const [dica, setDica] = useState<Dica | null>(null);
-  const ativo = (i: ItemMenu) =>
+  const casa = (i: ItemMenu) =>
     !!i.href &&
     (caminho !== "/documentos/novo" || i.href === "/documentos/novo") && (caminho === i.href || caminho.startsWith(`${i.href}/`) || !!i.prefixos?.some((p) => caminho.startsWith(p)));
+  // Só o item mais específico fica marcado (ex.: /equipe/prefeituras/parceiras não marca Início nem Prefeituras).
+  const todos = [...grupos.flat(), ...rodape].flatMap((i) => [i, ...(i.filhos ?? [])]);
+  const ativo = (i: ItemMenu) => casa(i) && !todos.some((o) => o !== i && casa(o) && (o.href?.length ?? 0) > (i.href?.length ?? 0));
 
   // Esc fecha a aba sem tirar o foco de onde está.
   useEffect(() => {

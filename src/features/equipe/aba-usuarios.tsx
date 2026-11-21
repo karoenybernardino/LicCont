@@ -33,7 +33,7 @@ export async function AbaUsuarios({ prefeitura, item }: { prefeitura: string; it
         </p>
         <Painel>
           <TituloPainel>Dados e perfil</TituloPainel>
-          <Formulario acao={salvarUsuario} botao="Salvar" enviando="Salvando…" className="max-w-md">
+          <Formulario acao={salvarUsuario} botao="Salvar" enviando="Salvando…" className="max-w-3xl">
             {oculto}
             <CamposUsuario secretarias={opcoes} inicial={alvo} />
           </Formulario>
@@ -110,10 +110,9 @@ export async function AbaUsuarios({ prefeitura, item }: { prefeitura: string; it
       </Painel>
       <Painel>
         <h2 id="cadastrar-usuario" className="scroll-mt-4 text-[17px] font-bold">Cadastrar usuário</h2>
-        <Formulario acao={cadastrarUsuario} botao="Cadastrar" enviando="Cadastrando…" className="max-w-md">
+        <Formulario acao={cadastrarUsuario} botao="Cadastrar" enviando="Cadastrando…" className="max-w-3xl">
           <input type="hidden" name="prefeitura" value={prefeitura} />
-          <Campo rotulo="E-mail" name="email" type="email" autoComplete="off" required />
-          <CamposUsuario secretarias={secretarias.filter((s) => s.ativa)} />
+          <CamposUsuario secretarias={secretarias.filter((s) => s.ativa)} antes={<Campo rotulo="E-mail" name="email" type="email" autoComplete="off" required />} />
         </Formulario>
       </Painel>
     </>
