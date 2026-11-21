@@ -1,4 +1,3 @@
-import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -299,7 +298,7 @@ export default async function Termo({ params }: { params: Promise<{ id: string }
             <Aviso tipo="azul">Termo cancelado: ele fica guardado só para consulta e a auditoria. Para eliminar esses documentos, gere um termo novo.</Aviso>
           )}
           {t.situacao === "em_ciencia" && !liberada && <Aviso tipo="azul">Enquanto o prazo corre, o termo pode ser cancelado. Nenhum documento é desativado antes da aprovação.</Aviso>}
-          {t.situacao === "em_ciencia" && liberada && administraAcervo(usuario) && (
+          {t.situacao === "em_ciencia" && liberada && usuario.administrador && (
             <>
               <Aviso tipo="ambar">
                 Ao aprovar, os {t.itens} documentos são <b>desativados</b> e saem da pesquisa e do mapa. O registro de cada um, o PDF e a auditoria permanecem.

@@ -75,6 +75,8 @@ export async function publicarEdital(_: EstadoAcao, formData: FormData): Promise
 }
 
 export async function aprovarTermo(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  // Aprovar desativa documentos: só administrador da prefeitura (o banco também recusa a parceira).
+  if ((await exigirSessao()).usuario.parceira) return { erro: "Você não tem permissão para esta ação." };
   const dados = esquemaId.safeParse({ id: formData.get("id") });
   if (!dados.success) return { erro: "Não foi possível concluir. Tente de novo." };
   return etapa("descarte_aprovar", { p_descarte: dados.data.id }, "Termo aprovado. Os documentos foram desativados e o registro ficou na auditoria.");
