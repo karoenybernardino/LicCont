@@ -133,7 +133,7 @@ export function PainelParceira({ eu, prefeituras, recorte, linhas, funcionarios,
           <Painel>
             <h2 className="font-titulo text-base font-bold">Para etiquetar</h2>
             <p className="text-xs text-texto-suave">As caixas mais antigas sem etiqueta, só das suas prefeituras.</p>
-            <Link href="/parceira/etiquetas" className={botaoContorno}>Ver todas</Link>
+            <Link href="/etiquetas" className={botaoContorno}>Ver todas</Link>
             <p className="text-xs text-texto-suave">Você só vê as prefeituras em que está alocada. Para incluir outra, fale com o dono da empresa ou com a equipe LicCONT.</p>
           </Painel>
         )}
