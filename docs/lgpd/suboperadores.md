@@ -12,6 +12,7 @@ que será feito antes do piloto com revisão jurídica.
 | Supabase | Banco, autenticação e armazenamento de arquivos | Cadastro de servidores (nome, e-mail institucional, matrícula), registros do acervo, PDFs | Brasil (São Paulo, sa-east-1) | Fase 1 | 0003 |
 | Vercel | Hospedagem e entrega do app | Dados em trânsito nas requisições; conteúdo dos PDFs em trânsito na conferência (lido e descartado, sem gravação); logs técnicos com IP e endereço acessado (sem dado pessoal gravado pelo app) | Funções em São Paulo (gru1); rede de borda global | Fase 1 | 0003 |
 | E-mail transacional (Resend, **pronto e desligado**: só liga com a chave na Vercel) | Avisos por e-mail (recuperação de senha segue pelo Supabase) | E-mail institucional e texto curto do aviso | EUA (transferência a validar) | Fases 5 a 7 | 0010 |
+| Sentry (plano gratuito; **só liga com o DSN na Vercel**) | Alerta de erro do app | Tipo e texto do erro já mascarados (sem CPF, e-mail, linha do banco), pilha de chamadas, navegador e sistema, caminho da página sem consulta. Sem dados de quem usa, IP, cookies, corpo ou conteúdo de documento | UE (Frankfurt) recomendada; transferência a validar | Fase 8 | 0014 |
 | GitHub | Código-fonte e CI | Nenhum dado pessoal de prefeitura (só dados fictícios) | EUA | Fase 0 | 0003 |
 
 ## Fontes públicas de dados (não são suboperadores)
@@ -49,6 +50,8 @@ Vercel.
 ## Ferramentas sem acesso a dado pessoal
 
 Semgrep e Gitleaks (CLIs abertas, rodam no GitHub Actions).
+
+UptimeRobot (plano gratuito): chama `/api/saude` e recebe só `ok`/`falha`. Decisão 0014.
 
 Have I Been Pwned (API de senhas, gratuita): o servidor envia só os 5
 primeiros caracteres do SHA-1 da senha nova (k-anonimato), nunca a senha

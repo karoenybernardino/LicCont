@@ -20,6 +20,15 @@ function storage() {
   }
 }
 
+// Alerta de erro (decisão 0014): o navegador envia direto ao Sentry do DSN.
+function alertas() {
+  try {
+    return process.env.NEXT_PUBLIC_SENTRY_DSN ? ` ${new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin}` : "";
+  } catch {
+    return "";
+  }
+}
+
 function politica(nonce: string) {
   const dev = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
   return [
@@ -30,7 +39,7 @@ function politica(nonce: string) {
     "font-src 'self'",
     // Envio e leitura do PDF vão direto ao Storage (links assinados); o pdf.js
     // roda num worker do próprio site.
-    `connect-src 'self'${storage()}`,
+    `connect-src 'self'${storage()}${alertas()}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
