@@ -50,7 +50,7 @@ grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 set local role authenticated;
 
 -- 1. Dono e funcionário não leem prefeituras direto (mensalidade e demais colunas).
-select tst_entrar('0d000000-0000-0000-0000-000000000001', '5d000000-0000-0000-0000-000000000001', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000001', '5d000000-0000-0000-0000-000000000001', 'aal2');
 select is((select count(*) from public.prefeituras), 0::bigint, 'dono não lê prefeituras pela Data API');
 select is((select count(*) from public.prefeituras where valor_mensalidade_centavos is not null), 0::bigint, 'dono não vê mensalidade');
 select is((select count(*) from public.parceira_prefeituras()), 1::bigint, 'dono ainda lê pela função');
@@ -65,7 +65,7 @@ select throws_ok($$select public.parceira_incluir_pessoa('f1000000-0000-0000-000
 select throws_ok($$select public.parceira_incluir_pessoa('f1000000-0000-0000-0000-000000000001', '0e000000-0000-0000-0000-000000000001', 'Equipe', 'funcionario')$$, '22023', null, 'dono não inclui conta da equipe');
 select ok((select public.parceira_incluir_pessoa('f1000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-000000000009', 'Novo', 'funcionario')) is not null, 'dono inclui conta livre');
 
-select tst_entrar('0d000000-0000-0000-0000-000000000002', '5d000000-0000-0000-0000-000000000002', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000002', '5d000000-0000-0000-0000-000000000002', 'aal2');
 select is((select count(*) from public.prefeituras), 0::bigint, 'funcionário não lê prefeituras pela Data API');
 select is((select count(*) from public.prefeituras where valor_mensalidade_centavos is not null), 0::bigint, 'funcionário não vê mensalidade');
 

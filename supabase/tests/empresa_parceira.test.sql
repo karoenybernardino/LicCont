@@ -66,14 +66,14 @@ select ok(not has_function_privilege('anon', 'public.parceira_prefeituras()', 'e
 select ok(not has_function_privilege('anon', 'app.prefeituras_permitidas()', 'execute'), 'anon não executa prefeituras_permitidas');
 
 set local role authenticated;
-select tst_entrar('0d000000-0000-0000-0000-000000000001', '5d000000-0000-0000-0000-000000000001', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000001', '5d000000-0000-0000-0000-000000000001', 'aal2');
 select is((select count(*) from app.prefeituras_permitidas()), 2::bigint, 'dono vê as 2 prefeituras da empresa dele');
 select is((select count(*) from public.parceira_prefeituras() where id = '33333333-3333-3333-3333-333333333333'), 0::bigint, 'dono não vê prefeitura de outra empresa');
 select is((select count(*) from public.caixas), 1::bigint, 'dono lê só a caixa da prefeitura dele (RLS)');
 select is((select count(*) from public.parceira_equipe()), 3::bigint, 'dono lista as 3 pessoas da empresa');
 select throws_ok($$select public.parceira_alocar('b1000000-0000-0000-0000-000000000003', array['33333333-3333-3333-3333-333333333333']::uuid[])$$, '23514', null, 'dono não aloca em prefeitura de outra empresa');
 
-select tst_entrar('0d000000-0000-0000-0000-000000000002', '5d000000-0000-0000-0000-000000000002', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000002', '5d000000-0000-0000-0000-000000000002', 'aal2');
 select is((select count(*) from app.prefeituras_permitidas()), 1::bigint, 'funcionário alocado vê só 1 prefeitura');
 select is((select id from public.parceira_prefeituras()), '11111111-1111-1111-1111-111111111111'::uuid, 'é a prefeitura alocada');
 select is((select count(*) from public.caixas), 1::bigint, 'funcionário lê só a caixa da prefeitura alocada');
@@ -82,19 +82,19 @@ select is((select count(*) from public.parceira_equipe()), 1::bigint, 'funcioná
 select is((select public.parceira_alocar('b1000000-0000-0000-0000-000000000002', array['22222222-2222-2222-2222-222222222222']::uuid[])), false, 'funcionário não aloca ninguém');
 select is((select public.parceira_incluir_pessoa('f1000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-000000000009', 'Intruso', 'funcionario')), null::uuid, 'funcionário não inclui pessoa');
 
-select tst_entrar('0d000000-0000-0000-0000-000000000003', '5d000000-0000-0000-0000-000000000003', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000003', '5d000000-0000-0000-0000-000000000003', 'aal2');
 select is((select count(*) from app.prefeituras_permitidas()), 0::bigint, 'funcionário sem alocação não vê prefeitura');
 select is((select count(*) from public.caixas), 0::bigint, 'funcionário sem alocação não lê caixa (RLS)');
 select is((select count(*) from public.prefeituras), 0::bigint, 'funcionário sem alocação não lê prefeitura (RLS)');
 select is((select count(*) from public.parceira_atividade(null, '2000-01-01')), 0::bigint, 'funcionário sem alocação não vê atividade');
 
-select tst_entrar('0d000000-0000-0000-0000-000000000004', '5d000000-0000-0000-0000-000000000004', 'aal1');
+select tst_entrar('0d000000-0000-0000-0000-000000000004', '5d000000-0000-0000-0000-000000000004', 'aal2');
 select is((select count(*) from app.prefeituras_permitidas()), 1::bigint, 'dono de outra empresa vê só a prefeitura dele');
 select is((select count(*) from public.caixas where prefeitura_id = '11111111-1111-1111-1111-111111111111'), 0::bigint, 'outra empresa não lê caixas da X');
 select is((select public.parceira_alocar('b1000000-0000-0000-0000-000000000002', array[]::uuid[])), false, 'outra empresa não mexe na alocação da X');
 select is((select count(*) from public.parceira_equipe()), 1::bigint, 'outra empresa só lista a própria equipe');
 
-select tst_entrar('0a000000-0000-0000-0000-000000000009', '5a000000-0000-0000-0000-000000000009', 'aal1');
+select tst_entrar('0a000000-0000-0000-0000-000000000009', '5a000000-0000-0000-0000-000000000009', 'aal2');
 select is((select count(*) from app.prefeituras_permitidas()), 0::bigint, 'quem não é da empresa não vê prefeitura');
 select is((select count(*) from public.parceira_eu()), 0::bigint, 'quem não é da empresa não tem perfil de parceira');
 

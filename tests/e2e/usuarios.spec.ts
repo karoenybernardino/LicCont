@@ -101,7 +101,7 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
   await page.getByLabel("CNPJ").fill("00.000.000/0005-55");
   // Cada passo só vale depois da hidratação: repete o clique até o passo mudar.
-  for (const passo of ["Contrato e TCE-CE", "Administrador", "Conferir"]) {
+  for (const passo of ["Contrato", "Administrador", "Conferir"]) {
     await expect(async () => {
       // Se um clique anterior já avançou o passo, não clica de novo (no último passo o botão some).
       if (await page.locator('li[aria-current="step"]').filter({ hasText: passo }).count()) return;
