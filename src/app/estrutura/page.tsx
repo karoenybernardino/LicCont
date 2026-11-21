@@ -1,4 +1,4 @@
-import { administraAcervo } from "@/features/parceira/escolha";
+import { CAMPO_PREFEITURA, administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -64,6 +64,7 @@ export default async function EstruturaFisica({
       <summary className={`${botaoPequeno} cursor-pointer list-none`}>Novo galpão</summary>
       <Painel className="absolute right-0 z-10 mt-2 w-80">
         <Formulario acao={cadastrarGalpao} botao="Cadastrar galpão" enviando="Cadastrando…">
+          <input type="hidden" name={CAMPO_PREFEITURA} value={usuario.prefeituraId} />
           <Campo rotulo="Nome do galpão" name="nome" required minLength={3} maxLength={80} />
         </Formulario>
       </Painel>

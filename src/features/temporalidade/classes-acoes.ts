@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { membroEquipe, usuarioAtual } from "@/features/sessao/dal";
-import { administraAcervo } from "@/features/parceira/escolha";
+import { administraAcervo, conferirPrefeitura } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { ErroPlanilha, LIMITE_BYTES_PLANILHA, lerPlanilha } from "@/features/importacao/planilha";
@@ -21,7 +21,8 @@ const uuid = z.guid();
 // Órgão em que a pessoa pode mexer: o seu (administrador) ou o escolhido (equipe).
 async function orgaoEditavel(prefeitura: unknown): Promise<string | null> {
   const u = await usuarioAtual();
-  if (administraAcervo(u) && u) return u.prefeituraId;
+  // Parceira: a tela manda a prefeitura que mostrava; se mudou em outra aba, recusa.
+  if (administraAcervo(u) && u) return conferirPrefeitura(typeof prefeitura === "string" ? prefeitura : null, u) ? u.prefeituraId : null;
   if (await membroEquipe()) {
     const id = uuid.safeParse(prefeitura);
     return id.success ? id.data : null;

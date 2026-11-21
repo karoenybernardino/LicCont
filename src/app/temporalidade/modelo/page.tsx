@@ -41,7 +41,7 @@ export default async function ModeloDoTermo({ searchParams }: { searchParams: Pr
           são geradas pelo sistema e não mudam, para o termo nunca dizer o que não aconteceu. Não escreva nome nem CPF de
           pessoa aqui. Confirme o texto com o jurídico da prefeitura.
         </p>
-        <FormularioModelo key={tipo} tipo={tipo} baseLegal={modelo.baseLegal} assinaturas={modelo.assinaturas} />
+        <FormularioModelo key={tipo} tipo={tipo} baseLegal={modelo.baseLegal} assinaturas={modelo.assinaturas} prefeituraId={usuario.prefeituraId} />
       </Painel>
     </PaginaSistema>
   );

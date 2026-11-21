@@ -86,7 +86,7 @@ export default async function Temporalidade() {
             <Pilula tom="aviso">{resumo.prontos === 1 ? "1 documento" : `${resumo.prontos} documentos`}</Pilula>
           </div>
           {prontos.length === 0 && <p className="text-sm text-texto-suave">Nenhum documento pronto para eliminação.</p>}
-          <FilaEliminacao prontos={prontos} podeGerar={podeGerar} />
+          <FilaEliminacao prontos={prontos} podeGerar={podeGerar} prefeituraId={usuario.prefeituraId} />
         </Painel>
       </div>
 

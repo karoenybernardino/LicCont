@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { exigirAcervo, exigirSessao } from "@/features/sessao/dal";
-import { administraAcervo } from "@/features/parceira/escolha";
+import { MENSAGEM_PREFEITURA_MUDOU, administraAcervo, conferirPrefeitura } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -33,6 +33,7 @@ function pronto(aviso: string): EstadoAcao {
 
 export async function cadastrarGalpao(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
   const { usuario } = await exigirAcervo();
+  if (!conferirPrefeitura(formData, usuario)) return { erro: MENSAGEM_PREFEITURA_MUDOU };
   const dados = esquemaGalpao.safeParse({ nome: formData.get("nome") });
   if (!dados.success) return { erro: dados.error.issues[0].message };
   if (emDemo()) return { aviso: AVISO_DEMO };
