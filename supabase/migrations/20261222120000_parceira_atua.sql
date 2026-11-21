@@ -301,8 +301,8 @@ set search_path = ''
 as $$
 declare
   v_planta text[] := case tg_table_name
-    when 'galpoes' then array['planta_largura', 'planta_profundidade', 'entrada_lado', 'entrada_posicao']
-    else array['planta_x', 'planta_y', 'planta_giro']
+    when 'galpoes' then array['planta_largura', 'planta_profundidade', 'entrada_lado', 'entrada_posicao', 'planta_metros_celula']
+    else array['planta_x', 'planta_y', 'planta_giro', 'planta_lados']
   end;
 begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'authenticated' then
