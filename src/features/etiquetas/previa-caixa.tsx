@@ -5,7 +5,7 @@ import type { CaixaEtiqueta } from "./dados";
 import type { ReactNode } from "react";
 
 export const nomeDoOrgao = (o: "prefeitura" | "camara") => (o === "camara" ? "CÂMARA" : "PREFEITURA");
-export type LogosPrevia = { prefeitura?: string | null; camara?: string | null };
+export type LogosPrevia = { prefeitura?: string | null; camara?: string | null; parceira?: string | null };
 
 // Prévia aproximada (a folha de verdade é o PDF). Mostra a primeira caixa escolhida, com o mesmo ajuste do PDF:
 // todos os itens aparecem (nada de "..." nem "+N itens"); lista grande reduz a fonte e, no mínimo, vira partes.
@@ -37,9 +37,9 @@ export function PreviaCaixa({ c, dividir, logos, qr }: { c: CaixaEtiqueta | unde
         </span>
       </div>
       {geral && (
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-[#3f5e66]">
-          <span>FUNDO<b className="block text-[13px] break-words text-[#0b2e3a]">{c.fundo || "—"}</b></span>
-          <span>SETOR<b className="block text-[13px] break-words text-[#0b2e3a]">{c.setor || "—"}</b></span>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 rounded-xl bg-[#0b2e3a] px-3 py-2 text-[11px] text-[#2dd4bf]">
+          <span>FUNDO<b className="block text-[13px] break-words text-white">{c.fundo || "—"}</b></span>
+          <span>SETOR<b className="block text-[13px] break-words text-white">{c.setor || "—"}</b></span>
         </div>
       )}
       <div className="flex flex-wrap gap-x-6 text-[11px] text-[#3f5e66]">
@@ -86,6 +86,13 @@ export function PreviaCaixa({ c, dividir, logos, qr }: { c: CaixaEtiqueta | unde
         </div>
         {qr ?? <span aria-hidden className="size-14 shrink-0 rounded-lg bg-white" />}
       </div>
+      {logos?.parceira && (
+        <div className="flex items-center gap-2 border-t border-[#cfdde2] pt-2 text-[10px] text-[#3f5e66]">
+          Serviço executado por
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logos.parceira} alt="" className="h-9 max-w-[140px] object-contain" />
+        </div>
+      )}
     </div>
   );
 }

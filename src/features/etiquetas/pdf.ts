@@ -292,7 +292,8 @@ function rodapeCaixa(t: Tela, c: Contexto, cx: CaixaPdf, T: (x: number) => numbe
   t.pilula(cx.localizacao, T(138), 594, 24, 13);
   t.qr(cx.url, T(382), 535, 100);
   t.linha(T(20), 659, T(502));
-  t.logoParceira(T(46), 673, 166, 52);
+  if (c.logoParceira) t.texto("Serviço executado por", T(46), 674, 8.5, c.f.n, SUAVE);
+  t.logoParceira(T(46), 678, 166, 46);
   t.licCont(T(476), 699);
 }
 
@@ -331,8 +332,12 @@ function etiquetaCaixa(t: Tela, c: Contexto, u: Unidade, x0: number) {
     if (cx.tipologia) campo("TIPOLOGIA DOCUMENTAL", cx.tipologia, 268, 168, 230, 15, 40);
     listaItens(t, c, u.itens, T);
   } else {
-    campo("FUNDO", cx.fundo || "—", 24, 164, 230, 15, 36);
-    campo("SETOR", cx.setor || "—", 268, 164, 230, 15, 36);
+    // Faixa petróleo com fundo e setor em destaque (rótulo em aqua, valor em branco).
+    t.rrect(T(20), 160, 482, 50, 10, { fill: PETROLEO });
+    for (const [rot, valor, x] of [["FUNDO", cx.fundo || "—", 36], ["SETOR", cx.setor || "—", 268]] as const) {
+      t.texto(rot, T(x), 176, 9.5, f.b, AQUA, { espaco: 0.7 });
+      t.bloco(valor, T(x), 182, 220, 15, 8.5, 24, f.b, BRANCO);
+    }
     campo("CLASSE", cx.classe, 24, 214, cx.tipologia ? 232 : 474, 14, 36);
     if (cx.tipologia) campo("TIPOLOGIA DOCUMENTAL", cx.tipologia, 268, 214, 230, 14, 36);
     // Grade de meses: marcados em petróleo, os demais só com a borda.
