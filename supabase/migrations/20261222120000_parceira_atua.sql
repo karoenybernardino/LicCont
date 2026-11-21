@@ -23,9 +23,8 @@
 --     - planta: app.planta_confere e políticas de planta_elementos, galpoes_altera e ruas_altera (salvar_planta, invoker);
 --     - caixas: criar, editar e desativar (a regra LC005 continua: caixa com documento ativo não desativa);
 --     - temporalidade: app.pode_editar_classes (classes_salvar, classe_excluir = regras e prazos), modelos_termo
---       (texto-base e assinaturas) e termos de eliminação (descarte_criar, descarte_publicar_edital,
---       descarte_aprovar, descarte_cancelar). A regra "quem gerou o termo não o aprova" e o prazo de 45 dias valem.
---       Para o termo aprovado desativar documentos, app.documento_conferir aceita a parceira SÓ dentro de descarte_aprovar.
+--       (texto-base e assinaturas) e o termo de eliminação ATÉ a fase de rascunho/edital (descarte_criar,
+--       descarte_publicar_edital, descarte_cancelar). Grupos restritos não entram no termo (descarte_criar confere grupos_permitidos).
 --       (A tabela_temporalidade foi removida em 20261215; as regras vivem em classes_documentais.)
 --   Leitura de prefeituras: ela NÃO lê a linha de prefeituras pela Data API (mensalidade, contrato, TCE; mesma
 --     razão da correção 20261220). Use public.parceira_atuando() (nome, tipo, limite_pdf_mb, caixas_por_modulo).
@@ -34,11 +33,12 @@
 --   TCE/PNCP, importação, exportação, grupos e tipologias: dependem de eh_admin() (continua falso).
 --   empréstimos e pedidos: pode_cadastrar passou a valer para ela, então foram fechados à parte: política restritiva
 --     de leitura e gatilho que recusa gravar (as funções registrar/pedir/devolver são security definer).
+--   APROVAR o termo de eliminação (descarte_aprovar, que desativa documentos): só administrador da prefeitura (eh_admin).
 --   conferir documento e desativar documento à mão: continuam de coordenador/administrador (app.eh_coordenador_de
 --     NÃO foi alterada: ela também guarda aprovação de empréstimo e TCE).
 --   marca/logo e parceiras: só equipe LicCONT.
 -- Como desfazer: recriar app.prefeitura_atual/secretarias_permitidas/pode_cadastrar/pode_etiquetar/planta_confere/
---   pode_editar_classes/documento_conferir/descarte_* a partir das migrações 20261108190000, 20261108140000, 20261114120000,
+--   pode_editar_classes/descarte_* a partir das migrações 20261108190000, 20261108140000, 20261114120000,
 --   20261119120000, 20261115120000, 20261215120000 e 20261122120000; recriar as políticas trocando
 --   pode_administrar_acervo() por eh_admin(); apagar os gatilhos/políticas *_sem_parceira, recriar prefeituras_le
 --   sem o "not parceira_atua()" e apagar a tabela parceira_contexto (só guarda a escolha atual; nenhum dado de cliente).
@@ -359,6 +359,12 @@ begin
   if not exists (select 1 from public.secretarias s where s.id = p_secretaria and s.prefeitura_id = v_prefeitura) then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
+  -- security definer ignora a RLS: grupos restritos (RH, jurídico) seguem invisíveis a quem não os vê.
+  if exists (select 1 from public.documentos d
+             where d.id = any (p_documentos) and d.prefeitura_id = v_prefeitura
+               and d.grupo_id not in (select app.grupos_permitidos())) then
+    raise exception 'sem permissão' using errcode = '42501';
+  end if;
   if p_documentos is null or cardinality(p_documentos) not between 1 and 500 then
     raise exception 'escolha de 1 a 500 documentos' using errcode = 'LD002';
   end if;
@@ -418,7 +424,8 @@ declare
   v_motivo text;
 begin
   select * into d from public.descartes where id = p_descarte and prefeitura_id = app.prefeitura_atual() for update;
-  if not found or not app.pode_administrar_acervo() then
+  -- Aprovar o termo desativa documentos: só administrador da prefeitura (a parceira nunca).
+  if not found or not app.eh_admin() then
     raise exception 'sem permissão' using errcode = '42501';
   end if;
   if d.situacao <> 'em_ciencia' then
@@ -463,42 +470,6 @@ begin
   end if;
   update public.descartes set situacao = 'cancelado', cancelado_em = now() where id = d.id;
   update public.descarte_itens set aberto = false where descarte_id = d.id;
-end
-$$;
-
--- O gatilho que guarda conferir/desativar documento aceita a parceira só dentro de descarte_aprovar
--- (a chave local app.descarte_aprovando só é ligada por essa função). Resto idêntico a 20261114120000.
-create or replace function app.documento_conferir()
-returns trigger
-language plpgsql
-set search_path = ''
-as $$
-begin
-  new.atualizado_em := now();
-  if coalesce(auth.jwt() ->> 'role', '') <> 'authenticated' then
-    return new;
-  end if;
-  if ((new.conferido_em is distinct from old.conferido_em and new.conferido_em is not null)
-      or new.ativo is distinct from old.ativo)
-     and not app.eh_coordenador_de(new.secretaria_id)
-     and not (new.conferido_em is not distinct from old.conferido_em
-              and coalesce(current_setting('app.descarte_aprovando', true), '') = '1'
-              and app.pode_administrar_acervo()) then
-    raise exception 'sem permissão' using errcode = '42501';
-  end if;
-  if old.conferido_em is not null and new.conferido_em is not distinct from old.conferido_em
-     and not app.eh_coordenador_de(new.secretaria_id)
-     and to_jsonb(new) - array['atualizado_em','conferido_em','conferido_por','ativo','texto_busca']
-         is distinct from to_jsonb(old) - array['atualizado_em','conferido_em','conferido_por','ativo','texto_busca'] then
-    new.conferido_em := null;
-  end if;
-  if new.conferido_em is distinct from old.conferido_em then
-    new.conferido_em := case when new.conferido_em is null then null else now() end;
-    new.conferido_por := case when new.conferido_em is null then null else auth.uid() end;
-  else
-    new.conferido_por := old.conferido_por;
-  end if;
-  return new;
 end
 $$;
 

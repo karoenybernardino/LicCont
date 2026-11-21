@@ -3,7 +3,8 @@
 --   (a) sem contexto não lê documentos; (b)(c) atuar só em prefeitura permitida;
 --   (d) com contexto lê só a prefeitura do contexto; (e) cadastra em A e não em B;
 --   (f) altera estrutura e regra de temporalidade em A (não em B) mas não cria usuário, secretaria nem vínculo;
---   (g) desalocar derruba o contexto; (h) parceira_contexto não é legível por authenticated.
+--   (g) desalocar derruba o contexto; (h) parceira_contexto não é legível por authenticated;
+--   (i) a parceira não aprova termo de eliminação (42501) e não põe documento de grupo restrito no termo; o administrador aprova.
 begin;
 create extension if not exists pgtap with schema extensions;
 select * from no_plan();
@@ -65,6 +66,20 @@ from public.grupos_documentais g
 where g.prefeitura_id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
   and g.chave = 'licitacoes_contratos';
 
+
+-- Administrador da prefeitura A, restrito (RH) e termo em ciência há 50 dias (gerado pelo dono X).
+insert into auth.users (id, email) values ('0d000000-0000-0000-0000-000000000015', 'admin.a@exemplo.test');
+insert into auth.sessions (id, user_id) values ('5d000000-0000-0000-0000-000000000015', '0d000000-0000-0000-0000-000000000015');
+insert into public.usuarios (id, prefeitura_id, nome, administrador, troca_senha_obrigatoria)
+  values ('0d000000-0000-0000-0000-000000000015', '11111111-1111-1111-1111-111111111111', 'Admin A', true, false);
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, grupo_id, tipo, modalidade, numero, ano, objeto)
+select 'd2000000-0000-0000-0000-000000000009', g.prefeitura_id, 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001',
+       g.id, 'licitacao', 'dispensa', '009/2024', 2024, 'Documento restrito (RH) fictício'
+from public.grupos_documentais g
+where g.prefeitura_id = '11111111-1111-1111-1111-111111111111' and g.chave = 'rh';
+insert into public.descartes (id, prefeitura_id, secretaria_id, ano, numero, situacao, gerado_por, edital_publicado_em)
+values ('de000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000',
+        2024, 1, 'em_ciencia', '0d000000-0000-0000-0000-000000000011', app.hoje() - 50);
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object(
@@ -156,6 +171,14 @@ select throws_ok($$insert into public.vinculos (prefeitura_id, usuario_id, secre
 select throws_ok($$select public.registrar_emprestimo('d2000000-0000-0000-0000-000000000001', 'Fulano', 'Setor', current_date, current_date + 7, null)$$,
   '42501', null, 'não registra empréstimo');
 select is((select count(*) from public.emprestimos), 0::bigint, 'não lê empréstimos');
+
+-- Termo de eliminação: a parceira não aprova (desativa documentos); o administrador da prefeitura aprova.
+select throws_ok($$select public.descarte_aprovar('de000000-0000-0000-0000-000000000001')$$, '42501', null, 'parceira não aprova termo de eliminação');
+select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d2000000-0000-0000-0000-000000000009']::uuid[])$$,
+  '42501', null, 'parceira não cria termo com documento de grupo restrito');
+select tst_entrar('0d000000-0000-0000-0000-000000000015', '5d000000-0000-0000-0000-000000000015', 'aal2');
+select lives_ok($$select public.descarte_aprovar('de000000-0000-0000-0000-000000000001')$$, 'administrador da prefeitura aprova o termo');
+select is((select situacao from public.descartes where id = 'de000000-0000-0000-0000-000000000001'), 'aprovado', 'termo ficou aprovado');
 
 -- dono atuando em A: B continua fora, mesmo sendo da empresa dele
 select tst_entrar('0d000000-0000-0000-0000-000000000011', '5d000000-0000-0000-0000-000000000011', 'aal2');
