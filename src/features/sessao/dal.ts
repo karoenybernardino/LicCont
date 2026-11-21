@@ -64,20 +64,29 @@ export const usuarioAtual = cache(async (): Promise<Usuario | null> => {
 });
 
 // Pessoa da empresa parceira: usuário sintético na prefeitura escolhida (cookie, conferido contra as
-// permitidas no servidor). O contexto do banco (parceira_atuar) é regravado a cada requisição.
-// Sem permitida nenhuma, null; sem o segundo fator, devolve o usuário para exigirSessao mandar ao código.
+// permitidas no servidor). O contexto do banco só é regravado (parceira_atuar) quando difere da escolha;
+// se a gravação falhar ou o banco não confirmar a prefeitura, NÃO há sessão (nunca vale contexto antigo).
+// Sem o segundo fator, devolve o usuário SEM prefeitura para exigirSessao mandar ao código.
 const usuarioParceira = cache(async (uid: string | null): Promise<Usuario | null> => {
   const eu = await euParceira();
   if (!eu) return null;
+  const base = { id: uid ?? eu.pessoaId, nome: eu.nome, administrador: false, trocaSenha: eu.trocaSenha, parceira: true };
+  if (await faltaSegundoFator()) return { ...base, prefeituraId: "" };
   const permitidas = await prefeiturasDaEmpresa();
   const prefeituraId = escolherPrefeitura((await cookies()).get(COOKIE_PARCEIRA_PREF)?.value, permitidas, false);
-  if (!prefeituraId && !(await faltaSegundoFator())) return null;
-  if (prefeituraId && !emDemo()) {
-    const sb = await clienteSessao();
-    await sb?.rpc("parceira_atuar", { p_prefeitura: prefeituraId });
-  }
-  return { id: uid ?? eu.pessoaId, prefeituraId, nome: eu.nome, administrador: false, trocaSenha: eu.trocaSenha, parceira: true };
+  if (!prefeituraId) return null;
+  if (!emDemo() && !(await contextoConfere(prefeituraId))) return null;
+  return { ...base, prefeituraId };
 });
+
+async function contextoConfere(prefeituraId: string) {
+  const sb = await clienteSessao();
+  if (!sb) return false;
+  const atuando = async () => ((await sb.rpc("parceira_atuando")).data as { id: string }[] | null)?.[0]?.id;
+  if ((await atuando()) === prefeituraId) return true;
+  const { error } = await sb.rpc("parceira_atuar", { p_prefeitura: prefeituraId });
+  return !error && (await atuando()) === prefeituraId;
+}
 
 // Só a pessoa de prefeitura (usuarios). Telas de login, senha e segundo fator da prefeitura usam esta:
 // a empresa parceira tem as suas (/parceira/...).
@@ -147,7 +156,8 @@ export async function secretariaAtual(u: Usuario) {
 
 export async function exigirSessao() {
   const usuario = await usuarioAtual();
-  if (!usuario) redirect("/entrar");
+  // Pessoa da empresa sem contexto confirmado no banco: volta ao painel para escolher a prefeitura.
+  if (!usuario) redirect((await euParceira()) ? "/parceira" : "/entrar");
   if (usuario.parceira) {
     // A empresa também exige o segundo fator e troca a senha na tela própria; o aceite é por prefeitura.
     if (await faltaSegundoFator()) redirect("/segundo-fator");
