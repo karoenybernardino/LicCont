@@ -454,7 +454,10 @@ export function FormularioDocumento({
           <div className="overflow-hidden rounded-xl border border-linha bg-white text-petroleo">
             <div className="flex items-center justify-between px-4 py-3">
               <span className="font-titulo text-[13px] tracking-[1px] uppercase"><span className="font-light">Lic</span><span className="font-bold">Cont</span></span>
-              <span className="text-[11px] text-[#3f5e66]">{prefeitura}</span>
+              <span className="text-right text-[11px] leading-4 text-[#3f5e66]">
+                <span className="mr-1.5 rounded bg-petroleo px-1.5 py-0.5 text-[10px] font-bold tracking-[.06em] text-aqua uppercase">{orgaoAtual ? ORGAOS[orgaoAtual] : "Órgão"}</span>
+                {prefeitura}
+              </span>
             </div>
             <div className="flex bg-petroleo">
               {[["Rua", ruaAtual?.codigo ?? "–"], ["Módulo", moduloAtual?.numero ?? "–"], ["Nível", nivelAtual?.numero ?? "–"], ["Caixa", caixaEscolhida ? String(caixaEscolhida.numero).padStart(2, "0") : "–"]].map(([r, v], i) => (
@@ -468,13 +471,13 @@ export function FormularioDocumento({
               <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                 <div>
                   <div className="font-titulo text-[15px] leading-5 font-bold">{resumo.numero ? `${tipo === "contrato" ? "Contrato" : "Licitação"} ${resumo.numero}` : "Título do processo"}</div>
-                  <div className="mt-0.5 line-clamp-2 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
+                  <div className="mt-0.5 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
                   {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Órgão", orgaoAtual ? ORGAOS[orgaoAtual] : "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
                     <div key={r} className="min-w-0">
                       <dt className="text-[9px] font-semibold tracking-[.1em] text-[#3f5e66] uppercase">{r}</dt>
-                      <dd className="mt-px truncate text-[13px] leading-[18px] font-medium text-petroleo">{v}</dd>
+                      <dd className="mt-px text-[13px] break-words leading-[18px] font-medium text-petroleo">{v}</dd>
                     </div>
                   ))}
                 </dl>
