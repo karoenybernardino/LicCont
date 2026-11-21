@@ -211,8 +211,10 @@ export async function entrarParceira(_: EstadoFormulario, formData: FormData): P
   }
 
   const sessao = await autenticar(dados.data.email, dados.data.senha, null, async (servico, id) => {
-    const { data } = await servico.from("parceira_pessoas").select("ativa").eq("usuario_id", id).maybeSingle();
-    return !!data?.ativa;
+    const { data } = await servico.from("parceira_pessoas").select("ativa, parceiras(ativa)").eq("usuario_id", id).maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const empresa = data?.parceiras as any;
+    return !!data?.ativa && (Array.isArray(empresa) ? empresa[0]?.ativa : empresa?.ativa) === true;
   });
   if (sessao === "indisponivel") return { erro: MENSAGEM_INDISPONIVEL };
   if (!sessao) return falhar(inicio);
