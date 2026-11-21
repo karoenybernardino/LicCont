@@ -28,7 +28,7 @@ test("cadastro de documento: sem empresa, valor, situação, CNPJ, data e encerr
 
 test("cadastro de caixa geral: grade de meses e o código da classificação preenche classe e prazo", async ({ page }) => {
   await page.goto("/documentos/novo");
-  await page.getByRole("link", { name: "Cadastrar caixa" }).click();
+  await page.getByRole("link", { name: "Cadastro geral" }).click();
   await expect(page).toHaveURL(/\/caixas\/nova$/);
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("radio", { name: "Arquivo geral" })).toHaveAttribute("aria-checked", "true");
