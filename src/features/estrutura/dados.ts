@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import type { Usuario } from "@/features/sessao/dal";
+import { prefeituraAtuando, usuarioAtual, type Usuario } from "@/features/sessao/dal";
+import { administraAcervo } from "@/features/parceira/escolha";
 import { emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 import { ESTRUTURA_DEMO, alteracoesDemo } from "@/features/demo/estrutura";
@@ -93,7 +94,7 @@ export const ehCoordenador = cache(async (u: Usuario) => {
 });
 
 export async function podeCaixas(u: Usuario) {
-  return u.administrador || (await ehCoordenador(u));
+  return administraAcervo(u) || (await ehCoordenador(u));
 }
 
 // Últimas alterações da estrutura, da auditoria (só o administrador lê).
@@ -124,6 +125,8 @@ export async function galpaoDaRua(ruaId: string): Promise<string | null> {
 // Caixas por módulo da prefeitura do usuário (30 ou 36); a equipe LicCONT escolhe no cadastro do órgão.
 export async function lerCaixasPorModulo(): Promise<number> {
   if (emDemo()) return CAIXAS_POR_MODULO_PADRAO;
+  // A empresa parceira não lê a linha de prefeituras (RLS): usa a função do banco.
+  if ((await usuarioAtual())?.parceira) return (await prefeituraAtuando())?.caixasPorModulo ?? CAIXAS_POR_MODULO_PADRAO;
   const sb = await clienteSessao();
   if (!sb) return CAIXAS_POR_MODULO_PADRAO;
   const { data } = await sb.from("prefeituras").select("caixas_por_modulo").maybeSingle();

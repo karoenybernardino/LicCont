@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Busca, CabecalhoPainel, Filtros, Pilula } from "@/ui/canvas";
 import { Painel, classeLinha, linhaCabecalho, td, th } from "@/features/estrutura/componentes";
-import { exigirSessao } from "@/features/sessao/dal";
+import { exigirPrefeitura } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { contarEmprestimos, documentosEmprestaveis, listarEmprestimos, listarPedidos } from "@/features/movimento/dados";
 import { dataBR, situacaoEmprestimo } from "@/features/movimento/situacao";
@@ -19,7 +19,7 @@ const ABAS = ["abertos", "atrasados", "devolvidos", "pendentes"] as const;
 type Aba = (typeof ABAS)[number];
 
 export default async function Emprestimos({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { usuario, secretaria } = await exigirSessao();
+  const { usuario, secretaria } = await exigirPrefeitura();
   const p = await searchParams;
   const um = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
   const aba: Aba = (ABAS as readonly string[]).includes(um(p.situacao)) ? (um(p.situacao) as Aba) : "abertos";

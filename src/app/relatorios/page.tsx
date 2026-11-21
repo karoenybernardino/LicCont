@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
-import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
+import { exigirPrefeitura, secretariasPermitidas } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
 import { IDS_RELATORIO, RELATORIOS, lerPedido, type IdRelatorio } from "@/features/relatorios/definicoes";
@@ -12,7 +12,7 @@ import { montarRelatorio } from "@/features/relatorios/dados";
 export const metadata: Metadata = { title: "Relatórios · LicCONT" };
 
 export default async function RelatoriosPagina({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { usuario, secretaria } = await exigirSessao();
+  const { usuario, secretaria } = await exigirPrefeitura();
   // Consulta não exporta: sem secretaria para cadastrar e sem ser administrador, volta à pesquisa.
   if (!usuario.administrador && (await secretariasParaCadastro(usuario)).length === 0) redirect("/pesquisa");
   const secretarias = (await secretariasPermitidas(usuario)).filter((s): s is { id: string; nome: string } => s.id !== null);

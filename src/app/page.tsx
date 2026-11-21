@@ -67,7 +67,8 @@ function Marca({ ok = true }: { ok?: boolean }) {
 const contato = (v: string | undefined) => v ?? "a definir";
 
 export default async function Raiz() {
-  if (await usuarioAtual()) redirect("/inicio");
+  const logado = await usuarioAtual();
+  if (logado) redirect(logado.parceira ? "/parceira" : "/inicio");
   return (
     <div className="flex-1">
       <header className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-10">

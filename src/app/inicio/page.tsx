@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { CartaoResumo, Pilula } from "@/ui/canvas";
 import { pesquisar, podeCadastrar } from "@/features/documentos/dados";
@@ -20,6 +21,7 @@ const ic = (nome: Parameters<typeof Icone>[0]["nome"]) => <Icone nome={nome} />;
 
 export default async function Inicio() {
   const { usuario, secretaria } = await exigirSessao();
+  if (usuario.parceira) redirect("/parceira");
   const admin = usuario.administrador;
   const [prefeitura, usuarios, secretarias, estrutura, acervo] = await Promise.all([
     nomePrefeitura(usuario),

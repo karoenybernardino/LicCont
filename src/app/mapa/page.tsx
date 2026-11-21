@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { exigirSessao } from "@/features/sessao/dal";
@@ -39,7 +40,7 @@ export default async function Mapa({ searchParams }: { searchParams: Promise<Rec
       {!galpao ? (
         <Painel>
           <p className="text-sm text-texto-suave">
-            Nenhum galpão cadastrado ainda. {usuario.administrador ? <Link href="/estrutura" className="underline">Cadastre o galpão na Estrutura física.</Link> : "Peça ao administrador para cadastrar o galpão."}
+            Nenhum galpão cadastrado ainda. {administraAcervo(usuario) ? <Link href="/estrutura" className="underline">Cadastre o galpão na Estrutura física.</Link> : "Peça ao administrador para cadastrar o galpão."}
           </p>
         </Painel>
       ) : (

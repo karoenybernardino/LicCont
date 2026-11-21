@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA, opcoesCookie } from "./cookies";
+import { COOKIE_PARCEIRA_PREF } from "@/features/parceira/escolha";
 import { COOKIE_PERFIL_DEMO, emDemo } from "@/features/demo/dados";
 import { euParceira } from "@/features/parceira/dados";
 import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaAtual, secretariaPermitida } from "./dal";
@@ -15,6 +16,7 @@ export async function sair() {
     const perfil = loja.get(COOKIE_PERFIL_DEMO)?.value ?? "";
     loja.delete(COOKIE_PERFIL_DEMO);
     loja.delete(COOKIE_SECRETARIA);
+    loja.delete(COOKIE_PARCEIRA_PREF);
     redirect(equipe ? "/equipe/entrar" : perfil.startsWith("parceira_") ? "/parceira/entrar" : "/entrar");
   }
   const supabase = await clienteSessao();
@@ -40,6 +42,7 @@ export async function sair() {
   const loja = await cookies();
   loja.delete(COOKIE_SECRETARIA);
   loja.delete(COOKIE_ATIVIDADE);
+  loja.delete(COOKIE_PARCEIRA_PREF);
   redirect(destino);
 }
 

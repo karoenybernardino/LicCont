@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
+import { exigirAcervo, exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { pesquisar, proximaCaixaLivre, secretariasParaCadastro } from "@/features/documentos/dados";
@@ -147,7 +147,7 @@ export async function moverDocumentos(entrada: unknown): Promise<Retorno & { mov
 // Estrutura pelo editor da planta (só administrador; o RLS confere de novo)
 // ---------------------------------------------------------------------------
 export async function criarRuaNaPlanta(entrada: unknown): Promise<Retorno> {
-  const { usuario } = await exigirAdmin();
+  const { usuario } = await exigirAcervo();
   const dados = esquemaNovaRua.safeParse(entrada);
   if (!dados.success) return INVALIDO;
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -170,7 +170,7 @@ export async function criarRuaNaPlanta(entrada: unknown): Promise<Retorno> {
 // quantidade > 0 acrescenta módulos iguais ao último; < 0 desativa os últimos
 // (o banco recusa se algum tiver documento).
 export async function ajustarModulosDaRua(entrada: unknown): Promise<Retorno> {
-  await exigirAdmin();
+  await exigirAcervo();
   const dados = esquemaAjusteModulos.safeParse(entrada);
   if (!dados.success) return INVALIDO;
   if (emDemo()) return { aviso: AVISO_DEMO };

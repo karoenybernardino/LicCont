@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Cartao } from "@/ui/cartao";
 import { Formulario } from "@/ui/formulario";
 import { MolduraLogin } from "@/features/login/moldura";
-import { usuarioAtual } from "@/features/sessao/dal";
+import { usuarioDePrefeitura } from "@/features/sessao/dal";
 import { aceiteEmDia } from "@/features/aceite/dados";
 import { aceitarTextos } from "@/features/aceite/acoes";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Aceite · LicCONT" };
 
 // Primeiro acesso, e sempre que a versão dos textos mudar.
 export default async function Aceite() {
-  if (!(await usuarioAtual())) redirect("/entrar");
+  if (!(await usuarioDePrefeitura())) redirect("/entrar");
   if (await aceiteEmDia()) redirect("/inicio");
   return (
     <MolduraLogin>

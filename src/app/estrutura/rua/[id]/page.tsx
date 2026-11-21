@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -47,7 +48,7 @@ export default async function RuaDoGalpao({
   const rua = e.ruas.find((r) => r.id === id);
   if (!rua) notFound();
 
-  const admin = usuario.administrador;
+  const admin = administraAcervo(usuario);
   const editaCaixas = await podeCaixas(usuario);
   const { nivel: nivelBuscado, caixa: caixaBuscada } = await searchParams;
   const modulos = e.modulos.filter((m) => m.ruaId === rua.id);

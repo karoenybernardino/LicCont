@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
+import { exigirAcervo, exigirSessao } from "@/features/sessao/dal";
+import { MENSAGEM_PREFEITURA_MUDOU, administraAcervo, conferirPrefeitura } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -31,7 +32,8 @@ function pronto(aviso: string): EstadoAcao {
 }
 
 export async function cadastrarGalpao(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const { usuario } = await exigirAdmin();
+  const { usuario } = await exigirAcervo();
+  if (!conferirPrefeitura(formData, usuario)) return { erro: MENSAGEM_PREFEITURA_MUDOU };
   const dados = esquemaGalpao.safeParse({ nome: formData.get("nome") });
   if (!dados.success) return { erro: dados.error.issues[0].message };
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -42,7 +44,7 @@ export async function cadastrarGalpao(_: EstadoAcao, formData: FormData): Promis
 }
 
 export async function cadastrarRua(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const { usuario } = await exigirAdmin();
+  const { usuario } = await exigirAcervo();
   const dados = esquemaRua.safeParse({ galpao: formData.get("galpao") });
   if (!dados.success) return INVALIDO;
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -58,7 +60,7 @@ export async function cadastrarRua(_: EstadoAcao, formData: FormData): Promise<E
 }
 
 export async function adicionarModulos(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  await exigirAcervo();
   const dados = esquemaModulos.safeParse(Object.fromEntries(formData));
   if (!dados.success) return INVALIDO;
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -79,7 +81,7 @@ export async function adicionarModulos(_: EstadoAcao, formData: FormData): Promi
 }
 
 export async function alterarCapacidade(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  await exigirAdmin();
+  await exigirAcervo();
   const dados = esquemaCapacidade.safeParse(Object.fromEntries(formData));
   if (!dados.success) return INVALIDO;
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -114,7 +116,7 @@ export async function alterarSituacao(_: EstadoAcao, formData: FormData): Promis
   const dados = esquemaSituacao.safeParse(Object.fromEntries(formData));
   if (!dados.success) return INVALIDO;
   const { tabela, id, ativo } = dados.data;
-  const permitido = tabela === "caixas" ? await podeCaixas(usuario) : usuario.administrador;
+  const permitido = tabela === "caixas" ? await podeCaixas(usuario) : administraAcervo(usuario);
   if (!permitido) return SEM_PERMISSAO;
   if (emDemo()) return { aviso: AVISO_DEMO };
   const sb = await clienteSessao();

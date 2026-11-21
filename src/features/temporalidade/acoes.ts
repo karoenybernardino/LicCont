@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
+import { exigirAcervo, exigirSessao } from "@/features/sessao/dal";
+import { MENSAGEM_PREFEITURA_MUDOU, conferirPrefeitura } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -16,7 +17,8 @@ export type RetornoTermo = { erro?: string; aviso?: string; id?: string };
 
 // Salva o texto-base e as assinaturas do termo da prefeitura. Só administrador.
 export async function salvarModelo(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const { usuario } = await exigirAdmin();
+  const { usuario } = await exigirAcervo();
+  if (!conferirPrefeitura(formData, usuario)) return { erro: MENSAGEM_PREFEITURA_MUDOU };
   const dados = esquemaModelo.safeParse({ tipo: formData.get("tipo"), baseLegal: formData.get("baseLegal"), assinaturas: formData.get("assinaturas") });
   if (!dados.success) return { erro: dados.error.issues[0].message };
   if (emDemo()) return { aviso: AVISO_DEMO };
@@ -34,8 +36,9 @@ export async function salvarModelo(_: EstadoAcao, formData: FormData): Promise<E
 }
 
 // Gera o termo em rascunho com os documentos marcados (todos de uma secretaria).
-export async function gerarTermo(entrada: unknown): Promise<RetornoTermo> {
-  await exigirSessao();
+export async function gerarTermo(entrada: unknown, prefeituraId: string): Promise<RetornoTermo> {
+  const { usuario } = await exigirSessao();
+  if (!conferirPrefeitura(prefeituraId, usuario)) return { erro: MENSAGEM_PREFEITURA_MUDOU };
   if (emDemo()) return { aviso: AVISO_DEMO };
   const dados = esquemaTermo.safeParse(entrada);
   if (!dados.success) return { erro: dados.error.issues[0].message };
@@ -75,6 +78,8 @@ export async function publicarEdital(_: EstadoAcao, formData: FormData): Promise
 }
 
 export async function aprovarTermo(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
+  // Aprovar desativa documentos: só administrador da prefeitura (o banco também recusa a parceira).
+  if ((await exigirSessao()).usuario.parceira) return { erro: "Você não tem permissão para esta ação." };
   const dados = esquemaId.safeParse({ id: formData.get("id") });
   if (!dados.success) return { erro: "Não foi possível concluir. Tente de novo." };
   return etapa("descarte_aprovar", { p_descarte: dados.data.id }, "Termo aprovado. Os documentos foram desativados e o registro ficou na auditoria.");

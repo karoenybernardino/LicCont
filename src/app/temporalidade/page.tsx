@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Pilula } from "@/ui/canvas";
@@ -28,7 +29,7 @@ export default async function Temporalidade() {
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Temporalidade e descarte" trilha="Acervo · Prazos de guarda" acoes={
-        usuario.administrador ? (
+        administraAcervo(usuario) ? (
           <div className="flex items-center gap-2.5">
             <Link href="/configuracoes/temporalidade" className={BOTAO_CONTORNO}>
               Editar a tabela
@@ -85,7 +86,7 @@ export default async function Temporalidade() {
             <Pilula tom="aviso">{resumo.prontos === 1 ? "1 documento" : `${resumo.prontos} documentos`}</Pilula>
           </div>
           {prontos.length === 0 && <p className="text-sm text-texto-suave">Nenhum documento pronto para eliminação.</p>}
-          <FilaEliminacao prontos={prontos} podeGerar={podeGerar} />
+          <FilaEliminacao prontos={prontos} podeGerar={podeGerar} prefeituraId={usuario.prefeituraId} />
         </Painel>
       </div>
 

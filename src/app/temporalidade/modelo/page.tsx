@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
-import { exigirAdmin } from "@/features/sessao/dal";
+import { exigirAcervo } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { lerModelo } from "@/features/temporalidade/dados";
 import { FormularioModelo } from "@/features/temporalidade/formulario-modelo";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Modelo do termo · LicCONT" };
 
 // Só o administrador edita o texto do termo de eliminação da prefeitura.
 export default async function ModeloDoTermo({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { usuario, secretaria } = await exigirAdmin();
+  const { usuario, secretaria } = await exigirAcervo();
   const tipo = (await searchParams).tipo === "emprestimo" ? "emprestimo" : "eliminacao";
   const modelo = await lerModelo(tipo);
   return (
@@ -41,7 +41,7 @@ export default async function ModeloDoTermo({ searchParams }: { searchParams: Pr
           são geradas pelo sistema e não mudam, para o termo nunca dizer o que não aconteceu. Não escreva nome nem CPF de
           pessoa aqui. Confirme o texto com o jurídico da prefeitura.
         </p>
-        <FormularioModelo key={tipo} tipo={tipo} baseLegal={modelo.baseLegal} assinaturas={modelo.assinaturas} />
+        <FormularioModelo key={tipo} tipo={tipo} baseLegal={modelo.baseLegal} assinaturas={modelo.assinaturas} prefeituraId={usuario.prefeituraId} />
       </Painel>
     </PaginaSistema>
   );

@@ -5,13 +5,13 @@ import { Cartao } from "@/ui/cartao";
 import { Formulario } from "@/ui/formulario";
 import { trocarSenha } from "@/features/login/acoes";
 import { MolduraLogin } from "@/features/login/moldura";
-import { faltaSegundoFator, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, usuarioDePrefeitura } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Nova senha · LicCONT" };
 
 // Primeiro acesso e depois de "Redefinir senha": a senha provisória é trocada aqui.
 export default async function NovaSenha() {
-  const usuario = await usuarioAtual();
+  const usuario = await usuarioDePrefeitura();
   if (!usuario) redirect("/entrar");
   if (!usuario.trocaSenha) redirect("/inicio");
   if (usuario.administrador && (await faltaSegundoFator())) redirect("/segundo-fator");

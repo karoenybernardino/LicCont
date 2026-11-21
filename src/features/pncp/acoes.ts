@@ -7,7 +7,7 @@ import { clienteSessao } from "@/lib/supabase/servidor";
 import { exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
-import { secretariasParaCadastro } from "@/features/documentos/dados";
+import { limitePdfMb, secretariasParaCadastro } from "@/features/documentos/dados";
 import { conferirEnvio, iniciarEnvio } from "@/features/documentos/acoes";
 import { ErroPncp, MENSAGEM_PNCP, baixarArquivo, esquemaCompra, listarArquivos, type ArquivoPncp } from "./cliente";
 
@@ -54,8 +54,7 @@ export async function anexarDoPncp(entrada: unknown): Promise<RetornoPncp> {
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
 
-  const { data: pref } = await sb.from("prefeituras").select("limite_pdf_mb").eq("id", usuario.prefeituraId).maybeSingle();
-  const limite = ((pref?.limite_pdf_mb as number | undefined) ?? 50) * 1024 * 1024;
+  const limite = (await limitePdfMb(usuario)) * 1024 * 1024;
 
   let bytes: Uint8Array;
   let paginas: number;

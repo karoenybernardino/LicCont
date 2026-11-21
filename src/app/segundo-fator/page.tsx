@@ -10,13 +10,13 @@ import { CadastroAutenticador } from "@/features/dois-fatores/cadastro";
 import { MolduraLogin } from "@/features/login/moldura";
 import { sair } from "@/features/sessao/acoes";
 import { euParceira } from "@/features/parceira/dados";
-import { faltaSegundoFator, membroEquipe, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, membroEquipe, usuarioDePrefeitura } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Segundo fator · LicCONT" };
 
 // Administrador e equipe: código do aplicativo autenticador a cada login.
 export default async function SegundoFator() {
-  const usuario = await usuarioAtual();
+  const usuario = await usuarioDePrefeitura();
   const equipe = usuario ? null : await membroEquipe();
   const parceira = usuario || equipe ? null : await euParceira();
   if (!usuario && !equipe && !parceira) redirect("/entrar");

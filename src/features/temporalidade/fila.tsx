@@ -11,7 +11,7 @@ const CONTORNO = `${BASE} border border-linha px-5 font-medium text-texto`;
 
 // Lista "Prontos para eliminação": marca os documentos aprovados pela comissão e
 // gera o termo em rascunho. Quem não gera termo vê a lista sem caixas de marcar.
-export function FilaEliminacao({ prontos, podeGerar }: { prontos: ProntoEliminacao[]; podeGerar: boolean }) {
+export function FilaEliminacao({ prontos, podeGerar, prefeituraId }: { prontos: ProntoEliminacao[]; podeGerar: boolean; prefeituraId: string }) {
   const router = useRouter();
   const [marcados, setMarcados] = useState(() => new Set(prontos.filter((p) => p.marcado).map((p) => p.id)));
   const [erro, setErro] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export function FilaEliminacao({ prontos, podeGerar }: { prontos: ProntoEliminac
     iniciar(async () => {
       setErro(null);
       setAviso(null);
-      const r = await gerarTermo({ documentos: [...marcados], observacao: null });
+      const r = await gerarTermo({ documentos: [...marcados], observacao: null }, prefeituraId);
       if (r.erro) return setErro(r.erro);
       if (r.aviso) return setAviso(r.aviso);
       if (imprimir) window.open(`/temporalidade/termo/${r.id}/arquivo?formato=pdf`, "_blank", "noopener");

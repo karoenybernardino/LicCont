@@ -1,4 +1,4 @@
-import { exigirSessao, nomePrefeitura, secretariasPermitidas } from "@/features/sessao/dal";
+import { exigirPrefeitura, nomePrefeitura, secretariasPermitidas } from "@/features/sessao/dal";
 import { secretariasParaCadastro } from "@/features/documentos/dados";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { emDemo } from "@/features/demo/dados";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const NEGADO = new Response("Você não tem permissão para esta ação.", { status: 403 });
 
 export async function GET(req: Request) {
-  const { usuario } = await exigirSessao();
+  const { usuario } = await exigirPrefeitura();
   const { id, formato, filtros } = lerPedido(new URL(req.url).searchParams);
   if (!id || !formato) return new Response("Confira os dados e tente de novo.", { status: 400 });
   if (!usuario.administrador && (await secretariasParaCadastro(usuario)).length === 0) return NEGADO;
