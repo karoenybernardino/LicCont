@@ -215,7 +215,7 @@ export async function podeConferir(u: Usuario, secretariaId: string) {
   return !!data?.length;
 }
 
-export type CaixaOcupada = { id: string; numero: number; documentos: number; capacidade: number; orgao: Orgao };
+export type CaixaOcupada = { id: string; numero: number; sequencial: number; documentos: number; capacidade: number; orgao: Orgao };
 
 // Caixas ativas de um nível com a ocupação (só números, de todas as secretarias).
 export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]> {
@@ -224,13 +224,13 @@ export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]
     if (!nivel) return [];
     return Array.from({ length: nivel.caixas }, (_, i) => {
       const id = idCaixaDemo(nivel.id, i + 1);
-      return { id, numero: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: CAPACIDADE_CAIXA_DEMO, orgao: "prefeitura" as Orgao };
+      return { id, numero: i + 1, sequencial: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: CAPACIDADE_CAIXA_DEMO, orgao: "prefeitura" as Orgao };
     });
   }
   const sb = await clienteSessao();
   if (!sb) return [];
   // Só caixa detalhada recebe documento (a geral não lista conteúdo).
-  const { data: caixas } = await sb.from("caixas").select("id, numero, orgao").eq("nivel_id", nivelId).eq("ativo", true).eq("tipo", "detalhada").order("numero");
+  const { data: caixas } = await sb.from("caixas").select("id, numero, sequencial, orgao").eq("nivel_id", nivelId).eq("ativo", true).eq("tipo", "detalhada").order("numero");
   const ids = (caixas ?? []).map((c) => c.id as string);
   if (!ids.length) return [];
   const { data: oc } = await sb.rpc("ocupacao_caixas", { p_caixas: ids });
@@ -240,6 +240,7 @@ export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]
   return (caixas ?? []).map((c) => ({
     id: c.id as string,
     numero: c.numero as number,
+    sequencial: c.sequencial as number,
     orgao: c.orgao as Orgao,
     documentos: mapa.get(c.id as string)?.documentos ?? 0,
     capacidade: mapa.get(c.id as string)?.capacidade ?? 50,

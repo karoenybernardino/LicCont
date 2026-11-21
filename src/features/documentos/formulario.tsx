@@ -20,10 +20,12 @@ import { EscolhaOrgao } from "./escolha-orgao";
 import { useOrigem } from "@/features/etiquetas/origem";
 import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
+import { PreviaCaixa } from "@/features/etiquetas/previa-caixa";
+import { caixaDoFormulario } from "@/features/etiquetas/caixa-do-formulario";
 import { CAIXAS_POR_MODULO_PADRAO, textoCaixaNoModulo } from "@/features/estrutura/capacidade";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
-import { MODALIDADES, ORGAOS, type Orgao, type Tipo } from "./tipos";
+import { MODALIDADES, type Orgao, type Tipo } from "./tipos";
 
 export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
@@ -92,7 +94,6 @@ export function FormularioDocumento({
   secretarias,
   secretariaPadrao,
   estrutura,
-  prefeitura,
   limiteMb,
   inicial,
   regras = [],
@@ -451,47 +452,16 @@ export function FormularioDocumento({
       <div className="flex min-w-0 flex-col gap-3.5">
         <div className={secao}>
           <span className="text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase">Etiqueta da caixa</span>
-          <div className="overflow-hidden rounded-xl border border-linha bg-white text-petroleo">
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="font-titulo text-[13px] tracking-[1px] uppercase"><span className="font-light">Lic</span><span className="font-bold">Cont</span></span>
-              <span className="text-right text-[11px] leading-4 text-[#3f5e66]">
-                <span className="mr-1.5 rounded bg-petroleo px-1.5 py-0.5 text-[10px] font-bold tracking-[.06em] text-aqua uppercase">{orgaoAtual ? ORGAOS[orgaoAtual] : "Órgão"}</span>
-                {prefeitura}
-              </span>
-            </div>
-            <div className="flex bg-petroleo">
-              {[["Rua", ruaAtual?.codigo ?? "–"], ["Módulo", moduloAtual?.numero ?? "–"], ["Nível", nivelAtual?.numero ?? "–"], ["Caixa", caixaEscolhida ? String(caixaEscolhida.numero).padStart(2, "0") : "–"]].map(([r, v], i) => (
-                <div key={r} className={`min-w-0 flex-1 py-2.5 pl-3.5 ${i < 3 ? "border-r border-white/15" : ""}`}>
-                  <div className="text-[9px] font-semibold tracking-[.1em] text-[#8cc5cf] uppercase">{r}</div>
-                  <div className={`font-mono text-[22px] leading-7 font-medium ${i === 3 ? "text-aqua" : "text-white"}`}>{v}</div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-stretch gap-3.5 px-4 pt-3.5 pb-4">
-              <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-                <div>
-                  <div className="font-titulo text-[15px] leading-5 font-bold">{resumo.numero ? `${tipo === "contrato" ? "Contrato" : "Licitação"} ${resumo.numero}` : "Título do processo"}</div>
-                  <div className="mt-0.5 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
-                </div>
-                <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
-                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Órgão", orgaoAtual ? ORGAOS[orgaoAtual] : "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
-                    <div key={r} className="min-w-0">
-                      <dt className="text-[9px] font-semibold tracking-[.1em] text-[#3f5e66] uppercase">{r}</dt>
-                      <dd className="mt-px text-[13px] break-words leading-[18px] font-medium text-petroleo">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-              <div className="flex flex-col items-center justify-end gap-1">
-                {caixaEscolhida && origem ? (
-                  <QrSvg texto={urlDaCaixa(origem, caixaEscolhida.id)} tamanho={92} rotulo="QR code da caixa" />
-                ) : (
-                  <div aria-hidden className="size-[92px] rounded border border-dashed border-[#3f5e66]/40" />
-                )}
-                <span className="text-[9px] text-[#3f5e66]">Ler para abrir</span>
-              </div>
-            </div>
-          </div>
+          <PreviaCaixa
+            dividir={false}
+            c={caixaDoFormulario({
+              orgao: orgaoAtual, sequencial: caixaEscolhida?.sequencial,
+              localizacao: ruaAtual && moduloAtual && nivelAtual ? `Rua ${ruaAtual.codigo} · Módulo ${moduloAtual.numero} · Nível ${nivelAtual.numero}` : null,
+              tipo: tipoEfetivo, modalidade, numero: resumo.numero, ano: resumo.ano, objeto: resumo.objeto,
+              secretaria: secretarias.find((s) => s.id === secretaria)?.nome ?? "", regra: regraAtual,
+            })}
+            qr={caixaEscolhida && origem ? <QrSvg texto={urlDaCaixa(origem, caixaEscolhida.id)} tamanho={56} rotulo="QR code da caixa" /> : undefined}
+          />
         </div>
 
         <section className={secao} aria-labelledby="t3">

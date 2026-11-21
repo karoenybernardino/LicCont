@@ -21,6 +21,9 @@ test("cadastro de documento: sem empresa, valor, situação, CNPJ, data e encerr
   await expect(orgao.getByRole("radio", { name: "Câmara" })).toHaveAttribute("aria-checked", "true");
   await expect(orgao.getByRole("radio", { name: "Prefeitura" })).toHaveAttribute("aria-checked", "false");
   await expect(page.getByText("Conta a partir do fim do ano do documento")).toBeVisible();
+  // A prévia é a etiqueta nova da caixa (a antiga era LICCONT + Rua/Módulo/Nível).
+  await expect(page.getByText("PRAZO DE GUARDA").first()).toBeVisible();
+  await expect(page.getByText("CX", { exact: true }).first()).toBeVisible();
 });
 
 test("cadastro de caixa geral: grade de meses e o código da classificação preenche classe e prazo", async ({ page }) => {
