@@ -175,6 +175,19 @@ export async function exigirSessao() {
   return { usuario, secretaria };
 }
 
+// Mesma guarda de exigirSessao (segundo fator, troca de senha, aceite) para rotas e ações que não
+// podem redirecionar (PDF, upload): devolve o status em vez de mandar para outra tela.
+export async function usuarioLiberado(): Promise<{ usuario: Usuario; status?: undefined } | { usuario?: undefined; status: 401 | 403 }> {
+  const usuario = await usuarioAtual();
+  if (!usuario) return { status: 401 };
+  if (usuario.parceira) {
+    if ((await faltaSegundoFator()) || usuario.trocaSenha || !usuario.prefeituraId) return { status: 403 };
+    return { usuario };
+  }
+  if ((usuario.administrador && (await faltaSegundoFator())) || usuario.trocaSenha || !(await aceiteEmDia())) return { status: 403 };
+  return { usuario };
+}
+
 // Só diz se a pessoa é da equipe; NÃO confere o segundo fator. Porteiro de
 // tela ou ação da equipe é sempre exigirEquipe().
 export const membroEquipe = cache(async (): Promise<{ id: string } | null> => {

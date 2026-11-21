@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { membroEquipe, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, membroEquipe, usuarioLiberado } from "@/features/sessao/dal";
 import { administraAcervo, conferirPrefeitura } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -18,12 +18,16 @@ export type RetornoClasses = { erro?: string; aviso?: string; resumo?: { inserid
 
 const uuid = z.guid();
 
+// Equipe LicCONT só vale com o segundo fator em dia (membroEquipe não confere).
+const equipeLiberada = async () => !!(await membroEquipe()) && !(await faltaSegundoFator());
+const podeEditarClasses = async () => administraAcervo((await usuarioLiberado()).usuario) || (await equipeLiberada());
+
 // Órgão em que a pessoa pode mexer: o seu (administrador) ou o escolhido (equipe).
 async function orgaoEditavel(prefeitura: unknown): Promise<string | null> {
-  const u = await usuarioAtual();
+  const u = (await usuarioLiberado()).usuario;
   // Parceira: a tela manda a prefeitura que mostrava; se mudou em outra aba, recusa.
   if (administraAcervo(u) && u) return conferirPrefeitura(typeof prefeitura === "string" ? prefeitura : null, u) ? u.prefeituraId : null;
-  if (await membroEquipe()) {
+  if (await equipeLiberada()) {
     const id = uuid.safeParse(prefeitura);
     return id.success ? id.data : null;
   }
@@ -72,7 +76,7 @@ export async function salvarClasses(entrada: unknown): Promise<RetornoClasses> {
 export async function excluirClasse(entrada: unknown): Promise<RetornoClasses> {
   const dados = z.object({ id: uuid }).safeParse(entrada);
   if (!dados.success) return { erro: "Não foi possível concluir. Tente de novo." };
-  if (!administraAcervo(await usuarioAtual()) && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
+  if (!(await podeEditarClasses())) return { erro: "Você não tem permissão para esta ação." };
   if (emDemo()) return { aviso: AVISO_DEMO };
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
@@ -88,7 +92,7 @@ export type TabelaLida = { erro?: string; cabecalhos?: string[]; linhas?: string
 
 // .xlsx e .csv são lidos aqui (texto puro, sem fórmulas); o PDF é lido no navegador.
 export async function lerTabelaEnviada(formData: FormData): Promise<TabelaLida> {
-  if (!administraAcervo(await usuarioAtual()) && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
+  if (!(await podeEditarClasses())) return { erro: "Você não tem permissão para esta ação." };
   const a = formData.get("arquivo");
   if (!(a instanceof File) || a.size === 0) return { erro: "Escolha um arquivo." };
   if (a.size > LIMITE_BYTES_PLANILHA) return { erro: "A planilha passa de 10 MB. Divida em partes menores." };

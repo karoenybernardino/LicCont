@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { usuarioAtual } from "@/features/sessao/dal";
+import { usuarioLiberado } from "@/features/sessao/dal";
 import { podeCadastrar } from "@/features/documentos/dados";
 import { emDemo } from "@/features/demo/dados";
 import { MAX_ETIQUETAS, TIPOS_ETIQUETA, montarEtiquetas } from "@/features/etiquetas/montar";
@@ -22,8 +22,8 @@ const NOMES: Record<string, string> = { caixa: "etiquetas-das-caixas", conteudo:
 // registra quem imprimiu e quando (auditoria). Exige login e papel de cadastro; o RLS e os grupos
 // documentais valem como em qualquer leitura.
 export async function POST(req: Request) {
-  const u = await usuarioAtual();
-  if (!u) return new NextResponse("Entre para continuar.", { status: 401 });
+  const { usuario: u, status } = await usuarioLiberado();
+  if (!u) return new NextResponse(status === 401 ? "Entre para continuar." : "Conclua o acesso (código de verificação ou troca de senha) para continuar.", { status });
   if (!(await podeCadastrar(u))) return new NextResponse("Você não tem permissão para esta ação.", { status: 403 });
   const dados = entrada.safeParse(await req.json().catch(() => null));
   if (!dados.success || (!dados.data.caixas.length && !dados.data.documentos.length)) return new NextResponse("Escolha o que imprimir.", { status: 400 });
