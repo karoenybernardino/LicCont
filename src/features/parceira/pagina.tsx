@@ -6,16 +6,22 @@ import { BarraLateral, type ItemMenu } from "@/features/sessao/barra-lateral";
 import type { Eu } from "./dados";
 import type { Resumo } from "./indicadores";
 import { SeletorPrefeitura } from "./seletor";
+import { trocarPrefeitura } from "./acoes-atuar";
 
 const iniciais = (nome: string) => nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");
 
-// Menu da empresa parceira: dono vê Painel, Pesquisa, Mapa 3D, Etiquetas e Equipe; funcionário não vê Equipe.
+// Menu da empresa parceira: as telas completas da prefeitura (Mapa 3D, Cadastrar, Etiquetas, Estrutura,
+// Temporalidade) mais Painel e Pesquisa; só o dono vê Equipe. Usuários, secretarias, TCE, importação,
+// exportação e empréstimos não existem para a empresa.
 export function menuParceira(papel: Eu["papel"]): ItemMenu[] {
   return [
     { href: "/parceira", rotulo: "Painel", dica: "Números das prefeituras que você atende.", icone: "painel" },
-    { href: "/parceira/pesquisa", rotulo: "Pesquisa", dica: "Busca documentos nas prefeituras permitidas.", icone: "pesquisa" },
-    { href: "/parceira/mapa", rotulo: "Mapa 3D", dica: "Mostra onde cada caixa está no arquivo.", icone: "mapa" },
-    { href: "/parceira/etiquetas", rotulo: "Etiquetas", dica: "Caixas que ainda precisam de etiqueta.", icone: "etiquetas" },
+    { href: "/pesquisa", rotulo: "Pesquisa", dica: "Busca documentos na prefeitura em que você atua.", icone: "pesquisa", prefixos: ["/documentos/"] },
+    { href: "/mapa", rotulo: "Mapa 3D", dica: "Mostra onde cada caixa está no arquivo.", icone: "mapa" },
+    { href: "/documentos/novo", rotulo: "Cadastrar", dica: "Registra documentos e caixas no acervo.", icone: "cadastro" },
+    { href: "/etiquetas", rotulo: "Etiquetas", dica: "Imprime etiquetas de caixa e documento com QR.", icone: "etiquetas" },
+    { href: "/estrutura", rotulo: "Estrutura física", dica: "Galpões, ruas e módulos de caixas.", icone: "estrutura" },
+    { href: "/configuracoes/temporalidade", rotulo: "Temporalidade", dica: "Classes, prazos de guarda e eliminação.", icone: "temporalidade", prefixos: ["/temporalidade"] },
     ...(papel === "dono" ? [{ href: "/parceira/equipe", rotulo: "Equipe", dica: "Pessoas da empresa e em quais prefeituras trabalham.", icone: "usuarios" as const }] : []),
   ];
 }
@@ -27,6 +33,10 @@ export function PaginaParceira({
   prefeituras,
   atual,
   todas = false,
+  atuando,
+  trilha,
+  acoes,
+  extra,
   children,
 }: {
   eu: Eu;
@@ -36,6 +46,11 @@ export function PaginaParceira({
   atual?: string;
   /** Oferece "Todas as prefeituras" (dono) ou "Minhas prefeituras" (funcionário). */
   todas?: boolean;
+  /** Telas completas (as mesmas da prefeitura): o seletor troca a prefeitura em que a pessoa atua. */
+  atuando?: { prefeituras: Resumo[]; atual: string };
+  trilha?: ReactNode;
+  acoes?: ReactNode;
+  extra?: ReactNode;
   children: ReactNode;
 }) {
   const opcoes = prefeituras
@@ -67,11 +82,22 @@ export function PaginaParceira({
           <div>
             <div className="text-xs text-texto-suave">
               {eu.parceiraNome} · {eu.papel === "dono" ? "Dono" : "Funcionário"}
+              {trilha && <> · {trilha}</>}
             </div>
             <h1 className="font-titulo text-[21px] font-bold">{titulo}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
-            {atual !== undefined && opcoes.length > 0 && <SeletorPrefeitura opcoes={opcoes} atual={atual} rotulo="Prefeitura" />}
+            {acoes}
+            {extra}
+            {atuando && atuando.prefeituras.length > 0 && (
+              <SeletorPrefeitura
+                opcoes={atuando.prefeituras.map((p) => ({ valor: p.id, texto: p.nome }))}
+                atual={atuando.atual}
+                rotulo="Prefeitura"
+                acao={trocarPrefeitura}
+              />
+            )}
+            {!atuando && atual !== undefined && opcoes.length > 0 && <SeletorPrefeitura opcoes={opcoes} atual={atual} rotulo="Prefeitura" />}
             <span className="hidden text-[13px] text-texto-suave sm:inline">{eu.nome}</span>
             <span aria-hidden title={eu.nome} className="flex size-9 items-center justify-center rounded-full bg-[#285a66] text-[13px] font-bold text-white">
               {iniciais(eu.nome)}

@@ -6,6 +6,7 @@ import { limitePdfMb, obterDocumento, opcoesEstrutura, posicaoDaCaixa, secretari
 import { FormularioDocumento } from "@/features/documentos/formulario";
 import { lerRegras } from "@/features/temporalidade/dados";
 import { listarGrupos, listarTipologias } from "@/features/classificacao/dados";
+import { logosDaPrevia } from "@/features/etiquetas/logos";
 import { esquemaId } from "@/features/documentos/esquemas";
 import { tituloDocumento } from "@/features/documentos/titulo";
 
@@ -19,7 +20,7 @@ export default async function EditarDocumento({ params }: { params: Promise<{ id
   if (!doc) notFound();
   const secretarias = await secretariasParaCadastro(usuario);
   if (!secretarias.some((s) => s.id === doc.secretariaId)) redirect(`/documentos/${id}`);
-  const [estrutura, prefeitura, limiteMb, pos, regras, grupos, tipologias] = await Promise.all([
+  const [estrutura, prefeitura, limiteMb, pos, regras, grupos, tipologias, logos] = await Promise.all([
     opcoesEstrutura(),
     nomePrefeitura(usuario),
     limitePdfMb(usuario),
@@ -27,6 +28,7 @@ export default async function EditarDocumento({ params }: { params: Promise<{ id
     lerRegras(),
     listarGrupos(),
     listarTipologias(),
+    logosDaPrevia(),
   ]);
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo={tituloDocumento(doc)} trilha="Acervo · Editar">
@@ -39,6 +41,7 @@ export default async function EditarDocumento({ params }: { params: Promise<{ id
         regras={regras}
         grupos={grupos}
         tipologias={tipologias}
+        logos={logos}
         inicial={{
           id: doc.id, tipo: doc.tipo, modalidade: doc.modalidade, numero: doc.numero, ano: doc.ano, objeto: doc.objeto,
           tituloProcesso: doc.tituloProcesso, orgao: doc.orgao, secretariaId: doc.secretariaId,

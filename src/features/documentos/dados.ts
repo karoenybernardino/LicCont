@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { clienteSessao } from "@/lib/supabase/servidor";
-import { secretariasPermitidas, type Usuario } from "@/features/sessao/dal";
+import { prefeituraAtuando, secretariasPermitidas, type Usuario } from "@/features/sessao/dal";
+import { administraAcervo } from "@/features/parceira/escolha";
 import { SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 import { CAPACIDADE_CAIXA_DEMO, DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
@@ -169,7 +170,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
 // os demais, onde são operador ou coordenador.
 export const secretariasParaCadastro = cache(async (u: Usuario) => {
   const lista = (await secretariasPermitidas(u)).filter((s): s is { id: string; nome: string } => s.id !== null);
-  if (u.administrador) return lista;
+  if (administraAcervo(u)) return lista;
   if (emDemo()) return (await perfilDemo()) === "consulta" ? [] : lista;
   const sb = await clienteSessao();
   if (!sb) return [];
@@ -292,6 +293,7 @@ export async function posicaoDaCaixa(caixaId: string): Promise<{ ruaId: string; 
 // Tamanho máximo do PDF desta prefeitura (MB). Demonstração: 50.
 export async function limitePdfMb(u: Usuario) {
   if (emDemo()) return 50;
+  if (u.parceira) return (await prefeituraAtuando())?.limitePdfMb ?? 50;
   const sb = await clienteSessao();
   if (!sb) return 50;
   const { data } = await sb.from("prefeituras").select("limite_pdf_mb").eq("id", u.prefeituraId).maybeSingle();

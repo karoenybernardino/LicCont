@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
-import { membroEquipe, nivelSessao, origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
+import { membroEquipe, nivelSessao, origemDaRequisicao, usuarioDePrefeitura } from "@/features/sessao/dal";
 import { euParceira } from "@/features/parceira/dados";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import { hashEmail } from "@/features/login/seguranca";
@@ -23,7 +23,7 @@ async function contexto() {
   const servico = clienteServico();
   const segredo = process.env.LOGIN_HASH_SEGREDO;
   if (!supabase || !servico || !segredo || segredo.length < 32) return null;
-  const usuario = await usuarioAtual();
+  const usuario = await usuarioDePrefeitura();
   const equipe = usuario ? null : await membroEquipe();
   const parceira = usuario || equipe ? null : await euParceira();
   if (!usuario?.administrador && !equipe && !parceira) redirect("/entrar");

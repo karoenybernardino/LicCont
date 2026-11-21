@@ -11,6 +11,7 @@ import {
 } from "@/features/demo/parceira";
 import { montarCapacidade, type CapacidadeBruta } from "@/features/estrutura/capacidade";
 import type { Linha, Resumo } from "./indicadores";
+export { escolherPrefeitura } from "./escolha";
 
 // Camada de dados da empresa parceira. Toda leitura passa por funções do banco que conferem
 // app.prefeituras_permitidas(); aqui a tela só escolhe entre o que o banco já devolveu.
@@ -73,12 +74,6 @@ export const prefeiturasDaEmpresa = cache(async (): Promise<Resumo[]> => {
   }));
 });
 
-// Seletor do topo: o id precisa estar entre as permitidas; sem escolha válida, vale a primeira (ou "todas" quando a tela aceita).
-export function escolherPrefeitura(valor: string | undefined, permitidas: Resumo[], aceitaTodas: boolean): string {
-  if (aceitaTodas && valor === "todas") return "todas";
-  const achada = permitidas.find((p) => p.id === valor);
-  return achada ? achada.id : aceitaTodas ? "todas" : (permitidas[0]?.id ?? "");
-}
 
 export async function atividade(prefeitura: string | null, dias = 120): Promise<Linha[]> {
   if (emDemo()) {

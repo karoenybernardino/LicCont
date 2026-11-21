@@ -8,6 +8,7 @@ import { FormularioDocumento } from "@/features/documentos/formulario";
 import { FormularioCaixa } from "@/features/documentos/formulario-caixa";
 import { lerRegras } from "@/features/temporalidade/dados";
 import { listarGrupos, listarTipologias } from "@/features/classificacao/dados";
+import { logosDaPrevia } from "@/features/etiquetas/logos";
 
 export const metadata: Metadata = { title: "Cadastrar documento · LicCONT" };
 
@@ -16,13 +17,14 @@ export default async function NovoDocumento({ searchParams }: { searchParams: Pr
   const secretarias = await secretariasParaCadastro(usuario);
   // Consulta só pesquisa: a tela nem abre (e a ação também recusa no servidor).
   if (!secretarias.length) redirect("/pesquisa");
-  const [estrutura, prefeitura, limiteMb, regras, grupos, tipologias, { salvo, modo }] = await Promise.all([
+  const [estrutura, prefeitura, limiteMb, regras, grupos, tipologias, logos, { salvo, modo }] = await Promise.all([
     opcoesEstrutura(),
     nomePrefeitura(usuario),
     limitePdfMb(usuario),
     lerRegras(),
     listarGrupos(),
     listarTipologias(),
+    logosDaPrevia(),
     searchParams,
   ]);
   const geral = modo === "geral";
@@ -69,6 +71,7 @@ export default async function NovoDocumento({ searchParams }: { searchParams: Pr
           regras={regras}
           grupos={grupos}
           tipologias={tipologias}
+          logos={logos}
         />
       )}
     </PaginaSistema>

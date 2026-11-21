@@ -6,7 +6,7 @@ import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
-import { caixasComOcupacao, podeConferir, posicaoDaCaixa, proximaCaixaLivre, secretariasParaCadastro, type CaixaOcupada } from "./dados";
+import { caixasComOcupacao, limitePdfMb, podeConferir, posicaoDaCaixa, proximaCaixaLivre, secretariasParaCadastro, type CaixaOcupada } from "./dados";
 import { Conferidor, MOTIVOS, type Motivo } from "./conferencia";
 import { esquemaDocumento, esquemaEnvio, esquemaId, mensagemDocumento } from "./esquemas";
 
@@ -121,8 +121,7 @@ export async function iniciarEnvio(entrada: { documento: string; nome: string; t
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
 
-  const { data: pref } = await sb.from("prefeituras").select("limite_pdf_mb").eq("id", usuario.prefeituraId).maybeSingle();
-  const limiteMb = (pref?.limite_pdf_mb as number | undefined) ?? 50;
+  const limiteMb = await limitePdfMb(usuario);
   if (dados.data.tamanho > limiteMb * 1024 * 1024) return { erro: MOTIVOS.grande_demais };
 
   const { data: doc } = await sb.from("documentos").select("secretaria_id").eq("id", dados.data.documento).maybeSingle();
@@ -182,8 +181,7 @@ export async function conferirEnvio(entrada: z.infer<typeof esquemaConferir>): P
   const { error: errMarca } = await sb.rpc("marcar_conferindo", { p_arquivo: dados.data.arquivo });
   if (errMarca) return { ok: false, erro: "Você não tem permissão para esta ação." };
 
-  const { data: pref } = await sb.from("prefeituras").select("limite_pdf_mb").eq("id", usuario.prefeituraId).maybeSingle();
-  const limite = ((pref?.limite_pdf_mb as number | undefined) ?? 50) * 1024 * 1024;
+  const limite = (await limitePdfMb(usuario)) * 1024 * 1024;
 
   let motivo: Motivo | null = null;
   const conf = new Conferidor(limite);

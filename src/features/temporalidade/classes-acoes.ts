@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { membroEquipe, usuarioAtual } from "@/features/sessao/dal";
+import { administraAcervo } from "@/features/parceira/escolha";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
 import { ErroPlanilha, LIMITE_BYTES_PLANILHA, lerPlanilha } from "@/features/importacao/planilha";
@@ -20,7 +21,7 @@ const uuid = z.guid();
 // Órgão em que a pessoa pode mexer: o seu (administrador) ou o escolhido (equipe).
 async function orgaoEditavel(prefeitura: unknown): Promise<string | null> {
   const u = await usuarioAtual();
-  if (u?.administrador) return u.prefeituraId;
+  if (administraAcervo(u) && u) return u.prefeituraId;
   if (await membroEquipe()) {
     const id = uuid.safeParse(prefeitura);
     return id.success ? id.data : null;
@@ -70,7 +71,7 @@ export async function salvarClasses(entrada: unknown): Promise<RetornoClasses> {
 export async function excluirClasse(entrada: unknown): Promise<RetornoClasses> {
   const dados = z.object({ id: uuid }).safeParse(entrada);
   if (!dados.success) return { erro: "Não foi possível concluir. Tente de novo." };
-  if (!(await usuarioAtual())?.administrador && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
+  if (!administraAcervo(await usuarioAtual()) && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
   if (emDemo()) return { aviso: AVISO_DEMO };
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
@@ -86,7 +87,7 @@ export type TabelaLida = { erro?: string; cabecalhos?: string[]; linhas?: string
 
 // .xlsx e .csv são lidos aqui (texto puro, sem fórmulas); o PDF é lido no navegador.
 export async function lerTabelaEnviada(formData: FormData): Promise<TabelaLida> {
-  if (!(await usuarioAtual())?.administrador && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
+  if (!administraAcervo(await usuarioAtual()) && !(await membroEquipe())) return { erro: "Você não tem permissão para esta ação." };
   const a = formData.get("arquivo");
   if (!(a instanceof File) || a.size === 0) return { erro: "Escolha um arquivo." };
   if (a.size > LIMITE_BYTES_PLANILHA) return { erro: "A planilha passa de 10 MB. Divida em partes menores." };

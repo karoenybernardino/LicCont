@@ -31,7 +31,7 @@ export async function registrarEmprestimo(formData: FormData): Promise<Retorno> 
   const { usuario } = await exigirSessao();
   const dados = esquemaEmprestimo.safeParse(Object.fromEntries(formData));
   if (!dados.success) return { erro: dados.error.issues[0].message, campo: String(dados.error.issues[0].path[0] ?? "") };
-  if ((await secretariasParaCadastro(usuario)).length === 0) return SEM_PERMISSAO;
+  if (usuario.parceira || (await secretariasParaCadastro(usuario)).length === 0) return SEM_PERMISSAO;
   if (emDemo()) return { aviso: AVISO_DEMO };
 
   const sb = await clienteSessao();
@@ -59,7 +59,7 @@ export async function devolverEmprestimo(entrada: unknown): Promise<Retorno> {
   const { usuario } = await exigirSessao();
   const dados = esquemaDevolucao.safeParse(entrada);
   if (!dados.success) return { erro: "Confira os dados e tente de novo." };
-  if ((await secretariasParaCadastro(usuario)).length === 0) return SEM_PERMISSAO;
+  if (usuario.parceira || (await secretariasParaCadastro(usuario)).length === 0) return SEM_PERMISSAO;
   if (emDemo()) return { aviso: AVISO_DEMO };
 
   const sb = await clienteSessao();
@@ -72,7 +72,8 @@ export async function devolverEmprestimo(entrada: unknown): Promise<Retorno> {
 
 // Aprovar ou recusar um pedido. O banco confere o papel e que quem aprova não é quem pediu.
 export async function decidirPedido(entrada: unknown): Promise<Retorno> {
-  await exigirSessao();
+  const { usuario } = await exigirSessao();
+  if (usuario.parceira) return SEM_PERMISSAO;
   const dados = esquemaDecisao.safeParse(entrada);
   if (!dados.success) return { erro: "Confira os dados e tente de novo." };
   if (emDemo()) return { aviso: AVISO_DEMO };

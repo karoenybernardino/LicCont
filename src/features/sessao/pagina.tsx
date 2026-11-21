@@ -9,6 +9,8 @@ import { contarFila } from "@/features/tce/dados";
 import { MODULOS } from "@/features/modulos/ocultos";
 import { nomePrefeitura, type Secretaria, type Usuario } from "./dal";
 import { SeletorSecretaria } from "./seletor-secretaria";
+import { PaginaParceira } from "@/features/parceira/pagina";
+import { euParceira, prefeiturasDaEmpresa } from "@/features/parceira/dados";
 
 // Menu em grupos, separados por um traço: Início; Acervo (o dia a dia dos documentos);
 // Gestão (acompanhar e conferir); Administração (só administrador). Configurações e
@@ -64,6 +66,24 @@ export async function PaginaSistema({
   larga?: boolean;
   children: ReactNode;
 }) {
+  // Pessoa da empresa parceira: mesmas telas, moldura própria (menu e seletor de prefeitura).
+  if (usuario.parceira) {
+    const [eu, prefeituras] = await Promise.all([euParceira(), prefeiturasDaEmpresa()]);
+    if (eu) {
+      return (
+        <PaginaParceira
+          eu={eu}
+          titulo={titulo}
+          trilha={trilha}
+          acoes={acoes}
+          extra={<SeletorSecretaria usuario={usuario} atual={secretaria} />}
+          atuando={{ prefeituras, atual: usuario.prefeituraId }}
+        >
+          {children}
+        </PaginaParceira>
+      );
+    }
+  }
   const prefeitura = await nomePrefeitura(usuario);
   // Cadastrar só aparece para quem cadastra (o servidor também confere).
   const cadastra = await podeCadastrar(usuario);

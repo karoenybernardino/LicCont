@@ -14,7 +14,7 @@ import {
   ehCookieSupabase,
   opcoesCookie,
 } from "@/features/sessao/cookies";
-import { faltaSegundoFator, origemDaRequisicao, segundoFatorObrigatorio, usuarioAtual } from "@/features/sessao/dal";
+import { faltaSegundoFator, origemDaRequisicao, segundoFatorObrigatorio, usuarioDePrefeitura } from "@/features/sessao/dal";
 import {
   MENSAGEM_ERRO_LOGIN,
   MENSAGEM_INDISPONIVEL,
@@ -262,7 +262,7 @@ export async function trocarSenha(_: EstadoFormulario, formData: FormData): Prom
   const supabase = await clienteSessao();
   const servico = clienteServico();
   if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
-  const usuario = await usuarioAtual();
+  const usuario = await usuarioDePrefeitura();
   if (!usuario) redirect("/entrar");
   // Troca voluntária (pedindo a senha atual) fica para depois: aqui só a provisória.
   if (!usuario.trocaSenha) redirect("/inicio");

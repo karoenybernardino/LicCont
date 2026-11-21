@@ -20,7 +20,7 @@ import { EscolhaOrgao } from "./escolha-orgao";
 import { useOrigem } from "@/features/etiquetas/origem";
 import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
-import { PreviaCaixa } from "@/features/etiquetas/previa-caixa";
+import { PreviaCaixa, type LogosPrevia } from "@/features/etiquetas/previa-caixa";
 import { caixaDoFormulario } from "@/features/etiquetas/caixa-do-formulario";
 import { CAIXAS_POR_MODULO_PADRAO, textoCaixaNoModulo } from "@/features/estrutura/capacidade";
 import { descreverArquivo } from "./formato";
@@ -99,6 +99,7 @@ export function FormularioDocumento({
   regras = [],
   grupos = [],
   tipologias = [],
+  logos,
 }: {
   secretarias: { id: string; nome: string }[];
   secretariaPadrao: string;
@@ -109,6 +110,8 @@ export function FormularioDocumento({
   regras?: Regra[];
   grupos?: GrupoDoc[];
   tipologias?: TipologiaDoc[];
+  /** Brasões da prévia (links assinados gerados no servidor). */
+  logos?: LogosPrevia;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -454,6 +457,7 @@ export function FormularioDocumento({
           <span className="text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase">Etiqueta da caixa</span>
           <PreviaCaixa
             dividir={false}
+            logos={logos}
             c={caixaDoFormulario({
               orgao: orgaoAtual, sequencial: caixaEscolhida?.sequencial,
               localizacao: ruaAtual && moduloAtual && nivelAtual ? `Rua ${ruaAtual.codigo} · Módulo ${moduloAtual.numero} · Nível ${nivelAtual.numero}` : null,

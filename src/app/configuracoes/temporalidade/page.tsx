@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Painel, TituloPainel } from "@/features/estrutura/componentes";
 import { listarGrupos } from "@/features/classificacao/dados";
-import { exigirAdmin } from "@/features/sessao/dal";
+import { exigirAcervo } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { EditorClasses } from "@/features/temporalidade/classes";
 import { lerRegras } from "@/features/temporalidade/dados";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Tabela de temporalidade · LicCONT" 
 // Administrador da prefeitura edita a tabela do próprio órgão (a equipe LicCONT
 // edita a de qualquer órgão em /equipe/<id>/temporalidade). O banco confere de novo.
 export default async function ConfiguracaoTemporalidade() {
-  const { usuario, secretaria } = await exigirAdmin();
+  const { usuario, secretaria } = await exigirAcervo();
   const [regras, grupos] = await Promise.all([lerRegras(), listarGrupos()]);
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Tabela de temporalidade" trilha="Configurações · Temporalidade">

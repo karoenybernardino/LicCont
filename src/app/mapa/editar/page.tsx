@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -34,7 +35,7 @@ export default async function EditarPlanta({ searchParams }: { searchParams: Pro
       }
       acoes={<div id="acoes-editor" className="flex items-center gap-3" />}
     >
-      <EditorPlanta key={JSON.stringify(planta)} estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} ehAdmin={usuario.administrador} />
+      <EditorPlanta key={JSON.stringify(planta)} estrutura={estrutura} planta={planta} galpaoId={estrutura.galpao.id} nomeGalpao={estrutura.galpao.nome} ehAdmin={administraAcervo(usuario)} />
     </PaginaSistema>
   );
 }

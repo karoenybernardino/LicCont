@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import "server-only";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import type { Usuario } from "@/features/sessao/dal";
@@ -161,7 +162,7 @@ export async function obterTermo(id: string): Promise<TermoCompleto | null> {
 
 // Pode gerar termo: administrador ou coordenador de alguma secretaria.
 export async function podeGerarTermo(u: Usuario) {
-  if (u.administrador) return true;
+  if (administraAcervo(u)) return true;
   if (emDemo()) return false;
   const sb = await clienteSessao();
   if (!sb) return false;

@@ -1,3 +1,4 @@
+import { administraAcervo } from "@/features/parceira/escolha";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -44,7 +45,7 @@ export default async function EstruturaFisica({
   const { usuario, secretaria } = await exigirSessao();
   const busca = await searchParams;
   const e = await carregarEstrutura(id(busca.galpao));
-  const admin = usuario.administrador;
+  const admin = administraAcervo(usuario);
   const editaCaixas = await podeCaixas(usuario);
   const caixasPorModulo = await lerCaixasPorModulo();
   const alteracoes = admin && e.galpao ? await ultimasAlteracoes(e) : [];

@@ -8,6 +8,7 @@ import {
   opcoesCookie,
 } from "@/features/sessao/cookies";
 import { ipDaRequisicao } from "@/features/login/seguranca";
+import { COOKIE_PARCEIRA_PREF } from "@/features/parceira/escolha";
 import { rotaOculta } from "@/features/modulos/ocultos";
 
 // CSP com nonce por requisição. Só o hash do script de tema não basta: o Next
@@ -89,7 +90,7 @@ export async function proxy(req: NextRequest) {
         req.method === "GET" ? 307 : 303,
       );
       for (const c of req.cookies.getAll()) {
-        if (ehCookieSupabase(c.name) || c.name === COOKIE_SECRETARIA || c.name === COOKIE_ATIVIDADE) {
+        if (ehCookieSupabase(c.name) || c.name === COOKIE_SECRETARIA || c.name === COOKIE_PARCEIRA_PREF || c.name === COOKIE_ATIVIDADE) {
           destino.cookies.delete(c.name);
         }
       }
