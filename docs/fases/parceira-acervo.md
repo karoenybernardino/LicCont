@@ -30,3 +30,10 @@ PDF, iguais às da prefeitura.
 3. Telas: `/parceira/mapa`, `/parceira/cadastrar` (documento e caixa), `/parceira/etiquetas` com o conteúdo completo.
 4. Prévia da etiqueta no cadastro de documento: brasão, número da caixa por órgão, rodapé da parceira.
 5. Testes (Vitest, Playwright demo) e PR.
+
+## Correções do responsável (2026-11-21)
+
+- A empresa **também** mexe em estrutura física (galpões, ruas, módulos, planta) e em temporalidade.
+  Fica fora dela só: usuários, vínculos e secretarias (competência da equipe LicCONT).
+  `app.eh_admin()` não muda; nova `app.pode_administrar_acervo()` cobre estrutura, caixas e temporalidade.
+- A etiqueta leva o **brasão do órgão**: órgão Câmara = brasão da Câmara; Prefeitura = brasão da prefeitura.
