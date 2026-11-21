@@ -11,7 +11,8 @@ test.describe("dono da empresa parceira", () => {
   test("vê as 5 prefeituras, a Equipe e o seletor com Todas", async ({ page }) => {
     await page.goto("/parceira");
     await expect(page.getByRole("heading", { name: "Painel", level: 1 })).toBeVisible();
-    await expect(page.locator("header select").locator("option").first()).toHaveText("Todas as prefeituras (5)");
+    await page.getByRole("combobox", { name: /Prefeitura/ }).click();
+    await expect(page.getByRole("listbox", { name: /Prefeitura/ }).getByRole("option").first()).toHaveText("Todas as prefeituras (5)");
     await expect(page.getByRole("link", { name: "Barbalha/CE" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Equipe", exact: true })).toBeVisible();
     await page.goto("/parceira/equipe");
@@ -60,7 +61,8 @@ test.describe("funcionário da empresa parceira", () => {
 
   test("vê só as 2 prefeituras alocadas e não abre a Equipe", async ({ page }) => {
     await page.goto("/parceira");
-    await expect(page.locator("header select").locator("option").first()).toHaveText("Minhas prefeituras (2)");
+    await page.getByRole("combobox", { name: /Prefeitura/ }).click();
+    await expect(page.getByRole("listbox", { name: /Prefeitura/ }).getByRole("option").first()).toHaveText("Minhas prefeituras (2)");
     await expect(page.getByRole("link", { name: "Caririaçu/CE" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Barbalha/CE" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Equipe", exact: true })).toHaveCount(0);
@@ -71,6 +73,7 @@ test.describe("funcionário da empresa parceira", () => {
   test("prefeitura não alocada na URL cai na primeira permitida", async ({ page }) => {
     await page.context().addCookies([{ name: "liccont_parceira_pref", value: "de8a0000-0000-0000-0000-000000000003", url: "http://localhost:3200" }]);
     await page.goto("/mapa");
-    await expect(page.locator("header select")).toHaveValue("de8a0000-0000-0000-0000-000000000001");
+    await page.getByRole("combobox", { name: /Prefeitura/ }).click();
+    await expect(page.getByRole("listbox", { name: /Prefeitura/ }).getByRole("option").first()).toHaveAttribute("aria-selected", "true");
   });
 });

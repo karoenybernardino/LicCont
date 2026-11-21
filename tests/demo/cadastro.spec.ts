@@ -31,7 +31,7 @@ test("cadastro de caixa geral: grade de meses e o código da classificação pre
   await page.getByRole("link", { name: "Cadastro geral" }).click();
   await expect(page).toHaveURL(/modo=geral/);
   await page.waitForLoadState("networkidle");
-  await expect(page.getByRole("radio", { name: "Arquivo geral" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: "Licitações e contratos" })).toHaveCount(0);
   const meses = page.getByRole("group", { name: /^Meses/ }).getByRole("checkbox");
   await expect(meses).toHaveCount(12);
   await meses.nth(0).click();
@@ -50,10 +50,6 @@ test("cadastro de caixa geral: grade de meses e o código da classificação pre
   await page.getByLabel("Código de classificação").press("Enter");
   await expect(page.getByText("Código não encontrado na tabela de temporalidade.")).toBeVisible();
 
-  // Detalhada: só órgão, etiqueta geral e endereço; a grade de meses some.
-  await page.getByRole("radio", { name: "Licitações e contratos" }).click();
-  await expect(page.getByLabel("Gerar também etiqueta geral (sem listar itens)")).toBeVisible();
-  await expect(meses).toHaveCount(0);
 });
 
 test("cadastro de caixa: em demonstração salvar avisa que nada foi gravado", async ({ page }) => {
