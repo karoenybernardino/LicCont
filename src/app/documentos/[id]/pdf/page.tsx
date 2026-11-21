@@ -6,9 +6,8 @@ import { PaginaSistema } from "@/features/sessao/pagina";
 import { obterDocumento } from "@/features/documentos/dados";
 import { esquemaId } from "@/features/documentos/esquemas";
 import { tituloDocumento } from "@/features/documentos/titulo";
-import { tomSituacao } from "@/features/documentos/painel";
-import { abreviarSha, formatarTamanho, formatarValor } from "@/features/documentos/formato";
-import { SITUACOES } from "@/features/documentos/tipos";
+import { abreviarSha, formatarTamanho } from "@/features/documentos/formato";
+import { ORGAOS } from "@/features/documentos/tipos";
 import { VisualizadorPdf } from "@/features/documentos/visualizador";
 
 export const metadata: Metadata = { title: "Visualizar documento · LicCONT" };
@@ -43,12 +42,10 @@ export default async function Visualizar({ params }: { params: Promise<{ id: str
           formato: doc.arquivo.avisos.includes("sem_pdfa") ? "PDF" : "PDF/A",
           sha: abreviarSha(doc.arquivo.sha256),
           campos: [
-            { rotulo: "Empresa", valor: doc.empresa ?? "—" },
+            { rotulo: "Órgão", valor: ORGAOS[doc.orgao] },
             { rotulo: "Secretaria", valor: doc.secretaria || "—" },
             { rotulo: "Ano", valor: String(doc.ano) },
-            { rotulo: "Valor", valor: formatarValor(doc.valor) },
           ],
-          situacao: { texto: SITUACOES[doc.situacao] ?? doc.situacao, tom: tomSituacao(doc.situacao) },
           posicao: doc.posicao?.texto ?? null,
           verNoMapa: doc.posicao ? `/mapa?caixa=${doc.caixaId}` : null,
         }}

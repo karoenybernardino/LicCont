@@ -7,9 +7,7 @@ import { exigirSessao } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { lerTemporalidade } from "@/features/movimento/dados";
 import { LinhaVazia } from "@/features/movimento/ui";
-import { lerRegras, listarTermos, podeGerarTermo } from "@/features/temporalidade/dados";
-import { EditorClasses } from "@/features/temporalidade/classes";
-import { listarGrupos } from "@/features/classificacao/dados";
+import { listarTermos, podeGerarTermo } from "@/features/temporalidade/dados";
 import { FilaEliminacao } from "@/features/temporalidade/fila";
 import { PainelTermos } from "@/features/temporalidade/painel-termos";
 import { BOTAO_CONTORNO } from "@/features/temporalidade/ui";
@@ -19,7 +17,7 @@ export const metadata: Metadata = { title: "Temporalidade · LicCONT" };
 
 export default async function Temporalidade() {
   const { usuario, secretaria } = await exigirSessao();
-  const [{ resumo, regras, prontos }, regrasEditaveis, termos, podeGerar, grupos] = await Promise.all([lerTemporalidade(), lerRegras(), listarTermos(), podeGerarTermo(usuario), listarGrupos()]);
+  const [{ resumo, regras, prontos }, termos, podeGerar] = await Promise.all([lerTemporalidade(), listarTermos(), podeGerarTermo(usuario)]);
   const hoje = hojeSaoPaulo();
   const linhasTermos = termos.map((t) => ({
     id: t.id, termo: `Termo ${String(t.numero).padStart(3, "0")}/${t.ano}`, secretaria: t.secretaria,
@@ -32,6 +30,9 @@ export default async function Temporalidade() {
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Temporalidade e descarte" trilha="Acervo · Prazos de guarda" acoes={
         usuario.administrador ? (
           <div className="flex items-center gap-2.5">
+            <Link href="/configuracoes/temporalidade" className={BOTAO_CONTORNO}>
+              Editar a tabela
+            </Link>
             <Link href="/temporalidade/modelo" className={BOTAO_CONTORNO}>
               Modelo do termo
             </Link>
@@ -52,9 +53,6 @@ export default async function Temporalidade() {
               <p className="mt-0.5 text-xs text-texto-suave">Cada órgão cadastra a sua tabela oficial, aprovada por profissional habilitado.</p>
             </div>
           </div>
-          {usuario.administrador ? (
-            <EditorClasses prefeitura={usuario.prefeituraId} classes={regrasEditaveis} grupos={grupos.filter((g) => g.ativo).map((g) => ({ id: g.id, nome: g.nome }))} />
-          ) : (
           <div className="-mx-5 overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -79,7 +77,6 @@ export default async function Temporalidade() {
               </tbody>
             </table>
           </div>
-          )}
         </Painel>
 
         <Painel>

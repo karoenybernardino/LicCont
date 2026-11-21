@@ -1,7 +1,7 @@
 -- Fase 7 · Temporalidade e descarte: isolamento, permissões e a regra de pronto.
 --   1. classes_documentais: outra prefeitura não lê nem escreve; só administrador grava (pela função);
 --   2. descartes e descarte_itens: só leitura pela Data API; outra prefeitura não lê;
---   3. documento fora do prazo, de guarda permanente, sem data, de outra secretaria
+--   3. documento fora do prazo, de guarda permanente, sem classe, de outra secretaria
 --      ou já em outro termo é recusado;
 --   4. eliminar exige edital + 45 dias + administrador diferente de quem gerou;
 --   5. nada é apagado: documentos, termos e itens não têm DELETE; termo aprovado não muda.
@@ -65,22 +65,23 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero) values
   ('c4a00000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'c3a00000-0000-0000-0000-000000000000', 1),
   ('c4b00000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'c3b00000-0000-0000-0000-000000000000', 1);
 
--- Documentos fictícios. Contrato conta do fim da vigência; licitação do encerramento.
---   d1 contrato vencido (apto)            d2 contrato que acabou hoje (prazo não cumprido)
+-- Documentos fictícios. O prazo conta do FIM DO ANO do documento (ano + guarda + 1 = primeiro dia liberado).
+--   d1 contrato de 2005 (apto)            d2 contrato do ano atual (prazo não cumprido)
 --   d3 licitação de regra permanente      d4 dispensa vencida (apta)
---   d5 contrato sem data de fim           d6 contrato vencido de Obras (outra secretaria)
+--   d5 contrato sem classe           d6 contrato vencido de Obras (outra secretaria)
 --   d7 contrato vencido da prefeitura B   d8 e d9 contratos vencidos (aptos), para o termo do administrador
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao,
-                               vigencia_inicio, vigencia_fim, encerrado_em) values
-  ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '001', 2005, 'Objeto fictício um', 'encerrado', '2005-01-01', '2010-01-01', null),
-  ('d1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '002', 2020, 'Objeto fictício dois', 'encerrado', '2020-01-01', app.hoje(), null),
-  ('d1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'concorrencia', '003', 2000, 'Objeto fictício três', 'concluida', null, null, '2000-01-01'),
-  ('d1000000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '004', 2000, 'Objeto fictício quatro', 'concluida', null, null, '2000-01-01'),
-  ('d1000000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '005', 2005, 'Objeto fictício cinco', 'vigente', '2005-01-01', null, null),
-  ('d1000000-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '006', 2005, 'Objeto fictício seis', 'encerrado', '2005-01-01', '2010-01-01', null),
-  ('d1000000-0000-0000-0000-000000000007', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'contrato', null, '007', 2005, 'Objeto fictício sete', 'encerrado', '2005-01-01', '2010-01-01', null),
-  ('d1000000-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '008', 2005, 'Objeto fictício oito', 'encerrado', '2005-01-01', '2010-01-01', null),
-  ('d1000000-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '009', 2005, 'Objeto fictício nove', 'encerrado', '2005-01-01', '2010-01-01', null);
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '001', 2005, 'Objeto fictício um'),
+  ('d1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '002', extract(year from app.hoje())::int, 'Objeto fictício dois'),
+  ('d1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'concorrencia', '003', 2000, 'Objeto fictício três'),
+  ('d1000000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '004', 2000, 'Objeto fictício quatro'),
+  ('d1000000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '005', 2005, 'Objeto fictício cinco'),
+  ('d1000000-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '006', 2005, 'Objeto fictício seis'),
+  ('d1000000-0000-0000-0000-000000000007', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'contrato', null, '007', 2005, 'Objeto fictício sete'),
+  ('d1000000-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '008', 2005, 'Objeto fictício oito'),
+  ('d1000000-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '009', 2005, 'Objeto fictício nove'),
+  ('d1000000-0000-0000-0000-000000000010', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '010', extract(year from app.hoje())::int - 6, 'Objeto fictício dez'),
+  ('d1000000-0000-0000-0000-000000000011', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '011', extract(year from app.hoje())::int - 5, 'Objeto fictício onze');
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
@@ -102,11 +103,11 @@ select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-1111111
 
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select lives_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[
-  {"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"apos_evento","evento":"Término do contrato","destinacao":"eliminacao"},
+  {"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"fixo","destinacao":"eliminacao"},
   {"codigo":"LP","nome":"Licitações permanentes","grupo":"Licitações e Contratos","tipo_prazo":"permanente","destinacao":"guarda_permanente"},
-  {"codigo":"DI","nome":"Dispensas","grupo":"Licitações e Contratos","prazo_corrente":1,"prazo_intermediaria":1,"tipo_prazo":"apos_evento","evento":"Encerramento","destinacao":"eliminacao"}]'::jsonb)$$,
+  {"codigo":"DI","nome":"Dispensas","grupo":"Licitações e Contratos","prazo_corrente":1,"prazo_intermediaria":1,"tipo_prazo":"fixo","destinacao":"eliminacao"}]'::jsonb)$$,
   'administrador cria as classes');
-select lives_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"apos_evento","evento":"Término do contrato","destinacao":"eliminacao"}]'::jsonb)$$,
+select lives_ok($$select public.classes_salvar('11111111-1111-1111-1111-111111111111', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos","prazo_corrente":2,"prazo_intermediaria":3,"tipo_prazo":"fixo","destinacao":"eliminacao"}]'::jsonb)$$,
   'reenviar o mesmo código atualiza, não duplica');
 select results_eq($$select count(*)::int from public.classes_documentais where codigo = 'CT'$$, array[1], 'uma classe por código');
 select throws_ok($$select public.classes_salvar('22222222-2222-2222-2222-222222222222', '[{"codigo":"CT","nome":"Contratos","grupo":"Licitações e Contratos"}]'::jsonb)$$,
@@ -124,8 +125,9 @@ select throws_ok($$select public.classes_salvar('11111111-1111-1111-1111-1111111
 reset role;
 select set_config('request.jwt.claims', '', true);
 update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'CT')
-  where id in ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000005',
-               'd1000000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000009');
+  where id in ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002',
+               'd1000000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000009',
+               'd1000000-0000-0000-0000-000000000010', 'd1000000-0000-0000-0000-000000000011');
 update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'LP')
   where id = 'd1000000-0000-0000-0000-000000000003';
 update public.documentos set classe_id = (select id from public.classes_documentais where codigo = 'DI')
@@ -149,7 +151,13 @@ select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-0000000
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000003']::uuid[])$$,
   'LD001', null, 'documento de guarda permanente é recusado');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000005']::uuid[])$$,
-  'LD001', null, 'documento aguardando o evento é recusado');
+  'LD001', null, 'documento sem classe é recusado');
+select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000011']::uuid[])$$,
+  'LD001', null, 'ano + guarda de 5 anos chega no ano que vem: ainda não cumprido');
+select is((select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000010')), null,
+  'ano atual - 6 + 5 anos de guarda = liberado desde 01/01 do ano atual');
+select is((select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000011')), 'prazo_nao_cumprido',
+  'ano atual - 5 + 5 anos de guarda só libera em 01/01 do ano que vem');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000006']::uuid[])$$,
   'LD002', null, 'documento de outra secretaria é recusado');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000007']::uuid[])$$,
@@ -215,7 +223,7 @@ select throws_ok($$select public.descarte_aprovar('00000000-0000-0000-0000-00000
 
 -- Um documento deixa de estar apto (virou permanente) antes da aprovação: nada é eliminado.
 reset role;
-update public.classes_documentais set tipo_prazo = 'permanente', evento = null, destinacao = 'guarda_permanente' where codigo = 'DI';
+update public.classes_documentais set tipo_prazo = 'permanente', destinacao = 'guarda_permanente' where codigo = 'DI';
 set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select throws_ok($$select public.descarte_aprovar((select id from public.descartes limit 1))$$,
@@ -223,7 +231,7 @@ select throws_ok($$select public.descarte_aprovar((select id from public.descart
 select results_eq($$select count(*)::int from public.documentos where ativo and id in
   ('d1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000004')$$, array[2], 'nenhum documento foi desativado');
 reset role;
-update public.classes_documentais set tipo_prazo = 'apos_evento', evento = 'Encerramento', destinacao = 'eliminacao' where codigo = 'DI';
+update public.classes_documentais set tipo_prazo = 'fixo', destinacao = 'eliminacao' where codigo = 'DI';
 set local role authenticated;
 
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
@@ -290,19 +298,6 @@ set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
 select throws_ok($$select public.descarte_criar('a1000000-0000-0000-0000-000000000000', array['d1000000-0000-0000-0000-000000000009']::uuid[])$$,
   'LD001', null, 'documento emprestado não entra em termo');
-
--- ---------------------------------------------------------------------------
--- Credor pessoa física: o CPF fica em coluna própria e não vai para a auditoria
--- ---------------------------------------------------------------------------
-select tst_entrar('0a000000-0000-0000-0000-000000000002', '5a000000-0000-0000-0000-000000000002', 'aal1');
-select lives_ok($$update public.documentos set cpf_credor = '12345678909' where id = 'd1000000-0000-0000-0000-000000000005'$$, 'coordenador grava o CPF do credor');
-select throws_ok($$update public.documentos set cpf_credor = '123' where id = 'd1000000-0000-0000-0000-000000000005'$$, '23514', null, 'CPF com formato errado é recusado');
-select throws_ok($$update public.documentos set cnpj = '11222333000181' where id = 'd1000000-0000-0000-0000-000000000005'$$, '23514', null, 'documento não leva CNPJ e CPF juntos');
-select tst_entrar('0b000000-0000-0000-0000-000000000001', '5b000000-0000-0000-0000-000000000001', 'aal2');
-select is_empty($$select 1 from public.documentos where cpf_credor is not null$$, 'B não lê o CPF do credor de A');
-reset role;
-select is_empty($$select 1 from public.auditoria where depois::text like '%12345678909%' or antes::text like '%12345678909%'$$, 'o CPF do credor não aparece na auditoria');
-set local role authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Privilégios

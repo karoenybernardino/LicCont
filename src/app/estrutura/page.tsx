@@ -8,9 +8,10 @@ import { exigirSessao } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { idSchema } from "@/features/login/esquemas";
 import { adicionarModulos, cadastrarGalpao, cadastrarRua } from "@/features/estrutura/acoes";
-import { carregarEstrutura, podeCaixas, ultimasAlteracoes } from "@/features/estrutura/dados";
+import { carregarEstrutura, lerCaixasPorModulo, podeCaixas, ultimasAlteracoes } from "@/features/estrutura/dados";
 import { quando } from "@/features/estrutura/alteracoes";
 import { LIMITES } from "@/features/estrutura/esquemas";
+import { CAIXAS_POR_NIVEL, niveisPorModulo } from "@/features/estrutura/capacidade";
 import { media, numeroBR, resumir } from "@/features/estrutura/ocupacao";
 import { BotaoAcao } from "@/features/estrutura/botao-acao";
 import {
@@ -45,6 +46,7 @@ export default async function EstruturaFisica({
   const e = await carregarEstrutura(id(busca.galpao));
   const admin = usuario.administrador;
   const editaCaixas = await podeCaixas(usuario);
+  const caixasPorModulo = await lerCaixasPorModulo();
   const alteracoes = admin && e.galpao ? await ultimasAlteracoes(e) : [];
 
   const ruasAtivas = e.ruas.filter((r) => r.ativo);
@@ -303,16 +305,9 @@ export default async function EstruturaFisica({
                           <option key={n}>{n}</option>
                         ))}
                       </Selecao>
-                      <Selecao rotulo="Níveis por módulo" name="niveis" defaultValue="4">
-                        {opcoes(LIMITES.niveis).map((n) => (
-                          <option key={n}>{n}</option>
-                        ))}
-                      </Selecao>
-                      <Selecao rotulo="Caixas por nível" name="capacidade" defaultValue="3">
-                        {opcoes(LIMITES.caixasPorNivel).map((n) => (
-                          <option key={n}>{n}</option>
-                        ))}
-                      </Selecao>
+                      <p className="self-end text-[12.5px] text-texto-suave sm:col-span-2">
+                        Cada módulo tem {niveisPorModulo(caixasPorModulo)} níveis de {CAIXAS_POR_NIVEL} caixas ({caixasPorModulo} caixas por módulo).
+                      </p>
                     </div>
                   </Formulario>
                 </Painel>

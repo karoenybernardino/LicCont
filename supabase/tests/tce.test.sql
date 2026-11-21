@@ -42,8 +42,8 @@ insert into public.niveis (id, prefeitura_id, modulo_id, numero, capacidade) val
 insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_documentos) values ('c4a00000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'c3a00000-0000-0000-0000-000000000000', 1, 5);
 
 -- Documento manual existente (alvo do duplicado).
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Objeto manual fictício', 'concluida');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Objeto manual fictício');
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
@@ -86,11 +86,11 @@ select throws_ok($$select public.importar_tce_abrir('11111111-1111-1111-1111-111
 
 select results_eq(
   $$select public.importar_tce_gravar((select id from imp), '[
-    {"tce_id":"T1","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Objeto do TCE fictício","empresa":"Empresa Fictícia","cnpj":"00000000000191","situacao":"concluida"},
-    {"tce_id":"T2","tipo":"licitacao","modalidade":"pregao_eletronico","numero":"015/2023","ano":2023,"objeto":"Objeto do TCE que NÃO pode sobrescrever","situacao":"concluida"}
+    {"tce_id":"T1","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Objeto do TCE fictício","empresa":"Empresa Fictícia","cnpj":"00000000000191"},
+    {"tce_id":"T2","tipo":"licitacao","modalidade":"pregao_eletronico","numero":"015/2023","ano":2023,"objeto":"Objeto do TCE que NÃO pode sobrescrever"}
   ]'::jsonb)::text$$,
   array['{"novos": 1, "duplicados": 1, "ja_existentes": 0}'], 'grava 1 novo e aponta 1 duplicado');
-select results_eq($$select public.importar_tce_gravar((select id from imp), '[{"tce_id":"T1","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Objeto do TCE fictício","situacao":"concluida"}]'::jsonb)::text$$,
+select results_eq($$select public.importar_tce_gravar((select id from imp), '[{"tce_id":"T1","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Objeto do TCE fictício"}]'::jsonb)::text$$,
   array['{"novos": 0, "duplicados": 0, "ja_existentes": 1}'], 'registro já conhecido é ignorado');
 select lives_ok($$select public.importar_tce_fechar((select id from imp), null)$$, 'rotina fecha a importação');
 select throws_ok($$select public.importar_tce_gravar((select id from imp), '[]')$$, '23514', null, 'importação fechada não recebe mais registros');

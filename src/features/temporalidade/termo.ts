@@ -57,7 +57,7 @@ export function conteudoTermo(t: Pick<TermoCompleto, "numero" | "ano" | "situaca
       larguras: [0.06, 0.2, 0.3, 0.14, 0.12, 0.18],
       linhas: t.documentos.map((d, i) => [
         String(i + 1), d.titulo, corta(d.objeto, 110), d.classe, d.caixa,
-        d.inicio ? `${data(d.inicio)} a ${data(d.fim)}` : `até ${data(d.fim)}`,
+        d.extremos,
       ]),
     },
     assinaturas: modelo.assinaturas.split("\n").map((l) => l.trim()).filter(Boolean),

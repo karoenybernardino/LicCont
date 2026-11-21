@@ -9,6 +9,7 @@ import { verificarCodigo } from "@/features/dois-fatores/acoes";
 import { CadastroAutenticador } from "@/features/dois-fatores/cadastro";
 import { MolduraLogin } from "@/features/login/moldura";
 import { sair } from "@/features/sessao/acoes";
+import { euParceira } from "@/features/parceira/dados";
 import { faltaSegundoFator, membroEquipe, usuarioAtual } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Segundo fator · LicCONT" };
@@ -17,9 +18,12 @@ export const metadata: Metadata = { title: "Segundo fator · LicCONT" };
 export default async function SegundoFator() {
   const usuario = await usuarioAtual();
   const equipe = usuario ? null : await membroEquipe();
-  if (!usuario && !equipe) redirect("/entrar");
+  const parceira = usuario || equipe ? null : await euParceira();
+  if (!usuario && !equipe && !parceira) redirect("/entrar");
   if (usuario && !usuario.administrador) redirect("/inicio");
-  if (!(await faltaSegundoFator())) redirect(!usuario ? "/equipe" : usuario.trocaSenha ? "/nova-senha" : "/inicio");
+  if (!(await faltaSegundoFator())) {
+    redirect(parceira ? (parceira.trocaSenha ? "/parceira/nova-senha" : "/parceira") : !usuario ? "/equipe" : usuario.trocaSenha ? "/nova-senha" : "/inicio");
+  }
 
   const supabase = (await clienteSessao())!;
   const { data } = await supabase.auth.mfa.listFactors();

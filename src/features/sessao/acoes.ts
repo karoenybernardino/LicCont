@@ -5,15 +5,17 @@ import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { COOKIE_ATIVIDADE, COOKIE_SECRETARIA, opcoesCookie } from "./cookies";
 import { COOKIE_PERFIL_DEMO, emDemo } from "@/features/demo/dados";
+import { euParceira } from "@/features/parceira/dados";
 import { exigirSessao, membroEquipe, origemDaRequisicao, secretariaAtual, secretariaPermitida } from "./dal";
 
 export async function sair() {
   if (emDemo()) {
     const loja = await cookies();
     const equipe = loja.get(COOKIE_PERFIL_DEMO)?.value === "equipe";
+    const perfil = loja.get(COOKIE_PERFIL_DEMO)?.value ?? "";
     loja.delete(COOKIE_PERFIL_DEMO);
     loja.delete(COOKIE_SECRETARIA);
-    redirect(equipe ? "/equipe/entrar" : "/entrar");
+    redirect(equipe ? "/equipe/entrar" : perfil.startsWith("parceira_") ? "/parceira/entrar" : "/entrar");
   }
   const supabase = await clienteSessao();
   let destino = "/entrar";
@@ -30,6 +32,7 @@ export async function sair() {
         p_aparelho: aparelho,
       });
     } else {
+      if (await euParceira()) destino = "/parceira/entrar";
       await supabase.rpc("registrar_auditoria", { p_acao: "sessao.saida", p_ip: ip, p_aparelho: aparelho });
     }
     await supabase.auth.signOut({ scope: "local" });

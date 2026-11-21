@@ -14,7 +14,7 @@ const contorno = "inline-flex min-h-10 items-center justify-center rounded-lg bo
 const primario = "inline-flex min-h-10 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#0e7490,#0f766e)] px-5 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-foco disabled:opacity-60 dark:bg-none dark:bg-[#2dd4bf] dark:text-[#0b2e3a]";
 
 // Escolhe PNG ou SVG, converte para PNG no navegador e deixa o arquivo pronto no campo "logo" do formulário.
-function LogoUpload({ atual, texto }: { atual: string | null; texto: string }) {
+function LogoUpload({ atual, texto, nome = "logo" }: { atual: string | null; texto: string; nome?: string }) {
   const oculto = useRef<HTMLInputElement>(null);
   const [previa, setPrevia] = useState<string | null>(atual);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,7 +50,7 @@ function LogoUpload({ atual, texto }: { atual: string | null; texto: string }) {
         {previa ? "Trocar" : "Enviar logo"}
         <input type="file" accept=".png,.svg,image/png,image/svg+xml" className="sr-only" onChange={(e) => escolher(e.target.files?.[0])} />
       </label>
-      <input ref={oculto} type="file" name="logo" className="hidden" tabIndex={-1} aria-hidden />
+      <input ref={oculto} type="file" name={nome} className="hidden" tabIndex={-1} aria-hidden />
     </div>
   );
 }
@@ -59,19 +59,19 @@ export function FormMarca({ id, marca, parceiras }: { id: string; marca: MarcaOr
   return (
     <form action={salvarMarcaOrgao} className="flex flex-col gap-3.5">
       <input type="hidden" name="id" value={id} />
-      <LogoUpload atual={marca.logoUrl} texto="Logo do órgão" />
+      <LogoUpload atual={marca.logoUrl} texto="Logo da Prefeitura" />
       {marca.logoUrl && (
         <label className="flex items-center gap-2 text-[13px]">
-          <input type="checkbox" name="remover_logo" className="size-4 accent-[#0e7490]" /> Remover o logo atual (se não enviar outro)
+          <input type="checkbox" name="remover_logo" className="size-4 accent-[#0e7490]" /> Remover o logo atual da Prefeitura (se não enviar outro)
         </label>
       )}
-      <label className="flex flex-col gap-[5px]">
-        <span className={rotulo}>Tipo de órgão</span>
-        <select name="tipo" defaultValue={marca.tipo} className={campo}>
-          <option value="prefeitura">Prefeitura</option>
-          <option value="camara">Câmara</option>
-        </select>
-      </label>
+      <LogoUpload atual={marca.logoCamaraUrl} texto="Logo da Câmara" nome="logo_camara" />
+      {marca.logoCamaraUrl && (
+        <label className="flex items-center gap-2 text-[13px]">
+          <input type="checkbox" name="remover_logo_camara" className="size-4 accent-[#0e7490]" /> Remover o logo atual da Câmara (se não enviar outro)
+        </label>
+      )}
+      <p className="text-[12.5px] text-texto-suave">Um só cadastro por município, com os dois logos. A etiqueta usa o logo do órgão da caixa.</p>
       <label className="flex flex-col gap-[5px]">
         <span className={rotulo}>Nome na etiqueta (quando não há logo)</span>
         <input name="nome_etiqueta" maxLength={120} defaultValue={marca.nomeEtiqueta} className={campo} />

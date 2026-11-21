@@ -1,7 +1,7 @@
 import "server-only";
 import { clienteSessao } from "@/lib/supabase/servidor";
 import { emDemo } from "@/features/demo/dados";
-import { SITUACOES } from "@/features/documentos/tipos";
+import { ORGAOS, type Orgao } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { lerTemporalidadeReal } from "@/features/temporalidade/dados";
 import { RELATORIOS, dataBR, descreverFiltros, type Filtros, type IdRelatorio, type Relatorio } from "./definicoes";
@@ -14,7 +14,6 @@ const PAGINA = 1000;
 type Linha = Record<string, unknown>;
 const hoje = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const dias = (iso: string) => Date.parse(`${iso}T00:00:00Z`) / 86_400_000;
-const real = (v: number | null) => (v === null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const codigo = (c: { numero: number; niveis: { numero: number; modulos: { numero: number; ruas: { codigo: string } } } } | null) =>
   c ? `${c.niveis.modulos.ruas.codigo}-M${c.niveis.modulos.numero}-N${c.niveis.numero}-C${String(c.numero).padStart(2, "0")}` : "Sem endereço";
 
@@ -43,7 +42,7 @@ export async function montarRelatorio(id: IdRelatorio, f: Filtros, nomesSecretar
     larguras,
     linhas,
   });
-  if (emDemo()) return pronto(["Documento", "Situação"], [0.7, 0.3], [["Exemplo de demonstração", "—"]]);
+  if (emDemo()) return pronto(["Documento", "Órgão"], [0.7, 0.3], [["Exemplo de demonstração", "—"]]);
   const sb = await clienteSessao();
   if (!sb) throw new Error("Não foi possível gerar o relatório.");
 
@@ -51,7 +50,7 @@ export async function montarRelatorio(id: IdRelatorio, f: Filtros, nomesSecretar
     const linhas = await paginar((de, ate) => {
       let q = sb
         .from("documentos")
-        .select(`id, tipo, modalidade, numero, ano, situacao, secretaria_id, ${CAIXA}`)
+        .select(`id, tipo, modalidade, numero, ano, orgao, secretaria_id, ${CAIXA}`)
         .eq("ativo", true)
         .order("secretaria_id")
         .order("ano")
@@ -62,13 +61,13 @@ export async function montarRelatorio(id: IdRelatorio, f: Filtros, nomesSecretar
       return q;
     });
     return pronto(
-      ["Documento", "Secretaria", "Ano", "Situação", "Endereço"],
+      ["Documento", "Secretaria", "Ano", "Órgão", "Endereço"],
       [0.3, 0.22, 0.08, 0.15, 0.25],
       linhas.map((d) => [
         tituloDocumento(d as never),
         nomesSecretaria.get(d.secretaria_id as string) ?? "—",
         String(d.ano),
-        SITUACOES[d.situacao as string] ?? String(d.situacao),
+        ORGAOS[d.orgao as Orgao] ?? String(d.orgao),
         codigo(d.caixas as never),
       ]),
     );
@@ -114,30 +113,5 @@ export async function montarRelatorio(id: IdRelatorio, f: Filtros, nomesSecretar
     );
   }
 
-  const linhas = await paginar((de, ate) => {
-    let q = sb
-      .from("documentos")
-      .select("tipo, modalidade, numero, ano, empresa, valor, vigencia_inicio, vigencia_fim, secretaria_id")
-      .eq("ativo", true)
-      .eq("tipo", "contrato")
-      .not("vigencia_fim", "is", null)
-      .order("vigencia_fim")
-      .range(de, ate);
-    if (f.secretaria) q = q.eq("secretaria_id", f.secretaria);
-    if (f.de) q = q.gte("vigencia_fim", f.de);
-    if (f.ate) q = q.lte("vigencia_fim", f.ate);
-    return q;
-  });
-  return pronto(
-    ["Contrato", "Empresa", "Secretaria", "Valor", "Início", "Fim"],
-    [0.2, 0.24, 0.18, 0.14, 0.12, 0.12],
-    linhas.map((c) => [
-      tituloDocumento(c as never),
-      String(c.empresa ?? "—"),
-      nomesSecretaria.get(c.secretaria_id as string) ?? "—",
-      real(c.valor === null ? null : Number(c.valor)),
-      dataBR(c.vigencia_inicio as string | null),
-      dataBR(c.vigencia_fim as string | null),
-    ]),
-  );
+  throw new Error("Não foi possível gerar o relatório.");
 }

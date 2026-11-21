@@ -51,9 +51,9 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero) values
 
 -- Um documento de Obras e outro da Saúde, cada um com um arquivo "enviando"
 -- enviado pelo operador da secretaria (como dono, para montar o cenário).
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao) values
-  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '1/2024', 2024, 'Objeto de Obras', 'concluida'),
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '2/2024', 2024, 'Objeto da Saúde', 'concluida');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '1/2024', 2024, 'Objeto de Obras'),
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '2/2024', 2024, 'Objeto da Saúde');
 insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por) values
   ('f0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'd0a20000-0000-0000-0000-000000000000', 'obras.pdf', 100, '0a000000-0000-0000-0000-000000000003'),
   ('f0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'saude.pdf', 100, '0a000000-0000-0000-0000-000000000005');

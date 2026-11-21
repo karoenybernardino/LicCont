@@ -61,11 +61,11 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_docum
   ('c4b00000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'c3b00000-0000-0000-0000-000000000000', 1, 5);
 
 -- Documentos: Saúde A, Obras A, Obras A inativo e um de B.
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao, ativo) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Equipamentos fictícios', 'concluida', true),
-  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação fictícia', 'concluida', true),
-  ('d0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '004/2022', 2022, 'Obra inativa fictícia', 'concluida', false),
-  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material fictício', 'concluida', true);
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, ativo) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Equipamentos fictícios', true),
+  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação fictícia', true),
+  ('d0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '004/2022', 2022, 'Obra inativa fictícia', false),
+  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material fictício', true);
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$

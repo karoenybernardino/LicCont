@@ -17,8 +17,6 @@ import { listarSecretarias, listarUsuarios } from "@/features/usuarios/dados";
 export const metadata: Metadata = { title: "Início · LicCONT" };
 
 const ic = (nome: Parameters<typeof Icone>[0]["nome"]) => <Icone nome={nome} />;
-const botaoHero =
-  "inline-flex min-h-10 items-center rounded-[10px] border border-white/30 bg-white/8 px-[18px] text-sm font-medium text-white hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua";
 
 export default async function Inicio() {
   const { usuario, secretaria } = await exigirSessao();
@@ -91,21 +89,12 @@ export default async function Inicio() {
           </p>
           <p className="font-titulo text-[26px] leading-[1.25] font-bold">Vamos montar o acervo da prefeitura.</p>
           <p className="text-sm leading-[21px] text-white/82">
-            Comece pela estrutura física e pelos usuários. Depois cadastre os documentos e pesquise o acervo.
+            Comece pela estrutura física. Depois cadastre os documentos e pesquise o acervo.
           </p>
           <div className="mt-1.5 flex flex-wrap gap-2.5">
-            {admin ? (
-              <>
-                <Link href="/usuarios" className="inline-flex min-h-10 items-center rounded-[10px] bg-[#2dd4bf] px-[18px] text-sm font-semibold text-[#0b2e3a] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua">
-                  Convidar usuários
-                </Link>
-                <Link href="/secretarias" className={botaoHero}>Cadastrar secretarias</Link>
-              </>
-            ) : (
-              <Link href="/estrutura" className="inline-flex min-h-10 items-center rounded-[10px] bg-[#2dd4bf] px-[18px] text-sm font-semibold text-[#0b2e3a] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua">
-                Ver a estrutura física
-              </Link>
-            )}
+            <Link href="/estrutura" className="inline-flex min-h-10 items-center rounded-[10px] bg-[#2dd4bf] px-[18px] text-sm font-semibold text-[#0b2e3a] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua">
+              Ver a estrutura física
+            </Link>
           </div>
         </div>
       </section>

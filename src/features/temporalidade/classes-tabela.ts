@@ -12,14 +12,13 @@ export type LinhaClasse = {
   corrente: number;
   intermediaria: number;
   tipoPrazo: TipoPrazo;
-  evento: string;
   destinacao: Destinacao;
   observacao: string;
   // Leitura de PDF duvidosa (texto sem coluna clara ou OCR pouco confiável): a pessoa confere.
   duvida?: boolean;
 };
 
-export const COLUNAS_MODELO = ["Código", "Classe", "Grupo", "Tipologias", "Prazo (anos)", "Tipo de prazo", "Evento", "Destinação", "Observação"] as const;
+export const COLUNAS_MODELO = ["Código", "Classe", "Grupo", "Tipologias", "Prazo (anos)", "Tipo de prazo", "Destinação", "Observação"] as const;
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
@@ -30,7 +29,6 @@ const APELIDOS: Record<string, string[]> = {
   tipologias: ["tipologias", "tipologia", "tipologia documental"],
   prazo: ["prazo", "prazo de guarda", "prazo (anos)", "prazo em anos", "guarda"],
   tipoPrazo: ["tipo de prazo", "tipo prazo", "contagem"],
-  evento: ["evento", "contagem a partir de", "inicio da contagem", "a partir de"],
   destinacao: ["destinacao", "destinacao final"],
   observacao: ["observacao", "observacoes", "obs"],
 };
@@ -46,13 +44,9 @@ export function mapearColunas(cabecalhos: string[]): Partial<Record<keyof typeof
   return mapa;
 }
 
-function lerTipoPrazo(texto: string, prazo: string, evento: string): TipoPrazo {
-  const t = semAcento(texto);
-  if (t.includes("perman")) return "permanente";
-  if (t.includes("evento") || t.includes("apos")) return "apos_evento";
-  if (t.includes("fixo")) return "fixo";
-  if (semAcento(prazo).includes("perman")) return "permanente";
-  return evento.trim() ? "apos_evento" : "fixo";
+// Só há prazo fixo (conta do fim do ano do documento) ou guarda permanente; tabela antiga com "após evento" lê como fixo.
+function lerTipoPrazo(texto: string, prazo: string): TipoPrazo {
+  return semAcento(texto).includes("perman") || semAcento(prazo).includes("perman") ? "permanente" : "fixo";
 }
 
 function lerDestinacao(texto: string, tipo: TipoPrazo): Destinacao {
@@ -82,8 +76,7 @@ export function montarLinhas(cabecalhos: string[], linhas: string[][], grupoPadr
   for (const l of linhas) {
     if (l.every((x) => !x.trim())) continue;
     const prazoTxt = c(l, "prazo");
-    const evento = c(l, "evento");
-    const tipoPrazo = lerTipoPrazo(c(l, "tipoPrazo"), prazoTxt, evento);
+    const tipoPrazo = lerTipoPrazo(c(l, "tipoPrazo"), prazoTxt);
     out.push({
       codigo: c(l, "codigo"),
       nome: c(l, "nome"),
@@ -91,7 +84,6 @@ export function montarLinhas(cabecalhos: string[], linhas: string[][], grupoPadr
       tipologias: c(l, "tipologias"),
       ...lerPrazo(prazoTxt),
       tipoPrazo,
-      evento: tipoPrazo === "apos_evento" ? evento : "",
       destinacao: lerDestinacao(c(l, "destinacao"), tipoPrazo),
       observacao: c(l, "observacao"),
     });
@@ -113,7 +105,6 @@ export function conferirLinhas(linhas: LinhaClasse[], gruposDoOrgao: string[]): 
     if (!l.grupo.trim()) e.push("Falta o grupo.");
     else if (!grupos.has(semAcento(l.grupo))) e.push("Grupo não cadastrado neste órgão.");
     if (l.tipoPrazo !== "permanente" && (l.corrente + l.intermediaria < 1 || l.corrente > 99 || l.intermediaria > 99)) e.push("Prazo inválido (de 1 a 99 anos).");
-    if (l.tipoPrazo === "apos_evento" && l.evento.trim().length < 2) e.push("Falta o evento que inicia a contagem.");
     if ((l.tipoPrazo === "permanente") !== (l.destinacao === "guarda_permanente")) e.push("Guarda permanente e prazo permanente têm de andar juntos.");
     return e;
   });
@@ -129,7 +120,6 @@ export const paraBanco = (linhas: LinhaClasse[]) =>
     prazo_corrente: l.tipoPrazo === "permanente" ? 0 : l.corrente,
     prazo_intermediaria: l.tipoPrazo === "permanente" ? 0 : l.intermediaria,
     tipo_prazo: l.tipoPrazo,
-    evento: l.tipoPrazo === "apos_evento" ? l.evento.trim() : "",
     destinacao: l.destinacao,
     observacao: l.observacao.trim(),
   }));
@@ -141,23 +131,12 @@ export function textoPrazo(r: { corrente: number; intermediaria: number; tipoPra
   return `${n} ${n === 1 ? "ano" : "anos"}`;
 }
 
-// Frase do prazo de guarda que sai na etiqueta: "12 anos após o término do contrato".
-const MASCULINO = /^(termino|fim|encerramento|vencimento|inicio|transito|pagamento|julgamento|arquivamento|desligamento|obito|ato)( |$)/;
-const FEMININO = /^(prestacao|aprovacao|conclusao|extincao|homologacao|publicacao|rescisao|vigencia)( |$)/;
-export function prazoDeGuarda(r: { corrente: number; intermediaria: number; tipoPrazo: TipoPrazo; evento: string | null }) {
+// Frase do prazo de guarda que sai na etiqueta: "5 anos a partir do fim do ano do documento".
+export function prazoDeGuarda(r: { corrente: number; intermediaria: number; tipoPrazo: TipoPrazo }) {
   if (r.tipoPrazo === "permanente") return "Guarda permanente";
   const n = r.corrente + r.intermediaria;
-  const anos = `${n} ${n === 1 ? "ano" : "anos"}`;
-  if (r.tipoPrazo === "fixo") return `${anos} a partir da data do documento`;
-  const ev = (r.evento ?? "").trim();
-  if (!ev) return anos;
-  const baixo = ev.charAt(0).toLowerCase() + ev.slice(1);
-  return `${anos} após ${MASCULINO.test(semAcento(ev)) ? "o " : FEMININO.test(semAcento(ev)) ? "a " : ""}${baixo}`;
+  return `${n} ${n === 1 ? "ano" : "anos"} a partir do fim do ano do documento`;
 }
-
-// Texto da coluna "Contagem a partir de".
-export const textoContagem = (r: { tipoPrazo: TipoPrazo; evento: string | null }) =>
-  r.tipoPrazo === "permanente" ? "—" : r.tipoPrazo === "apos_evento" ? (r.evento ?? "—") : "Data do documento";
 
 // ---------------------------------------------------------------------------
 // Texto do PDF -> linhas de tabela
@@ -224,9 +203,9 @@ const col = (i: number) => String.fromCharCode(65 + i);
 
 export function gerarModeloXlsx(grupos: string[]): Uint8Array {
   const exemplo = [
-    ["031", "Licitações e Contratos", grupos.find((g) => /licita/i.test(g)) ?? grupos[0] ?? "Licitações e Contratos", "Processo licitatório", "12", "após evento", "Término do contrato", "eliminação", ""],
-    ["035", "Dispensas e inexigibilidades", grupos.find((g) => /licita/i.test(g)) ?? grupos[0] ?? "Licitações e Contratos", "", "5", "fixo", "", "eliminação", "Conta da data do documento"],
-    ["010", "Atas da câmara", grupos[0] ?? "Administrativo", "Ata", "", "permanente", "", "guarda permanente", ""],
+    ["031", "Licitações e Contratos", grupos.find((g) => /licita/i.test(g)) ?? grupos[0] ?? "Licitações e Contratos", "Processo licitatório", "12", "fixo", "eliminação", ""],
+    ["035", "Dispensas e inexigibilidades", grupos.find((g) => /licita/i.test(g)) ?? grupos[0] ?? "Licitações e Contratos", "", "5", "fixo", "eliminação", "Conta do fim do ano do documento"],
+    ["010", "Atas da câmara", grupos[0] ?? "Administrativo", "Ata", "", "permanente", "guarda permanente", ""],
   ];
   const celula = (t: string, r: number, c: number) => `<c r="${col(c)}${r}" t="inlineStr"><is><t>${esc(t)}</t></is></c>`;
   const linha = (cels: readonly string[], r: number) => `<row r="${r}">${cels.map((t, c) => celula(t, r, c)).join("")}</row>`;

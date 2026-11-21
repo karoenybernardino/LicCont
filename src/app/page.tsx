@@ -19,7 +19,7 @@ const HOJE = [
 ];
 const COM = [
   "Cada caixa tem endereço (rua, módulo, nível, caixa) e etiqueta com QR.",
-  "Busca por número, objeto, empresa ou ano, e o sistema mostra onde o papel está.",
+  "Busca por número, título, objeto ou ano, e o sistema mostra onde o papel está.",
   "Empréstimos e devoluções registrados, com prazo e atraso.",
   "Tabela de temporalidade e termo de eliminação, com aprovação.",
   "Auditoria de cada entrada, busca e alteração.",

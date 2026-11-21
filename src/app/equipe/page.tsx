@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { CartaoResumo, Pilula } from "@/ui/canvas";
 import { PaginaEquipe } from "@/features/equipe/pagina";
@@ -23,7 +24,7 @@ export default async function InicioEquipe() {
     listarPrefeituras(), integracoes(), listarPedidos(100), acoesEquipe({ limite: 4 }), usoPrefeituras(),
   ]);
   const ativas = prefeituras.filter((p) => p.status === "ativa").length;
-  const comErro = prefeituras.filter((p) => integ.get(p.id)?.situacao === "erro");
+  const comErro = MODULOS.tce ? prefeituras.filter((p) => integ.get(p.id)?.situacao === "erro") : [];
   const semAdmin = prefeituras.filter((p) => p.administradores === 0);
   const novos = pedidos.filter((p) => p.situacao === "novo");
   const antigo = novos.at(-1);
@@ -59,7 +60,7 @@ export default async function InicioEquipe() {
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <CartaoResumo rotulo="Prefeituras ativas" valor={String(ativas)} legenda={`de ${prefeituras.length} cadastradas`} cor="teal" icone={<Icone nome="secretarias" />} />
         <CartaoResumo rotulo="Pedidos novos" valor={String(novos.length)} legenda="do formulário do site" cor="ambar" icone={<Icone nome="usuarios" />} />
-        <CartaoResumo rotulo="Integrações com erro" valor={String(comErro.length)} legenda="TCE fora do ar na última rodada" cor="vermelho" icone={<Icone nome="importados" />} />
+        {MODULOS.tce && <CartaoResumo rotulo="Integrações com erro" valor={String(comErro.length)} legenda="TCE fora do ar na última rodada" cor="vermelho" icone={<Icone nome="importados" />} />}
         <CartaoResumo rotulo="Pendências" valor={String(semAdmin.length)} legenda="prefeituras sem administrador ativo" cor="aco" icone={<Icone nome="auditoria" />} />
       </div>
 

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Formulario } from "@/ui/formulario";
 import { Campo } from "@/ui/campo";
 import { Selecao } from "@/ui/selecao";
+import { OPCOES_CAIXAS_POR_MODULO } from "@/features/estrutura/capacidade";
 import { BotaoEnviar } from "@/ui/botao-enviar";
 import { CabecalhoPainel, Filtros, Pilula, botaoContorno, botaoPrimario } from "@/ui/canvas";
 import { BotaoConfirmar } from "@/features/equipe/botao-confirmar";
@@ -18,28 +20,32 @@ import { listarAdministradores, obterPrefeitura, suporteAutorizadoAte, usoPrefei
 import { formatarCnpj } from "@/features/prefeituras/lista";
 import { formatarData } from "@/features/documentos/formato";
 import { exigirEquipe } from "@/features/sessao/dal";
-import { classesDoOrgao, listarParceiras, marcaDoOrgao } from "@/features/equipe/marca";
+import { listarParceiras, marcaDoOrgao } from "@/features/equipe/marca";
+import { AbaSecretarias } from "@/features/equipe/aba-secretarias";
+import { AbaUsuarios } from "@/features/equipe/aba-usuarios";
 import { FormMarca } from "@/features/equipe/marca-form";
-import { EditorClasses } from "@/features/temporalidade/classes";
 
 export const metadata: Metadata = { title: "Prefeitura · LicCONT" };
 
 const SITUACOES = { implantacao: "Em implantação", ativa: "Ativa", suspensa: "Suspensa" } as const;
 const TONS = { implantacao: "aviso", ativa: "ok", suspensa: "erro" } as const;
 const entrada = "!min-h-10 !rounded-lg !text-sm";
-const ABAS = [
+const TODAS_ABAS = [
   ["resumo", "Resumo"],
   ["administradores", "Administradores"],
+  ["secretarias", "Secretarias"],
+  ["usuarios", "Usuários"],
   ["tce", "Integração TCE-CE"],
   ["marca", "Logo e temporalidade"],
   ["uso", "Uso"],
   ["auditoria", "Auditoria"],
 ] as const;
+const ABAS = TODAS_ABAS.filter(([v]) => v !== "tce" || MODULOS.tce);
 const reais = (c: number | null) => (c === null ? "" : (c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }));
 const rotuloMini = "text-[11px] font-medium tracking-[.05em] text-texto-suave uppercase";
 
 // Quadro EquipePrefeituraDetalhe: cabeçalho e abas Resumo, Administradores, Integração TCE-CE, Uso e Auditoria.
-export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; editar?: string; importou?: string; marca?: string }> }) {
+export default async function DetalhePrefeitura({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; item?: string; editar?: string; importou?: string; marca?: string }> }) {
   await exigirEquipe();
   const { id } = await params;
   const busca = await searchParams;
@@ -52,7 +58,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
   const uso = usoTodas.get(id);
   const i = integ.get(id);
   const aviso = busca.importou ? AVISOS_IMPORTAR[busca.importou] : undefined;
-  const [marca, parceiras, classes] = aba === "marca" ? await Promise.all([marcaDoOrgao(id), listarParceiras(), classesDoOrgao(id)]) : [null, [], { classes: [], grupos: [] }];
+  const [marca, parceiras] = aba === "marca" ? await Promise.all([marcaDoOrgao(id), listarParceiras()]) : [null, []];
   const avisoMarca = busca.marca ? ({ ok: "Marca salva.", logo: "O logo precisa ser PNG ou SVG de até 1 MB.", demo: "Modo demonstração: nada foi salvo.", erro: "Não foi possível salvar. Confira os dados." } as Record<string, string>)[busca.marca] : undefined;
   const acoes = aba === "auditoria" ? await acoesEquipe({ prefeitura: id, limite: 50 }) : [];
   const href = (a: string) => `/equipe/${id}?aba=${a}`;
@@ -119,7 +125,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
             {uso && <ResumoUso uso={uso} suporte={suporte} />}
             {editar && (
               <Painel>
-                <CabecalhoPainel icone={<span>✎</span>} titulo="Editar dados" subtitulo="Nome, CNPJ, contrato e integração com o TCE-CE" />
+                <CabecalhoPainel icone={<span>✎</span>} titulo="Editar dados" subtitulo={MODULOS.tce ? "Nome, CNPJ, contrato e integração com o TCE-CE" : "Nome, CNPJ e contrato"} />
                 <Formulario acao={atualizarPrefeitura} botao="Salvar dados" enviando="Salvando…" className="gap-3.5">
                   <input type="hidden" name="id" value={p.id} />
                   <input type="hidden" name="plano" value="completo" />
@@ -129,12 +135,15 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                     <Campo rotulo="Implantação (R$)" name="valor_implantacao" inputMode="decimal" defaultValue={reais(p.implantacaoCentavos)} className={entrada} />
                     <Campo rotulo="Mensalidade (R$)" name="valor_mensalidade" inputMode="decimal" defaultValue={reais(p.mensalidadeCentavos)} className={entrada} />
                     <Campo rotulo="Início do contrato" name="contrato_inicio" type="date" defaultValue={p.contratoInicio ?? ""} className={entrada} />
-                    <Campo rotulo="Código do município no TCE" name="tce_codigo_municipio" inputMode="numeric" defaultValue={p.tceCodigo ?? ""} className={entrada} />
+                    <Selecao rotulo="Caixas por módulo" name="caixas_por_modulo" defaultValue={String(p.caixasPorModulo ?? 36)} className={entrada}>
+                      {OPCOES_CAIXAS_POR_MODULO.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </Selecao>
+                    {MODULOS.tce && <Campo rotulo="Código do município no TCE" name="tce_codigo_municipio" inputMode="numeric" defaultValue={p.tceCodigo ?? ""} className={entrada} />}
                   </div>
-                  <label className="flex items-center gap-2.5 text-sm font-medium">
+                  {MODULOS.tce && <label className="flex items-center gap-2.5 text-sm font-medium">
                     <input type="checkbox" name="tce_ativo" defaultChecked={i?.ativo ?? false} className="size-4 accent-[#0e7490]" />
                     Integração com o TCE-CE ligada
-                  </label>
+                  </label>}
                 </Formulario>
               </Painel>
             )}
@@ -196,7 +205,11 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
         </Painel>
       )}
 
-      {aba === "tce" && (
+      {aba === "secretarias" && <AbaSecretarias prefeitura={id} item={busca.item} />}
+
+      {aba === "usuarios" && <AbaUsuarios prefeitura={id} item={busca.item} />}
+
+      {aba === "tce" && MODULOS.tce && (
         <Painel>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -228,7 +241,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
             <Painel>
               <CabecalhoPainel
                 icone={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h10l4 4v14H5zM14 3v5h5" /></svg>}
-                titulo="Logo do órgão"
+                titulo="Logos da Prefeitura e da Câmara"
                 subtitulo="Sai no topo das etiquetas, da folha de conteúdo e dos relatórios."
               />
               {marca && <FormMarca id={id} marca={marca} parceiras={parceiras} />}
@@ -239,7 +252,7 @@ export default async function DetalhePrefeitura({ params, searchParams }: { para
                 titulo="Tabela de temporalidade"
                 subtitulo="Código de classificação e prazo de guarda que saem nas etiquetas."
               />
-              <EditorClasses prefeitura={id} classes={classes.classes} grupos={classes.grupos} />
+              <Link href={`/equipe/${id}/temporalidade`} className={botaoContorno}>Abrir a tabela</Link>
             </Painel>
           </div>
         </>

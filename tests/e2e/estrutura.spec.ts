@@ -65,25 +65,25 @@ test("administrador cria rua, gera módulos e níveis pelas listas e a ocupaçã
 
   await page.getByLabel("Rua", { exact: true }).selectOption({ label: "C" });
   await page.getByLabel("Módulos", { exact: true }).selectOption("2");
-  await page.getByLabel("Níveis por módulo").selectOption("3");
-  await page.getByLabel("Caixas por nível").selectOption("4");
+  // Níveis e caixas por nível vêm do cadastro da prefeitura: 36 caixas por módulo = 6 níveis de 6 caixas.
+  await expect(page.getByText("Cada módulo tem 6 níveis de 6 caixas (36 caixas por módulo).")).toBeVisible();
   await page.getByRole("button", { name: "Adicionar ao galpão" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Módulos 1 a 2 adicionados." })).toBeVisible();
-  await expect(linhaDaRua(page, "C")).toHaveText(/Rua C\s*2\s*6\s*0\s*0%/);
+  await expect(linhaDaRua(page, "C")).toHaveText(/Rua C\s*2\s*12\s*0\s*0%/);
 
   await page.getByRole("link", { name: "Editar Rua C" }).click();
   await page.getByRole("link", { name: "Gerenciar Módulo 1 · Nível 1" }).click();
-  await page.getByLabel("Quantidade de caixas").selectOption("4");
+  await page.getByLabel("Quantidade de caixas").selectOption("6");
   await page.getByRole("button", { name: "Cadastrar caixas" }).click();
   // Nível cheio: o formulário sai e a tela diz que não há posição livre.
   await expect(page.getByText("Nível cheio: não há posição livre.")).toBeVisible();
-  await expect(page.getByRole("row", { name: /^Nível 1\s*C-M1-N1/ })).toContainText("4 de 4");
+  await expect(page.getByRole("row", { name: /^Nível 1\s*C-M1-N1/ })).toContainText("6 de 6");
   await expect(page.getByRole("button", { name: "Cadastrar caixas" })).toHaveCount(0);
   await page.getByRole("button", { name: "Desativar nível" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Ainda há caixas ativas aqui. Desative as caixas antes." })).toBeVisible();
   await semFalhasDeAcessibilidade(page);
 
   await page.getByRole("link", { name: "Voltar para a estrutura" }).click();
-  await expect(linhaDaRua(page, "C")).toContainText("17%");
-  await expect(page.getByText("4 caixas adicionadas")).toBeVisible();
+  await expect(linhaDaRua(page, "C")).toContainText("8%");
+  await expect(page.getByText("6 caixas adicionadas")).toBeVisible();
 });

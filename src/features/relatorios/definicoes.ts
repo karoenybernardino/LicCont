@@ -1,13 +1,12 @@
-// Os cinco relatórios da Fase 9 e o que cada um aceita de filtro.
+// Os relatórios da Fase 9 e o que cada um aceita de filtro.
 // Nenhum relatório carrega CPF: os dados vêm das mesmas leituras das telas
 // (que já não trazem CPF) e passam pelo RLS de quem baixa.
 
 export const RELATORIOS = {
-  inventario: { nome: "Inventário por secretaria", descricao: "Todos os documentos ativos, com secretaria, endereço na caixa e situação.", periodo: false },
+  inventario: { nome: "Inventário por secretaria", descricao: "Todos os documentos ativos, com secretaria, endereço na caixa e órgão.", periodo: false },
   sem_endereco: { nome: "Documentos sem endereço", descricao: "Documentos importados que ainda não têm caixa no galpão.", periodo: false },
   emprestimos_atraso: { nome: "Empréstimos em atraso", descricao: "Quem retirou, quando era o prazo e há quantos dias está atrasado.", periodo: false },
   descartes: { nome: "Descartes previstos no período", descricao: "Documentos cujo prazo de guarda termina no período escolhido.", periodo: true },
-  contratos_vigencia: { nome: "Contratos por vigência", descricao: "Contratos cuja vigência termina no período escolhido, com valor e empresa.", periodo: true },
 } as const;
 
 export type IdRelatorio = keyof typeof RELATORIOS;

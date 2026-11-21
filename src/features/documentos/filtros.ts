@@ -1,8 +1,8 @@
-import { MODALIDADES, SITUACOES_CONTRATO } from "./tipos";
+import { MODALIDADES, ORGAOS, type Orgao } from "./tipos";
 
 // Filtros da pesquisa: vivem na URL (?q=&aba=&de=&ate=...) para voltar,
 // recarregar e copiar o link manterem a pesquisa.
-export type Aba = "todos" | "licitacao" | "contrato";
+export type Aba = "todos" | "licitacao" | "contrato" | "caixas";
 export type Filtros = {
   q: string;
   aba: Aba;
@@ -11,11 +11,14 @@ export type Filtros = {
   modalidade: string | null;
   secretaria: string | null;
   origem: "manual" | "planilha" | "tce" | null;
-  situacao: string | null;
-  vmin: number | null;
-  vmax: number | null;
-  vigencia: "vigentes" | "vencidos" | "vencem_30" | null;
-  ordem: "recentes" | "antigos" | "maior_valor";
+  orgao: Orgao | null;
+  // Fundo e setor da caixa (parte do nome, sem acento); mês de 1 a 12 entre os meses da caixa.
+  fundo: string | null;
+  setor: string | null;
+  mes: number | null;
+  // Ano limite da caixa (só para caixas gerais).
+  ano: number | null;
+  ordem: "recentes" | "antigos";
   cursor: string | null;
 };
 
@@ -28,56 +31,31 @@ const inteiro = (v: string | null, min: number, max: number) => {
   const n = v === null ? NaN : Number(v);
   return Number.isInteger(n) && n >= min && n <= max ? n : null;
 };
-const numero = (v: string | null) => {
-  const n = v === null ? NaN : Number(v);
-  return Number.isFinite(n) && n >= 0 ? n : null;
-};
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const faixaLida = (v: string | null): [number | null, number | null] => {
-  const m = v === null ? null : /^(\d{0,12})-(\d{0,12})$/.exec(v);
-  return m ? [m[1] ? Number(m[1]) : null, m[2] ? Number(m[2]) : null] : [null, null];
-};
-
-export const temFiltroDeContrato = (f: Pick<Filtros, "situacao" | "vmin" | "vmax" | "vigencia">) =>
-  f.situacao !== null || f.vmin !== null || f.vmax !== null || f.vigencia !== null;
-
-// Faixas de valor da pesquisa ("min-max", vazio = sem limite). A tela escolhe uma
-// faixa; a URL guarda vmin e vmax, que também valem sozinhos.
-export const FAIXAS_VALOR: [string, string][] = [
-  ["0-50000", "Até R$ 50 mil"],
-  ["50000-200000", "R$ 50 mil a R$ 200 mil"],
-  ["200000-1000000", "R$ 200 mil a R$ 1 milhão"],
-  ["1000000-", "Acima de R$ 1 milhão"],
-];
-export const faixaDeValor = (vmin: number | null, vmax: number | null) =>
-  vmin === null && vmax === null ? "" : `${vmin ?? ""}-${vmax ?? ""}`;
 
 // Lê e saneia: valor desconhecido vira "sem filtro" (a URL é entrada do usuário).
 export function lerFiltros(p: Params): Filtros {
   const aba = um(p, "aba");
   const modalidade = um(p, "modalidade");
-  const situacao = um(p, "situacao");
-  const vigencia = um(p, "vigencia");
+  const orgao = um(p, "orgao");
   const secretaria = um(p, "secretaria");
   const ordem = um(p, "ordem");
   const f: Filtros = {
     q: (um(p, "q") ?? "").slice(0, 100),
-    aba: aba === "licitacao" || aba === "contrato" ? aba : "todos",
+    aba: aba === "licitacao" || aba === "contrato" || aba === "caixas" ? aba : "todos",
     de: inteiro(um(p, "de"), 1950, 2100),
     ate: inteiro(um(p, "ate"), 1950, 2100),
     modalidade: modalidade && modalidade in MODALIDADES ? modalidade : null,
     secretaria: secretaria && uuid.test(secretaria) ? secretaria : null,
     origem: um(p, "origem") === "manual" || um(p, "origem") === "planilha" || um(p, "origem") === "tce" ? (um(p, "origem") as Filtros["origem"]) : null,
-    situacao: situacao && situacao in SITUACOES_CONTRATO ? situacao : null,
-    vmin: numero(um(p, "vmin")) ?? faixaLida(um(p, "valor"))[0],
-    vmax: numero(um(p, "vmax")) ?? faixaLida(um(p, "valor"))[1],
-    vigencia: vigencia === "vigentes" || vigencia === "vencidos" || vigencia === "vencem_30" ? vigencia : null,
-    ordem: ordem === "antigos" || ordem === "maior_valor" ? ordem : "recentes",
+    orgao: orgao && orgao in ORGAOS ? (orgao as Orgao) : null,
+    fundo: um(p, "fundo")?.slice(0, 120) ?? null,
+    setor: um(p, "setor")?.slice(0, 120) ?? null,
+    mes: inteiro(um(p, "mes"), 1, 12),
+    ano: inteiro(um(p, "ano"), 1900, 2100),
+    ordem: ordem === "antigos" ? "antigos" : "recentes",
     cursor: um(p, "cursor"),
   };
-  // Filtro de contrato leva a aba para Contratos sozinho.
-  if (temFiltroDeContrato(f)) f.aba = "contrato";
   return f;
 }
 
@@ -94,10 +72,11 @@ export function paraQuery(f: Partial<Filtros>) {
   poe("modalidade", f.modalidade);
   poe("secretaria", f.secretaria);
   poe("origem", f.origem);
-  poe("situacao", f.situacao);
-  poe("vmin", f.vmin);
-  poe("vmax", f.vmax);
-  poe("vigencia", f.vigencia);
+  poe("orgao", f.orgao);
+  poe("fundo", f.fundo);
+  poe("setor", f.setor);
+  poe("mes", f.mes);
+  poe("ano", f.ano);
   if (f.ordem && f.ordem !== "recentes") poe("ordem", f.ordem);
   poe("cursor", f.cursor);
   return q.toString();
@@ -105,5 +84,5 @@ export function paraQuery(f: Partial<Filtros>) {
 
 // Quantos filtros (fora a busca e a aba) estão ligados, para o "Limpar".
 export function filtrosAtivos(f: Filtros) {
-  return [f.de, f.ate, f.modalidade, f.secretaria, f.origem, f.situacao, f.vmin, f.vmax, f.vigencia].filter((v) => v !== null).length;
+  return [f.de, f.ate, f.modalidade, f.secretaria, f.origem, f.orgao, f.fundo, f.setor, f.mes, f.ano].filter((v) => v !== null).length;
 }

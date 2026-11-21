@@ -7,7 +7,8 @@ test.skip(!temSupabase && !process.env.CI, "sem Supabase local");
 // Um só fluxo em série: o autenticador do administrador é cadastrado uma vez.
 test.describe.configure({ mode: "serial", retries: 0 });
 
-test("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuário que entra só na secretaria vinculada", async ({
+// Fora de uso: só a equipe LicCONT cadastra usuários (permissoes_equipe). Reescrever pelo fluxo da equipe.
+test.skip("administrador cadastra, bloqueia, desbloqueia e redefine a senha de usuário que entra só na secretaria vinculada", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -100,8 +101,10 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   await page.getByLabel("Nome do órgão").fill("Prefeitura Fictícia Nova");
   await page.getByLabel("CNPJ").fill("00.000.000/0005-55");
   // Cada passo só vale depois da hidratação: repete o clique até o passo mudar.
-  for (const passo of ["Contrato e TCE-CE", "Administrador", "Conferir"]) {
+  for (const passo of ["Contrato", "Administrador", "Conferir"]) {
     await expect(async () => {
+      // Se um clique anterior já avançou o passo, não clica de novo (no último passo o botão some).
+      if (await page.locator('li[aria-current="step"]').filter({ hasText: passo }).count()) return;
       await page.getByRole("button", { name: "Continuar" }).click({ timeout: 2000 });
       await expect(page.locator('li[aria-current="step"]')).toContainText(passo, { timeout: 1000 });
     }).toPass({ timeout: 15_000 });

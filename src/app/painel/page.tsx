@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import { Painel, Rotulo, TituloPainel } from "@/features/estrutura/componentes";
 import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
 import { lerPainel, porcento } from "@/features/painel/dados";
+import { emAlerta, textoCaixasLivres, type Barra } from "@/features/estrutura/capacidade";
 
 export const metadata: Metadata = { title: "Painel · LicCONT" };
 
 const num = (n: number) => n.toLocaleString("pt-BR");
-const real = (v: number | null) => (v === null ? "" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const ver = "text-[13px] font-medium text-destaque underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-foco";
 
 function Cartao({ rotulo, valor, legenda, href, acao }: { rotulo: string; valor: string; legenda: string; href: string; acao: string }) {
@@ -21,6 +22,27 @@ function Cartao({ rotulo, valor, legenda, href, acao }: { rotulo: string; valor:
         {acao}
       </Link>
     </Painel>
+  );
+}
+
+// Barras simples de ocupação (rótulo, barra, percentual). Acima de 90% a barra muda de cor.
+function BarrasOcupacao({ titulo, barras }: { titulo: string; barras: Barra[] }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-xs font-medium tracking-[.05em] text-texto-suave uppercase">{titulo}</h3>
+      <ul className="flex max-h-52 flex-col gap-1.5 overflow-y-auto pr-1 text-xs">
+        {barras.map((b) => (
+          <li key={b.rotulo} className="grid grid-cols-[4.5rem_1fr_2.75rem] items-center gap-2">
+            <span className="truncate font-mono">{b.rotulo}</span>
+            <div role="img" aria-label={`${b.rotulo}: ${b.percentual}% ocupado`} className="h-2.5 overflow-hidden rounded-full bg-linha">
+              <div className={`h-full ${emAlerta(b.percentual) ? "bg-[#b45309] dark:bg-[#fbbf24]" : "bg-[#0e7490] dark:bg-[#2dd4bf]"}`} style={{ width: `${Math.min(b.percentual, 100)}%` }} />
+            </div>
+            <span className="text-right font-mono">{b.percentual}%</span>
+          </li>
+        ))}
+        {!barras.length && <li className="text-texto-suave">Sem dados.</li>}
+      </ul>
+    </div>
   );
 }
 
@@ -69,10 +91,12 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
   const p = await searchParams;
   const pedida = typeof p.secretaria === "string" ? p.secretaria : "";
   const filtro = secretarias.some((s) => s.id === pedida) ? pedida : null;
-  const d = await lerPainel(filtro);
+  const orgao = p.orgao === "prefeitura" || p.orgao === "camara" ? p.orgao : null;
+  const d = await lerPainel(filtro, orgao);
   const { documentos: doc, emprestimos: emp, tce } = d.resumo;
   const pdf = porcento(doc.com_pdf, doc.total);
   const ocupadas = porcento(d.caixas.com_documento, d.caixas.total);
+  const cap = d.capacidade;
 
   return (
     <PaginaSistema usuario={usuario} secretaria={secretaria} titulo="Painel" trilha="Acervo · Painel">
@@ -88,6 +112,14 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
             </option>
           ))}
         </select>
+        <label htmlFor="orgao" className="text-texto-suave">
+          Órgão
+        </label>
+        <select id="orgao" name="orgao" defaultValue={orgao ?? ""} className="min-h-10 rounded-lg border border-linha bg-campo px-3">
+          <option value="">Prefeitura e Câmara</option>
+          <option value="prefeitura">Prefeitura</option>
+          <option value="camara">Câmara</option>
+        </select>
         <button type="submit" className="min-h-10 rounded-lg border border-linha px-3 hover:border-destaque">
           Aplicar
         </button>
@@ -95,7 +127,7 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Cartao rotulo="Documentos no acervo" valor={num(doc.total)} legenda={`${num(doc.licitacoes)} licitações · ${num(doc.contratos)} contratos`} href="/pesquisa" acao="Abrir na pesquisa" />
-        <Cartao rotulo="Importados do TCE a conferir" valor={num(tce.a_conferir)} legenda={`ainda sem caixa · ${tce.duplicados} possíveis duplicados`} href="/importados" acao="Abrir a fila" />
+        {MODULOS.tce && <Cartao rotulo="Importados do TCE a conferir" valor={num(tce.a_conferir)} legenda={`ainda sem caixa · ${tce.duplicados} possíveis duplicados`} href="/importados" acao="Abrir a fila" />}
         <Cartao
           rotulo="Empréstimos abertos"
           valor={num(emp.abertos)}
@@ -104,6 +136,31 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
           acao="Ver empréstimos"
         />
         <Cartao rotulo="Caixas ocupadas" valor={`${ocupadas}%`} legenda={`${num(d.caixas.com_documento)} de ${num(d.caixas.total)} com algum documento`} href="/mapa" acao="Abrir o mapa 3D" />
+      </div>
+
+      <div className="mt-4">
+        <Painel>
+          <TituloPainel>Capacidade do arquivo</TituloPainel>
+          <div className="flex flex-wrap items-baseline gap-x-8 gap-y-1">
+            <p data-testid="capacidade-percentual" className={`text-3xl font-bold ${cap.alerta ? "text-[#b45309] dark:text-[#fbbf24]" : ""}`}>{cap.percentual}%</p>
+            <p className="text-sm">
+              {num(cap.ocupadas)} de {num(cap.total)} caixas ocupadas · {textoCaixasLivres(cap.livres)}
+            </p>
+            <p className="text-xs text-texto-suave">
+              {num(cap.modulos)} módulos × {cap.caixasPorModulo} caixas por módulo · 6 caixas por nível
+            </p>
+          </div>
+          {cap.alerta && (
+            <p role="status" className="text-sm font-semibold text-[#b45309] dark:text-[#fbbf24]">
+              Atenção: o arquivo passou de 90% da capacidade.
+            </p>
+          )}
+          <div className="grid gap-5 md:grid-cols-3">
+            <BarrasOcupacao titulo="Por rua" barras={cap.porRua} />
+            <BarrasOcupacao titulo="Por nível" barras={cap.porNivel} />
+            <BarrasOcupacao titulo="Por módulo" barras={cap.porModulo} />
+          </div>
+        </Painel>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[2fr_1fr_1fr]">
@@ -148,7 +205,7 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
         </Painel>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Painel>
           <TituloPainel>Empréstimos atrasados · {emp.atrasados}</TituloPainel>
           <ul className="text-sm">
@@ -182,26 +239,6 @@ export default async function PainelPagina({ searchParams }: { searchParams: Pro
           </ul>
           <Link href="/temporalidade" className={ver}>
             Abrir a fila de descarte
-          </Link>
-        </Painel>
-        <Painel>
-          <TituloPainel>Contratos vencendo em 60 dias · {d.contratos.total}</TituloPainel>
-          <ul className="text-sm">
-            {d.contratos.itens.map((a) => (
-              <li key={a.titulo} className="flex justify-between gap-2 border-t border-linha py-2">
-                <span>
-                  {a.titulo}
-                  <span className="block text-xs text-texto-suave">
-                    {a.empresa ?? "—"} {a.valor !== null && `· ${real(a.valor)}`}
-                  </span>
-                </span>
-                <span className="text-texto-suave">em {a.emDias} dias</span>
-              </li>
-            ))}
-            {!d.contratos.itens.length && <li className="py-2 text-texto-suave">Nenhum contrato vence em 60 dias.</li>}
-          </ul>
-          <Link href="/pesquisa?vigencia=vencem_30" className={ver}>
-            Ver na pesquisa
           </Link>
         </Painel>
       </div>

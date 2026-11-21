@@ -4,7 +4,7 @@
 // "Fase 4 · Mapa 3D com girar e ocupação" e "Fase 4 · Dentro da caixa").
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SITUACOES } from "@/features/documentos/tipos";
+import { ORGAOS } from "@/features/documentos/tipos";
 import type { DetalheCaixa } from "./dados";
 
 const cartao =
@@ -15,10 +15,8 @@ const botaoCheio = `inline-flex min-h-10 items-center justify-center rounded-lg 
 
 export const estilos = { cartao, botaoBorda, botaoCheio, foco };
 
-const tom = (s: string) =>
-  ["em_andamento", "deserta", "fracassada", "revogada", "anulada", "rescindido"].includes(s)
-    ? "bg-[#fef3c7] text-[#7c2d12] dark:bg-[#3b2f0b] dark:text-[#fcd34d]"
-    : "bg-[#ccfbf1] text-[#115e59] dark:bg-[#0e4a45] dark:text-[#7ff0df]";
+// Só a Câmara leva etiqueta de órgão (a Prefeitura é o padrão).
+const tomOrgao = "bg-[#fef3c7] text-[#7c2d12] dark:bg-[#3b2f0b] dark:text-[#fcd34d]";
 
 export function CaixaSelecionada({ d, carregando, acessorios }: { d: DetalheCaixa | null; carregando: boolean; acessorios?: ReactNode }) {
   return (
@@ -118,11 +116,11 @@ export function DentroDaCaixa({
               <Link href={`/documentos/${x.id}`} className={`min-w-0 flex-1 rounded ${foco}`}>
                 <span className="block truncate font-titulo text-[13px] font-semibold">{x.titulo}</span>
                 <span className="block truncate text-[11px] text-texto-suave">
-                  {[x.empresa, x.secretaria, x.ano].filter(Boolean).join(" · ")}
+                  {[x.tituloProcesso, x.secretaria, x.ano].filter(Boolean).join(" · ")}
                 </span>
               </Link>
               {x.emprestado && <span className="shrink-0 rounded-xl bg-[#fff1d6] px-2 py-0.5 text-[11px] font-semibold text-[#7a4a00] dark:bg-[#3a2a08] dark:text-[#ffd27a]">Emprestado</span>}
-                  <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
+                  {x.orgao === "camara" && <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tomOrgao}`}>{ORGAOS.camara}</span>}
             </li>
           ))}
         </ul>
@@ -219,10 +217,10 @@ export function PainelPlanta({ d, carregando }: { d: DetalheCaixa | null; carreg
                 <Link href={`/documentos/${x.id}`} className={`flex items-center gap-2 rounded-[10px] border border-linha bg-superficie-2 px-2.5 py-2 ${foco}`}>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-titulo text-[13px] font-semibold">{x.titulo}</span>
-                    <span className="block truncate text-[11px] text-texto-suave">{[x.empresa, x.secretaria, x.ano].filter(Boolean).join(" · ")}</span>
+                    <span className="block truncate text-[11px] text-texto-suave">{[x.tituloProcesso, x.secretaria, x.ano].filter(Boolean).join(" · ")}</span>
                   </span>
                   {x.emprestado && <span className="shrink-0 rounded-xl bg-[#fff1d6] px-2 py-0.5 text-[11px] font-semibold text-[#7a4a00] dark:bg-[#3a2a08] dark:text-[#ffd27a]">Emprestado</span>}
-                  <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tom(x.situacao)}`}>{SITUACOES[x.situacao] ?? x.situacao}</span>
+                  {x.orgao === "camara" && <span className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-semibold ${tomOrgao}`}>{ORGAOS.camara}</span>}
                 </Link>
               </li>
             ))}

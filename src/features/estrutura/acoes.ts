@@ -6,7 +6,8 @@ import { exigirAdmin, exigirSessao } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
-import { podeCaixas } from "./dados";
+import { lerCaixasPorModulo, podeCaixas } from "./dados";
+import { CAIXAS_POR_NIVEL, niveisPorModulo } from "./capacidade";
 import {
   esquemaCaixas,
   esquemaCapacidade,
@@ -63,7 +64,9 @@ export async function adicionarModulos(_: EstadoAcao, formData: FormData): Promi
   if (emDemo()) return { aviso: AVISO_DEMO };
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
-  const { rua, modulos, niveis, capacidade } = dados.data;
+  const { rua, modulos } = dados.data;
+  const niveis = niveisPorModulo(await lerCaixasPorModulo());
+  const capacidade = CAIXAS_POR_NIVEL;
   const { data: inicio, error } = await sb.rpc("adicionar_modulos", {
     p_rua: rua,
     p_modulos: modulos,

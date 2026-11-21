@@ -35,8 +35,7 @@ const linha = z.object({
   tipologias: z.string().trim().max(500).default(""),
   prazo_corrente: z.number().int().min(0).max(99),
   prazo_intermediaria: z.number().int().min(0).max(99),
-  tipo_prazo: z.enum(["fixo", "apos_evento", "permanente"]),
-  evento: z.string().trim().max(80).default(""),
+  tipo_prazo: z.enum(["fixo", "permanente"]),
   destinacao: z.enum(["eliminacao", "guarda_permanente"]),
   observacao: z.string().trim().max(500).default(""),
 });
@@ -52,16 +51,17 @@ export async function salvarClasses(entrada: unknown): Promise<RetornoClasses> {
   if (!dados.success) return { erro: dados.error.issues[0].message };
   const orgao = await orgaoEditavel(dados.data.prefeitura);
   if (!orgao) return { erro: "Você não tem permissão para esta ação." };
-  const erro = dados.data.linhas.find((l) => (l.tipo_prazo === "apos_evento" && l.evento.length < 2) || (l.tipo_prazo !== "permanente" && l.prazo_corrente + l.prazo_intermediaria < 1));
-  if (erro) return { erro: "Confira o prazo e o evento de cada linha." };
+  const erro = dados.data.linhas.find((l) => (l.tipo_prazo !== "permanente" && l.prazo_corrente + l.prazo_intermediaria < 1));
+  if (erro) return { erro: "Confira o prazo de cada linha." };
   if (emDemo()) return { aviso: AVISO_DEMO };
   const sb = await clienteSessao();
   if (!sb) return { erro: MENSAGEM_INDISPONIVEL };
   const { data, error } = await sb.rpc("classes_salvar", { p_prefeitura: orgao, p_linhas: dados.data.linhas, p_substituir: dados.data.substituir });
   if (error) {
-    return { erro: error.code === "22023" ? "Confira o grupo, o prazo e o evento de cada linha." : error.code === "23514" || error.code === "23505" ? "Confira os dados: código repetido ou prazo incoerente." : mensagemDoBanco(error.code) };
+    return { erro: error.code === "22023" ? "Confira o grupo e o prazo de cada linha." : error.code === "23514" || error.code === "23505" ? "Confira os dados: código repetido ou prazo incoerente." : mensagemDoBanco(error.code) };
   }
   revalidatePath("/temporalidade");
+  revalidatePath("/configuracoes/temporalidade");
   revalidatePath("/equipe", "layout");
   const r = data as { inseridas: number; atualizadas: number; removidas: number; desativadas: number };
   return { aviso: "Tabela salva.", resumo: r };
@@ -77,6 +77,7 @@ export async function excluirClasse(entrada: unknown): Promise<RetornoClasses> {
   const { data, error } = await sb.rpc("classe_excluir", { p_classe: dados.data.id });
   if (error) return { erro: mensagemDoBanco(error.code) };
   revalidatePath("/temporalidade");
+  revalidatePath("/configuracoes/temporalidade");
   revalidatePath("/equipe", "layout");
   return { aviso: data === "desativada" ? "A classe já tem caixa ou documento ligado: foi desativada, não excluída." : "Classe excluída." };
 }

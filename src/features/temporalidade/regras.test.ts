@@ -1,26 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { aprovavelDesde, dataBR, observacaoTermo, dataDoEvento, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
+import { aprovavelDesde, dataBR, observacaoTermo, diasEntre, estadoDoPrazo, hojeSaoPaulo, mensagemDoBanco, somarAnos, type Regra } from "./regras";
 
 const r = (id: string, o: Partial<Regra>): Regra => ({
-  id, codigo: id, classe: id, grupoId: "g", grupo: "Licitações e Contratos", corrente: 0, intermediaria: 0, tipoPrazo: "fixo", evento: null,
+  id, codigo: id, classe: id, grupoId: "g", grupo: "Licitações e Contratos", corrente: 0, intermediaria: 0, tipoPrazo: "fixo",
   destinacao: "eliminacao", observacao: null, ativa: true, ...o,
 });
 const regras: Regra[] = [
-  r("ct", { corrente: 2, intermediaria: 3, tipoPrazo: "apos_evento", evento: "Término do contrato" }),
+  r("cinco", { corrente: 5 }),
   r("lp", { tipoPrazo: "permanente", destinacao: "guarda_permanente" }),
-  r("fx", { corrente: 1, intermediaria: 1 }),
+  r("dois", { corrente: 1, intermediaria: 1 }),
 ];
-const doc = (o: Partial<Parameters<typeof estadoDoPrazo>[0]>) => ({ tipo: "contrato" as const, classe_id: "ct", data_producao: null, evento_em: null, vigencia_fim: null, encerrado_em: null, ...o });
-const contrato = (fim: string | null) => doc({ vigencia_fim: fim });
-
-describe("dataDoEvento", () => {
-  it("usa o evento informado; senão, fim da vigência (contrato) ou encerramento (licitação)", () => {
-    expect(dataDoEvento(doc({ evento_em: "2020-01-01", vigencia_fim: "2019-01-01" }))).toBe("2020-01-01");
-    expect(dataDoEvento(doc({ vigencia_fim: "2019-01-01" }))).toBe("2019-01-01");
-    expect(dataDoEvento(doc({ tipo: "licitacao", encerrado_em: "2018-05-05" }))).toBe("2018-05-05");
-    expect(dataDoEvento(doc({ tipo: "outro" }))).toBeNull();
-  });
-});
+const doc = (o: Partial<Parameters<typeof estadoDoPrazo>[0]>) => ({ classe_id: "cinco", ano: 2025, ...o });
 
 describe("somarAnos", () => {
   it("29/02 cai em 28/02 se o ano de chegada não é bissexto (como o Postgres)", () => {
@@ -30,27 +20,24 @@ describe("somarAnos", () => {
   it("31 de dezembro", () => expect(somarAnos("2010-12-31", 5)).toBe("2015-12-31"));
 });
 
-describe("estadoDoPrazo", () => {
-  it("pronto no dia do vencimento (borda) e perto de vencer no dia anterior", () => {
-    expect(estadoDoPrazo(contrato("2020-06-15"), regras, "2025-06-15")).toMatchObject({ estado: "pronto", emDias: 0 });
-    expect(estadoDoPrazo(contrato("2020-06-15"), regras, "2025-06-14")).toMatchObject({ estado: "vence", emDias: 1 });
+describe("estadoDoPrazo (conta do fim do ano do documento)", () => {
+  it("ano 2025 + 5 anos: libera em 01/01/2031, não em 31/12/2030", () => {
+    expect(estadoDoPrazo(doc({}), regras, "2031-01-01")).toMatchObject({ estado: "pronto", vencimento: "2031-01-01", emDias: 0 });
+    expect(estadoDoPrazo(doc({}), regras, "2030-12-31")).toMatchObject({ estado: "vence", emDias: 1 });
+  });
+  it("soma corrente e intermediária", () => {
+    expect(estadoDoPrazo(doc({ classe_id: "dois", ano: 2000 }), regras, "2026-11-15")).toMatchObject({ estado: "pronto", vencimento: "2003-01-01" });
   });
   it("vence em até 90 dias; depois disso, vigente", () => {
-    expect(estadoDoPrazo(contrato("2020-06-15"), regras, "2025-03-17")).toMatchObject({ estado: "vence", emDias: 90 });
-    expect(estadoDoPrazo(contrato("2020-06-15"), regras, "2025-03-16")).toMatchObject({ estado: "vigente", emDias: 91 });
+    expect(estadoDoPrazo(doc({}), regras, "2030-10-03")).toMatchObject({ estado: "vence", emDias: 90 });
+    expect(estadoDoPrazo(doc({}), regras, "2030-10-02")).toMatchObject({ estado: "vigente", emDias: 91 });
   });
-  it("guarda permanente nunca fica pronto", () => {
-    expect(estadoDoPrazo(doc({ classe_id: "lp", vigencia_fim: "1990-01-01" }), regras, "2026-11-15")).toEqual({ estado: "permanente" });
+  it("guarda permanente fica fora da fila", () => {
+    expect(estadoDoPrazo(doc({ classe_id: "lp", ano: 1990 }), regras, "2026-11-15")).toEqual({ estado: "permanente" });
   });
-  it("sem classe, sem regra e sem evento não entram na fila", () => {
-    expect(estadoDoPrazo(contrato(null), regras, "2026-11-15")).toEqual({ estado: "aguardando_evento" });
-    expect(estadoDoPrazo(contrato("2000-01-01"), [], "2026-11-15")).toEqual({ estado: "sem_regra" });
-    expect(estadoDoPrazo(doc({ classe_id: null, vigencia_fim: "2000-01-01" }), regras, "2026-11-15")).toEqual({ estado: "sem_regra" });
-  });
-  it("prazo fixo conta da data do documento, não do evento", () => {
-    const d = doc({ classe_id: "fx", data_producao: "2000-01-01", vigencia_fim: "2020-01-01" });
-    expect(estadoDoPrazo(d, regras, "2026-11-15")).toMatchObject({ estado: "pronto", vencimento: "2002-01-01" });
-    expect(estadoDoPrazo(doc({ classe_id: "fx" }), regras, "2026-11-15")).toEqual({ estado: "sem_data" });
+  it("sem classe ou sem regra não entra na fila", () => {
+    expect(estadoDoPrazo(doc({ classe_id: "x" }), [], "2026-11-15")).toEqual({ estado: "sem_regra" });
+    expect(estadoDoPrazo(doc({ classe_id: null }), regras, "2026-11-15")).toEqual({ estado: "sem_regra" });
   });
 });
 

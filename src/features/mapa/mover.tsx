@@ -8,6 +8,7 @@ import { localizarCaixa, type NoRua } from "./arvore";
 import type { DetalheCaixa, LinhaDocumento } from "./dados";
 import { proximaLivre } from "./acoes";
 import { estilos } from "./painel-caixa";
+import { CAIXAS_POR_NIVEL, textoCaixasLivres } from "@/features/estrutura/capacidade";
 
 const campo =
   "h-10 w-full rounded-lg border border-borda-campo bg-campo px-2.5 text-[13px] font-medium text-texto focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foco max-md:h-11";
@@ -108,7 +109,7 @@ export function MoverDocumentos({
           <select className={campo} value={nivelId} disabled={!m} onChange={(e) => limpar("nivel", e.target.value)}>
             <option value="">Escolha</option>
             {m?.niveis.map((x) => (
-              <option key={x.id} value={x.id}>Nível {x.numero}</option>
+              <option key={x.id} value={x.id}>Nível {x.numero} · {textoCaixasLivres(Math.max(CAIXAS_POR_NIVEL - x.caixas.length, 0))}</option>
             ))}
           </select>
         </label>
@@ -140,7 +141,7 @@ export function MoverDocumentos({
         {marcados.map((d) => (
           <li key={d.id} className="truncate">
             {d.titulo}
-            <span className="text-texto-suave"> · {d.empresa ?? d.secretaria}</span>
+            <span className="text-texto-suave"> · {d.tituloProcesso ?? d.secretaria}</span>
           </li>
         ))}
       </ul>

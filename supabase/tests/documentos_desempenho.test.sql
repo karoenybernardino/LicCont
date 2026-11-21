@@ -57,10 +57,10 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_docum
   ('c4b00000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'c3b00000-0000-0000-0000-000000000000', 1, 5);
 
 -- Documentos: um da Saúde (A), um de Obras (A), um da B. Como dono do banco.
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, empresa, situacao) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Aquisição de equipamentos médico-hospitalares', 'TecnoMed Fictícia', 'concluida'),
-  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação de vias', 'Construtora Fictícia', 'concluida'),
-  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material de escritório', null, 'concluida');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Aquisição de equipamentos médico-hospitalares'),
+  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'concorrencia', '003/2022', 2022, 'Pavimentação de vias'),
+  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Material de escritório');
 insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por) values
   ('f0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'a.pdf', 1000, '0a000000-0000-0000-0000-000000000001'),
   ('f0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0b10000-0000-0000-0000-000000000000', 'b.pdf', 1000, '0b000000-0000-0000-0000-000000000001');
@@ -74,13 +74,12 @@ grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 
 -- Desempenho: 100 mil documentos fictícios da prefeitura A; a pesquisa
 -- (busca textual, filtros e página) precisa responder em menos de 1 s.
-insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, empresa, situacao)
+insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
 select '11111111-1111-1111-1111-111111111111',
        case when g % 2 = 0 then 'a1000000-0000-0000-0000-000000000000'::uuid else 'a2000000-0000-0000-0000-000000000000'::uuid end,
        'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'pregao_eletronico',
        lpad(g::text, 6, '0') || '/' || (2000 + g % 25), 2000 + g % 25,
-       'Objeto fictício ' || g || case when g % 97 = 0 then ' pavimentação de vias' else ' material de consumo' end,
-       'Empresa Fictícia ' || (g % 500), 'concluida'
+       'Objeto fictício ' || g || case when g % 97 = 0 then ' pavimentação de vias' else ' material de consumo' end
 from generate_series(1, 100000) g;
 analyze public.documentos;
 

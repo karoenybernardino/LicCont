@@ -6,6 +6,7 @@ import { emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 import { ESTRUTURA_DEMO, alteracoesDemo } from "@/features/demo/estrutura";
 import type { Estrutura } from "./ocupacao";
+import { CAIXAS_POR_MODULO_PADRAO } from "./capacidade";
 import { NOMES, agrupar, type Alteracao, type LinhaAuditoria } from "./alteracoes";
 
 // Leitura pela sessão do usuário: o RLS devolve só a própria prefeitura.
@@ -118,4 +119,13 @@ export async function galpaoDaRua(ruaId: string): Promise<string | null> {
   if (!sb) return null;
   const { data } = await sb.from("ruas").select("galpao_id").eq("id", ruaId).maybeSingle();
   return data?.galpao_id ?? null;
+}
+
+// Caixas por módulo da prefeitura do usuário (30 ou 36); a equipe LicCONT escolhe no cadastro do órgão.
+export async function lerCaixasPorModulo(): Promise<number> {
+  if (emDemo()) return CAIXAS_POR_MODULO_PADRAO;
+  const sb = await clienteSessao();
+  if (!sb) return CAIXAS_POR_MODULO_PADRAO;
+  const { data } = await sb.from("prefeituras").select("caixas_por_modulo").maybeSingle();
+  return (data?.caixas_por_modulo as number | undefined) ?? CAIXAS_POR_MODULO_PADRAO;
 }

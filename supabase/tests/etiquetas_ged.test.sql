@@ -66,28 +66,28 @@ returns void language sql as $$
 $$;
 grant execute on function public.tst_entrar(uuid, uuid, text) to authenticated;
 
--- Classes: fixa de 5 anos (conta da data do documento) e uma de guarda por evento.
-insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, prazo_corrente_anos, tipo_prazo, evento, destinacao)
-select g.prefeitura_id, g.id, x.codigo, x.nome, 5, x.tp, x.ev, 'eliminacao'
+-- Classes: duas fixas de 5 anos (conta do fim do ano do documento).
+insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, prazo_corrente_anos, tipo_prazo, destinacao)
+select g.prefeitura_id, g.id, x.codigo, x.nome, 5, x.tp, 'eliminacao'
 from public.grupos_documentais g,
-     (values ('FX', 'Classe fixa', 'fixo', null), ('EV', 'Classe por evento', 'apos_evento', 'Término do contrato')) as x(codigo, nome, tp, ev)
+     (values ('FX', 'Classe fixa', 'fixo'), ('EV', 'Classe do ano atual', 'fixo')) as x(codigo, nome, tp)
 where g.prefeitura_id = '11111111-1111-1111-1111-111111111111' and g.chave = 'licitacoes_contratos';
 insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, prazo_corrente_anos, tipo_prazo, destinacao)
 select g.prefeitura_id, g.id, 'RH1', 'Ficha funcional', 5, 'fixo', 'eliminacao'
 from public.grupos_documentais g
 where g.prefeitura_id = '11111111-1111-1111-1111-111111111111' and g.chave = 'rh';
 
--- Documentos de A: d1 licitação/contrato (fixa), d2 de RH (tipo outro), d3 por evento sem evento informado.
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao, classe_id, data_producao) values
+-- Documentos de A: d1 licitação/contrato (fixa), d2 de RH (tipo outro), d3 do ano atual (prazo ainda não cumprido).
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, classe_id) values
   ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001',
-   'licitacao', 'dispensa', '001', 2005, 'Objeto fictício um', 'concluida',
-   (select id from public.classes_documentais where codigo = 'FX'), '2005-03-01'),
+   'licitacao', 'dispensa', '001', 2005, 'Objeto fictício um',
+   (select id from public.classes_documentais where codigo = 'FX')),
   ('d1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001',
-   'outro', null, '002', 2005, 'Ficha fictícia de servidor', 'arquivado',
-   (select id from public.classes_documentais where codigo = 'RH1'), '2005-03-01'),
+   'outro', null, '002', 2005, 'Ficha fictícia de servidor',
+   (select id from public.classes_documentais where codigo = 'RH1')),
   ('d1000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001',
-   'contrato', null, '003', 2005, 'Objeto fictício três', 'vigente',
-   (select id from public.classes_documentais where codigo = 'EV'), null);
+   'contrato', null, '003', extract(year from app.hoje())::int, 'Objeto fictício três',
+   (select id from public.classes_documentais where codigo = 'EV'));
 insert into public.arquivos (id, prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por, situacao, ativo, sha256, paginas, conferido_em)
 values ('f1000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000',
         'd1000000-0000-0000-0000-000000000002', 'ficha.pdf', 1000, '0a000000-0000-0000-0000-000000000003',
@@ -108,8 +108,8 @@ select results_eq($$select sequencial from public.caixas where prefeitura_id = '
   array[1], 'a numeração de B começa de novo');
 select results_eq($$select grupo_id = (select id from public.grupos_documentais where prefeitura_id = d.prefeitura_id and chave = 'rh')
   from public.documentos d where id = 'd1000000-0000-0000-0000-000000000002'$$, array[true], 'a classe define o grupo do documento');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'outro', '9', 2024, 'Sem grupo', 'arquivado')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'outro', '9', 2024, 'Sem grupo')$$,
   '23502', null, 'documento de tipo outro precisa de grupo');
 select throws_ok($$insert into public.classes_documentais (prefeitura_id, grupo_id, codigo, nome, tipo_prazo, destinacao)
   select prefeitura_id, id, 'ZZ', 'Incoerente', 'fixo', 'guarda_permanente' from public.grupos_documentais limit 1$$,
@@ -185,15 +185,15 @@ select throws_ok($$select * from public.parceiras$$, '42501', null, 'administrad
 select is_empty($$select 1 from public.equipe_parceiras()$$, 'administrador de órgão não lista parceiras');
 select throws_ok($$select public.equipe_parceira_salvar(gen_random_uuid(), 'Parceira', '12345678000195', null, array[]::uuid[])$$,
   '42501', null, 'administrador de órgão não cadastra parceira');
-select throws_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111111111111', 'prefeitura', 'Nome', null, false, null)$$,
+select throws_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111111111111', 'Nome', null, false, null, false, null)$$,
   '42501', null, 'administrador de órgão não troca a marca pela função da equipe');
 
 select tst_entrar('0e000000-0000-0000-0000-000000000001', '5e000000-0000-0000-0000-000000000001', 'aal2');
 select lives_ok($$select public.equipe_parceira_salvar('e1000000-0000-0000-0000-000000000001', 'Parceira Fictícia', '12345678000195',
   'parceiras/e1000000-0000-0000-0000-000000000001/logo.png', array['11111111-1111-1111-1111-111111111111']::uuid[])$$, 'equipe cadastra e liga a parceira');
 select results_eq($$select prefeituras::int from public.equipe_parceiras() where nome = 'Parceira Fictícia'$$, array[1], 'a parceira atende um órgão');
-select lives_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111111111111', 'camara', 'Câmara de Teste', 'orgaos/11111111-1111-1111-1111-111111111111/logo.png', false,
-  'e1000000-0000-0000-0000-000000000001')$$, 'equipe define tipo, nome e logo do órgão');
+select lives_ok($$select public.equipe_orgao_marca('11111111-1111-1111-1111-111111111111', 'Câmara de Teste', 'orgaos/11111111-1111-1111-1111-111111111111/logo.png', false,
+  'orgaos/11111111-1111-1111-1111-111111111111/logo-camara.png', false, 'e1000000-0000-0000-0000-000000000001')$$, 'equipe define nome e os dois logos do órgão');
 select throws_ok($$select public.equipe_parceira_salvar(gen_random_uuid(), 'Outra', '12345678000195', null, array[]::uuid[])$$,
   '23505', null, 'CNPJ de parceira não repete');
 
@@ -220,14 +220,7 @@ set local role authenticated;
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
 select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000001')$$, array[null]::text[], 'sem PDF e com prazo cumprido é apto (só organização)');
 select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000002')$$, array['digitalizado_sem_icp'], 'digitalizado sem ICP não é apto');
-select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000003')$$, array['aguardando_evento'], 'prazo por evento sem evento informado aguarda');
-reset role;
-select set_config('request.jwt.claims', '', true);
-update public.documentos set evento_em = app.hoje() where id = 'd1000000-0000-0000-0000-000000000003';
-update public.arquivos set assinatura_icp = false;
-set local role authenticated;
-select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal2');
-select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000003')$$, array['prazo_nao_cumprido'], 'com o evento informado conta o prazo a partir dele');
+select results_eq($$select app.motivo_inelegivel('d1000000-0000-0000-0000-000000000003')$$, array['prazo_nao_cumprido'], 'documento do ano atual com guarda de 5 anos só libera daqui a 6 anos (fim do ano + 5)');
 reset role;
 select set_config('request.jwt.claims', '', true);
 update public.arquivos set assinatura_icp = true, assinatura_certificado = 'cert fictício', assinatura_em = now();

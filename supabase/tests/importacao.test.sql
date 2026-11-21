@@ -39,8 +39,8 @@ insert into public.niveis (id, prefeitura_id, modulo_id, numero, capacidade) val
 insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_documentos) values ('c4a00000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'c3a00000-0000-0000-0000-000000000000', 1, 5);
 
 -- Documento manual já existente (prova que a repetida é pulada).
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Equipamentos fictícios', 'concluida');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'pregao_eletronico', '015/2023', 2023, 'Equipamentos fictícios');
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
@@ -58,9 +58,9 @@ select ok((select id from lote_a) is not null, 'administrador cria lote');
 
 select results_eq(
   $$select (public.gravar_lote_importacao((select id from lote_a), '[
-    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"licitacao","modalidade":"pregao_eletronico","numero":"015/2023","ano":2023,"objeto":"Repetida fictícia","situacao":"concluida"},
-    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Nova fictícia","situacao":"concluida"},
-    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"contrato","numero":"010/2024","ano":2024,"objeto":"Contrato fictício","situacao":"vigente","vigencia_inicio":"2024-01-01","vigencia_fim":"2025-01-01"}
+    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"licitacao","modalidade":"pregao_eletronico","numero":"015/2023","ano":2023,"objeto":"Repetida fictícia"},
+    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"licitacao","modalidade":"dispensa","numero":"001/2024","ano":2024,"objeto":"Nova fictícia"},
+    {"secretaria_id":"a1000000-0000-0000-0000-000000000000","tipo":"contrato","numero":"010/2024","ano":2024,"objeto":"Contrato fictício"}
   ]'::jsonb) ->> 'gravados')::int$$,
   array[2], 'grava 2 linhas novas');
 select results_eq($$select pulados from public.lotes_importacao where id = (select id from lote_a)$$, array[1], 'repetida é pulada');
@@ -69,8 +69,8 @@ select results_eq($$select objeto from public.documentos where id = 'd0a10000-00
 select results_eq($$select count(*)::int from public.documentos where lote_id = (select id from lote_a) and caixa_id is null and origem = 'planilha'$$,
   array[2], 'importados ficam sem caixa e com origem planilha');
 select throws_ok($$select public.gravar_lote_importacao((select id from lote_a), '[]'::jsonb)$$, '23514', null, 'lote não grava duas vezes');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, tipo, modalidade, numero, ano, objeto, situacao)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'licitacao', 'dispensa', '009/2024', 2024, 'Sem caixa', 'concluida')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, tipo, modalidade, numero, ano, objeto, orgao)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'licitacao', 'dispensa', '009/2024', 2024, 'Sem caixa', 'prefeitura')$$,
   '23514', null, 'documento manual sem caixa é recusado');
 select throws_ok($$update public.documentos set caixa_id = null where id = 'd0a10000-0000-0000-0000-000000000000'$$,
   '23514', null, 'documento com caixa não volta a ficar sem');

@@ -1,4 +1,4 @@
-import { MODALIDADES, SITUACOES } from "@/features/documentos/tipos";
+import { MODALIDADES } from "@/features/documentos/tipos";
 
 // Campos que a planilha pode preencher e como reconhecer o título da coluna.
 export const CAMPOS = [
@@ -7,17 +7,12 @@ export const CAMPOS = [
   { chave: "ano", rotulo: "Ano", obrigatorio: true, apelidos: ["ano", "exercicio", "exercício"] },
   { chave: "objeto", rotulo: "Objeto", obrigatorio: true, apelidos: ["objeto", "descricao", "descrição", "assunto"] },
   { chave: "secretaria", rotulo: "Secretaria", obrigatorio: true, apelidos: ["secretaria", "orgao", "órgão", "setor", "unidade"] },
-  { chave: "situacao", rotulo: "Situação", obrigatorio: true, apelidos: ["situacao", "situação", "status"] },
+  { chave: "titulo_processo", rotulo: "Título do processo", obrigatorio: false, apelidos: ["titulo do processo", "título do processo", "titulo"] },
+  { chave: "orgao", rotulo: "Prefeitura ou Câmara", obrigatorio: false, apelidos: ["prefeitura ou camara", "prefeitura ou câmara", "prefeitura/camara", "prefeitura/câmara", "orgao do documento", "órgão do documento"] },
   { chave: "modalidade", rotulo: "Modalidade", obrigatorio: false, apelidos: ["modalidade"] },
-  { chave: "empresa", rotulo: "Empresa ou credor", obrigatorio: false, apelidos: ["empresa", "credor", "contratada", "fornecedor", "vencedor"] },
-  { chave: "cnpj", rotulo: "CNPJ ou CPF", obrigatorio: false, apelidos: ["cnpj", "cnpj/cpf", "cnpj ou cpf", "documento do credor"] },
-  { chave: "valor", rotulo: "Valor", obrigatorio: false, apelidos: ["valor", "valor total", "valor global"] },
-  { chave: "vigencia_inicio", rotulo: "Início da vigência", obrigatorio: false, apelidos: ["inicio da vigencia", "início da vigência", "vigencia inicio", "data inicio", "início"] },
-  { chave: "vigencia_fim", rotulo: "Fim da vigência", obrigatorio: false, apelidos: ["fim da vigencia", "fim da vigência", "vigencia fim", "data fim", "término", "termino"] },
   { chave: "classe", rotulo: "Classe (código ou nome)", obrigatorio: false, apelidos: ["classe", "codigo de classificacao", "código de classificação", "classificacao", "classificação", "cod. classe"] },
   { chave: "tipologia", rotulo: "Tipologia documental", obrigatorio: false, apelidos: ["tipologia", "tipologia documental"] },
   { chave: "volume", rotulo: "Volume", obrigatorio: false, apelidos: ["volume", "vol", "vol."] },
-  { chave: "data_producao", rotulo: "Data do documento", obrigatorio: false, apelidos: ["data", "data do documento", "data do ato", "data de producao", "data de produção"] },
 ] as const;
 
 export type ChaveCampo = (typeof CAMPOS)[number]["chave"];
@@ -79,11 +74,9 @@ export const MODALIDADE_POR_TEXTO: Record<string, string> = Object.fromEntries([
   ...Object.keys(MODALIDADES).map((k) => [k.replace(/_/g, " "), k]),
 ]);
 
-export const SITUACAO_POR_TEXTO: Record<string, string> = Object.fromEntries([
-  ...Object.entries(SITUACOES).map(([k, v]) => [semAcento(v), k]),
-  ...Object.keys(SITUACOES).map((k) => [k.replace(/_/g, " "), k]),
-  ["finalizada", "concluida"],
-  ["finalizado", "concluida"],
-  ["ativo", "vigente"],
-  ["ativa", "vigente"],
-]);
+export const ORGAO_POR_TEXTO: Record<string, "prefeitura" | "camara"> = {
+  prefeitura: "prefeitura",
+  camara: "camara",
+  "camara municipal": "camara",
+  "camara de vereadores": "camara",
+};

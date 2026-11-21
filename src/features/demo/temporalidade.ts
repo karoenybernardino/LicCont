@@ -11,17 +11,17 @@ export const REGRAS_EDITAVEIS_DEMO: Regra[] = CLASSES_DEMO;
 
 const secretaria = (nome: string) => SECRETARIAS_DEMO.find((s) => s.nome.startsWith(nome))?.id ?? SECRETARIAS_DEMO[0].id;
 const item = (titulo: string, objeto: string, extremos: string, caixa: string, vencimento: string, classe: string): ItemTermo => ({
-  titulo, objeto, caixa, classe, extremos, vencimento, inicio: null, fim: null,
+  titulo, objeto, caixa, classe, extremos, vencimento,
 });
 
 const base = { geradoPor: "de200000-0000-0000-0000-000000000001", prefeitura: "Prefeitura Fictícia de Exemplo", observacao: null, canceladoEm: null, aprovadoEm: null };
 const id = (n: number) => `de700000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 
 const SAUDE = [
-  item("Dispensa 003/2016", "Aquisição de material de expediente", "2016 – 2016", "D-M1-N1-C02", "2026-03-01", "Dispensas e inexigibilidades"),
-  item("Contrato 019/2015", "Locação de veículos para a frota", "2015 – 2018", "D-M1-N1-C05", "2026-05-01", "Contratos e aditivos"),
-  item("Pregão Eletrônico 008/2016", "Medicamentos da atenção básica", "2016 – 2016", "D-M2-N1-C01", "2026-08-01", "Licitações e Contratos"),
-  item("Dispensa 014/2016", "Manutenção de ar-condicionado", "2016 – 2016", "D-M2-N1-C03", "2026-09-01", "Dispensas e inexigibilidades"),
+  item("Dispensa 003/2016", "Aquisição de material de expediente", "2016", "D-M1-N1-C02", "2026-03-01", "Dispensas e inexigibilidades"),
+  item("Contrato 019/2015", "Locação de veículos para a frota", "2015", "D-M1-N1-C05", "2026-05-01", "Contratos e aditivos"),
+  item("Pregão Eletrônico 008/2016", "Medicamentos da atenção básica", "2016", "D-M2-N1-C01", "2026-08-01", "Licitações e Contratos"),
+  item("Dispensa 014/2016", "Manutenção de ar-condicionado", "2016", "D-M2-N1-C03", "2026-09-01", "Dispensas e inexigibilidades"),
 ];
 
 // Termo 005 tem o prazo de ciência correndo (quadro TermoAndamento): as datas
@@ -37,9 +37,9 @@ export function termosDemo(hoje: string): TermoCompleto[] {
       ...base, id: id(4), numero: 4, ano: 2026, situacao: "rascunho", secretariaId: secretaria("Obras"), secretaria: "Obras",
       geradoEm: "2026-11-10T12:00:00Z", editalEm: null, itens: 3,
       documentos: [
-        item("Convite 002/2017", "Reforma da praça central", "2017 – 2017", "B-M4-N2-C01", "2026-06-01", "Licitações e Contratos"),
-        item("Contrato 031/2016", "Pavimentação de ruas do bairro Centro", "2016 – 2019", "B-M4-N2-C03", "2026-07-01", "Contratos e aditivos"),
-        item("Tomada de Preços 005/2017", "Construção de muro de arrimo", "2017 – 2017", "B-M4-N2-C03", "2026-10-01", "Licitações e Contratos"),
+        item("Convite 002/2017", "Reforma da praça central", "2017", "B-M4-N2-C01", "2026-06-01", "Licitações e Contratos"),
+        item("Contrato 031/2016", "Pavimentação de ruas do bairro Centro", "2016", "B-M4-N2-C03", "2026-07-01", "Contratos e aditivos"),
+        item("Tomada de Preços 005/2017", "Construção de muro de arrimo", "2017", "B-M4-N2-C03", "2026-10-01", "Licitações e Contratos"),
       ],
     },
     {

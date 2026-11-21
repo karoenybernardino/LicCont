@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { MODULOS } from "@/features/modulos/ocultos";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Pilula } from "@/ui/canvas";
 import { exigirSessao, secretariasPermitidas } from "@/features/sessao/dal";
 import { PaginaSistema } from "@/features/sessao/pagina";
-import { cursorDoBanco, obterDocumento, pesquisar } from "@/features/documentos/dados";
+import { cursorDoBanco, obterDocumento, pesquisar, pesquisarCaixas } from "@/features/documentos/dados";
 import { esquemaId } from "@/features/documentos/esquemas";
-import { FAIXAS_VALOR, faixaDeValor, lerFiltros, paraQuery, filtrosAtivos, type Aba, type Filtros } from "@/features/documentos/filtros";
+import { lerFiltros, paraQuery, filtrosAtivos, type Aba, type Filtros } from "@/features/documentos/filtros";
 import { EscolhaCompacta } from "@/features/documentos/escolha-compacta";
-import { PainelDocumento, tomSituacao } from "@/features/documentos/painel";
-import { MODALIDADES, SITUACOES, SITUACOES_CONTRATO } from "@/features/documentos/tipos";
+import { PainelDocumento } from "@/features/documentos/painel";
+import { MESES, MODALIDADES, ORGAOS } from "@/features/documentos/tipos";
 import { tituloDocumento } from "@/features/documentos/titulo";
 import { documentosEmprestados } from "@/features/movimento/dados";
 
@@ -60,15 +61,32 @@ function Escolha({ nome, rotulo: r, valor, opcoes, vazio, icone }: { nome: strin
   );
 }
 
+// Campo de texto do filtro (fundo e setor da caixa), no mesmo tamanho dos campos de escolha.
+function Texto({ nome, rotulo: r, valor }: { nome: string; rotulo: string; valor: string | null }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className={rotulo}>{r}</span>
+      <input
+        name={nome}
+        defaultValue={valor ?? ""}
+        maxLength={120}
+        className="h-9 w-full rounded-lg border border-borda-campo bg-campo px-2.5 text-[13px] font-medium text-texto shadow-[0_1px_2px_rgba(11,46,58,.06)] hover:border-[#0e7490] focus-visible:outline-2 focus-visible:outline-foco dark:shadow-none"
+      />
+    </label>
+  );
+}
+
 export default async function Pesquisa({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { usuario, secretaria } = await exigirSessao();
   const params = await searchParams;
   const f = lerFiltros(params);
-  const [r, secretarias, emprestados] = await Promise.all([pesquisar(usuario, f), secretariasPermitidas(usuario), documentosEmprestados()]);
+  // Aba "Caixas gerais": a lista mostra caixas do arquivo geral; as contagens dos documentos seguem a aba "Todos".
+  const emCaixas = f.aba === "caixas";
+  const [r, secretarias, emprestados, caixas] = await Promise.all([pesquisar(usuario, emCaixas ? { ...f, aba: "todos" } : f), secretariasPermitidas(usuario), documentosEmprestados(), pesquisarCaixas({ ...f, tipo: "geral" })]);
   const nomes = new Map(secretarias.filter((s) => s.id).map((s) => [s.id as string, s.nome]));
   const pedido = typeof params.doc === "string" && esquemaId.safeParse({ id: params.doc }).success ? params.doc : null;
   // Como no quadro: sem documento escolhido, o primeiro da lista já aparece no detalhe.
-  const idDoc = pedido ?? r.itens[0]?.id ?? null;
+  const idDoc = emCaixas ? null : (pedido ?? r.itens[0]?.id ?? null);
   // Com um documento escolhido, a coluna da esquerda fica compacta (quadro "painel do documento").
   const compacto = pedido !== null;
   const doc = idDoc ? await obterDocumento(idDoc) : null;
@@ -79,13 +97,13 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
     ["todos", "Todos", r.contagens.todos],
     ["licitacao", "Licitações", r.contagens.licitacao],
     ["contrato", "Contratos", r.contagens.contrato],
+    ["caixas", "Caixas gerais", caixas.length],
   ];
   const proximo = cursorDoBanco(r.proximo);
   const anoAtual = new Date().getFullYear();
   const anos: [string, string][] = Array.from({ length: anoAtual - 1999 }, (_, i) => String(anoAtual - i)).map((a) => [a, a]);
-  const valorAtual = faixaDeValor(f.vmin, f.vmax);
-  const faixasValor = FAIXAS_VALOR.some(([k]) => k === valorAtual) || !valorAtual ? FAIXAS_VALOR : [...FAIXAS_VALOR, [valorAtual, "Faixa personalizada"] as [string, string]];
-  const ordens = [["recentes", "Mais recentes"], ["antigos", "Mais antigos"], ["maior_valor", "Maior valor"]] as const;
+  const meses: [string, string][] = MESES.map((m, i) => [String(i + 1), m]);
+  const ordens = [["recentes", "Mais recentes"], ["antigos", "Mais antigos"]] as const;
   const ordemAtual = ordens.find(([k]) => k === f.ordem)?.[1] ?? "Mais recentes";
   const mapa = r.itens.length > 0 ? `/mapa?codigos=${r.itens.filter((i) => i.codigo).slice(0, 50).map((i) => i.codigo).join(",")}` : "/mapa";
 
@@ -103,7 +121,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
           <label className="flex h-10 min-w-60 flex-1 items-center gap-2.5 rounded-[10px] border border-borda-campo bg-campo px-3.5 shadow-[0_1px_2px_rgba(11,46,58,.06)] hover:border-[#0e7490] focus-within:outline-2 focus-within:outline-foco dark:shadow-none">
             <Ico tam={18}><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Ico>
             <span className="sr-only">Buscar</span>
-            <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número do processo, objeto, credor ou CNPJ" className="min-w-0 flex-1 bg-transparent text-sm outline-0" />
+            <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número do processo, título ou objeto" className="min-w-0 flex-1 bg-transparent text-sm outline-0" />
             <kbd className="rounded-[5px] border border-borda-campo px-1.5 py-px font-mono text-[10.5px] text-texto-suave max-md:hidden">Enter</kbd>
           </label>
           <nav aria-label="Tipo de documento" className="flex max-w-full gap-0.5 overflow-x-auto rounded-[11px] border border-linha bg-superficie-2 p-[3px]">
@@ -121,6 +139,8 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                     <Ico cor={cor}><path d="M3 5h18l-7 8v6l-4 2v-8z" /></Ico>
                   ) : k === "licitacao" ? (
                     <Ico cor={cor}><path d="M14 4l6 6M11 7l6 6M8 10l6-6M12.5 11.5L4 20" /></Ico>
+                  ) : k === "caixas" ? (
+                    <Ico cor={cor}><path d="M21 8l-9-5-9 5v8l9 5 9-5z" /><path d="M3 8l9 5 9-5M12 13v8" /></Ico>
                   ) : (
                     <Ico cor={cor}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></Ico>
                   )}
@@ -156,20 +176,22 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             </span>
             <div className="grid grid-cols-2 gap-2">
               <Escolha nome="modalidade" rotulo="Modalidade" valor={f.modalidade} vazio="Todas" opcoes={Object.entries(MODALIDADES)} icone={<Ico><circle cx="12" cy="9" r="5" /><path d="M9 13.5L8 21l4-2 4 2-1-7.5" /></Ico>} />
-              <Escolha nome="origem" rotulo="Origem" valor={f.origem} vazio="Todas as origens" opcoes={[["manual", "Cadastrado à mão"], ["planilha", "Importado de planilha"], ["tce", "Importado do TCE"]]} icone={<Ico><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Ico>} />
+              <Escolha nome="origem" rotulo="Origem" valor={f.origem} vazio="Todas as origens" opcoes={[["manual", "Cadastrado à mão"], ["planilha", "Importado de planilha"], ...(MODULOS.tce ? ([["tce", "Importado do TCE"]] as [string, string][]) : [])]} icone={<Ico><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Ico>} />
               <Escolha nome="secretaria" rotulo="Secretaria" valor={f.secretaria} vazio="Todas" opcoes={[...nomes.entries()]} icone={<Ico><rect x="9" y="3" width="6" height="5" rx="1" /><rect x="3" y="16" width="6" height="5" rx="1" /><rect x="15" y="16" width="6" height="5" rx="1" /><path d="M12 8v4M6 16v-4h12v4" /></Ico>} />
             </div>
           </fieldset>
           <fieldset className={grupo}>
-            <legend className="sr-only">Contratos</legend>
+            <legend className="sr-only">Órgão e caixa</legend>
             <span className="flex items-center gap-[7px] font-titulo text-[12.5px] font-semibold">
-              <Ico><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></Ico>
-              Contratos
+              <Ico><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></Ico>
+              Órgão e caixa
             </span>
-            <div className="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
-              <Escolha nome="situacao" rotulo="Situação" valor={f.situacao} vazio="Todas" opcoes={Object.entries(SITUACOES_CONTRATO)} icone={<Ico><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></Ico>} />
-              <Escolha nome="valor" rotulo="Valor" valor={valorAtual} vazio="Qualquer valor" opcoes={faixasValor} icone={<Ico><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" /><path d="M6 10v4M18 10v4" /></Ico>} />
-              <Escolha nome="vigencia" rotulo="Vigência" valor={f.vigencia} vazio="Todos" opcoes={[["vigentes", "Vigentes"], ["vencidos", "Vencidos"], ["vencem_30", "Vencem em 30 dias"]]} icone={<Ico><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></Ico>} />
+            <div className="grid grid-cols-5 gap-2 max-sm:grid-cols-1">
+              <Escolha nome="orgao" rotulo="Órgão" valor={f.orgao} vazio="Todos" opcoes={Object.entries(ORGAOS)} icone={<Ico><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></Ico>} />
+              <Texto nome="fundo" rotulo="Fundo" valor={f.fundo} />
+              <Texto nome="setor" rotulo="Setor" valor={f.setor} />
+              <Texto nome="ano" rotulo="Ano limite" valor={f.ano === null ? null : String(f.ano)} />
+              <Escolha nome="mes" rotulo="Mês" valor={f.mes === null ? null : String(f.mes)} vazio="Todos" opcoes={meses} icone={<Ico><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></Ico>} />
             </div>
           </fieldset>
         </div>
@@ -200,14 +222,14 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
               <input type="hidden" name="aba" value={f.aba} />
               <input type="hidden" name="doc" value={idDoc ?? ""} />
               {f.de === null && f.ate !== null && <input type="hidden" name="ate" value={f.ate} />}
-              {f.vmin !== null && <input type="hidden" name="vmin" value={f.vmin} />}
-              {f.vmax !== null && <input type="hidden" name="vmax" value={f.vmax} />}
-              {f.vigencia && <input type="hidden" name="vigencia" value={f.vigencia} />}
+              {f.fundo && <input type="hidden" name="fundo" value={f.fundo} />}
+              {f.setor && <input type="hidden" name="setor" value={f.setor} />}
+              {f.mes !== null && <input type="hidden" name="mes" value={f.mes} />}
               {f.ordem !== "recentes" && <input type="hidden" name="ordem" value={f.ordem} />}
               <label className="flex min-h-11 items-center gap-2.5 rounded-lg border border-borda-campo bg-campo px-3 focus-within:outline-2 focus-within:outline-foco">
                 <Ico tam={18} cor="currentColor"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Ico>
                 <span className="sr-only">Buscar</span>
-                <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número, objeto ou empresa" className="min-w-0 flex-1 bg-transparent text-[15px] outline-0" />
+                <input name="q" defaultValue={f.q} maxLength={100} placeholder="Número, título ou objeto" className="min-w-0 flex-1 bg-transparent text-[15px] outline-0" />
               </label>
               <nav aria-label="Tipo de documento" className="flex gap-1 rounded-[13px] border border-linha bg-superficie-2 p-[3px]">
                 {abas.map(([k, nome, n]) => {
@@ -234,7 +256,7 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                 )}
                 {f.de === null && <EscolhaCompacta nome="de" rotulo="Ano" valor={null} opcoes={anos} />}
                 <EscolhaCompacta nome="secretaria" rotulo="Secretaria" valor={f.secretaria} opcoes={[...nomes.entries()]} />
-                <EscolhaCompacta nome="situacao" rotulo="Situação" valor={f.situacao} opcoes={Object.entries(SITUACOES_CONTRATO)} />
+                <EscolhaCompacta nome="orgao" rotulo="Órgão" valor={f.orgao} opcoes={Object.entries(ORGAOS)} />
                 <EscolhaCompacta nome="modalidade" rotulo="Modalidade" valor={f.modalidade} opcoes={Object.entries(MODALIDADES)} />
                 <noscript>
                   <button type="submit">Aplicar</button>
@@ -267,7 +289,31 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             </details>
           </div>
           <div tabIndex={0} className="sc min-h-0 flex-1 overflow-y-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foco">
-            {r.itens.length === 0 ? (
+            {emCaixas ? (
+              caixas.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-texto-suave">
+                  Nenhuma caixa geral encontrada. <Link href="/pesquisa?aba=caixas" className="text-destaque underline">Limpar filtros</Link>
+                </p>
+              ) : (
+                <ul aria-label="Caixas gerais">
+                  {caixas.map((c) => (
+                    <li key={c.id} className="flex flex-col gap-1.5 border-b border-l-[3px] border-b-linha border-l-transparent px-4 py-3.5">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="font-titulo text-[15px] font-semibold">Caixa {String(c.sequencial).padStart(4, "0")} · {ORGAOS[c.orgao]}</span>
+                        {c.digitalizada && <Pilula tom="aviso">Digitalizada</Pilula>}
+                      </span>
+                      <span className="text-[13px] text-texto-suave">{[c.fundo, c.setor].filter(Boolean).join(" · ")}</span>
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-texto-suave">
+                        <Link href={`/mapa?codigos=${c.endereco}`} className="font-mono font-medium hover:underline">{c.endereco}</Link>
+                        {c.meses.length > 0 && <span>{c.meses.map((m) => MESES[m - 1]?.slice(0, 3)).join(", ")}</span>}
+                        {c.anoLimite && <span>até {c.anoLimite}</span>}
+                        {c.codigoClassificacao && <span className="font-mono">cód. {c.codigoClassificacao}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : r.itens.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-texto-suave">
                 Nenhum documento encontrado. <Link href="/pesquisa" className="text-destaque underline">Limpar filtros</Link>
               </p>
@@ -284,12 +330,12 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
                         <span className="font-titulo text-[15px] font-semibold">{tituloDocumento(d)}</span>
                         <span className="flex items-center gap-1.5">
                           {emprestados.has(d.id) && <Pilula tom="aviso">Emprestado</Pilula>}
-                          <Pilula tom={tomSituacao(d.situacao)}>{SITUACOES[d.situacao] ?? d.situacao}</Pilula>
+                          {d.orgao === "camara" && <Pilula tom="aviso">{ORGAOS.camara}</Pilula>}
                         </span>
                       </span>
                       <span className="text-[13px] text-texto-suave">
                         {d.objeto}
-                        {d.empresa ? ` · ${d.empresa}` : ""}
+                        {d.titulo_processo ? ` · ${d.titulo_processo}` : ""}
                       </span>
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs font-medium text-texto-suave">{d.codigo ?? "Sem endereço"}</span>
@@ -310,7 +356,11 @@ export default async function Pesquisa({ searchParams }: { searchParams: Promise
             )}
           </div>
         </section>
-        {doc ? (
+        {emCaixas ? (
+          <p className="rounded-[14px] border border-dashed border-linha p-8 text-center text-sm text-texto-suave max-lg:hidden">
+            Caixa geral: a caixa é o próprio registro e não lista documentos. O endereço abre o mapa.
+          </p>
+        ) : doc ? (
           <div className="min-w-0">
             <PainelDocumento doc={doc} usuario={usuario} />
           </div>

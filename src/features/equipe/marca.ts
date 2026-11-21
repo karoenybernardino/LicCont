@@ -8,7 +8,8 @@ import type { Regra, TipoPrazo, Destinacao } from "@/features/temporalidade/regr
 // A equipe não lê o acervo: aqui só entram cadastro do órgão e tabela de temporalidade.
 
 export type Parceira = { id: string; nome: string; cnpj: string; logoUrl: string | null; ativa: boolean; prefeituras: number };
-export type MarcaOrgao = { tipo: "prefeitura" | "camara"; nomeEtiqueta: string; logoUrl: string | null; parceiraId: string | null };
+// Um cadastro por município com dois logos: Prefeitura e Câmara (a etiqueta usa o do órgão da caixa).
+export type MarcaOrgao = { nomeEtiqueta: string; logoUrl: string | null; logoCamaraUrl: string | null; parceiraId: string | null };
 
 const PARCEIRAS_DEMO: Parceira[] = [
   { id: "de830000-0000-0000-0000-000000000001", nome: "Empresa Parceira Exemplo", cnpj: "00000000000100", logoUrl: null, ativa: true, prefeituras: 2 },
@@ -49,12 +50,12 @@ export async function orgaosParaParceira(parceira: string): Promise<OrgaoDaParce
 }
 
 export async function marcaDoOrgao(id: string): Promise<MarcaOrgao | null> {
-  if (emDemo()) return { tipo: "prefeitura", nomeEtiqueta: "Prefeitura Fictícia de Exemplo", logoUrl: null, parceiraId: PARCEIRAS_DEMO[0].id };
+  if (emDemo()) return { nomeEtiqueta: "Prefeitura Fictícia de Exemplo", logoUrl: null, logoCamaraUrl: null, parceiraId: PARCEIRAS_DEMO[0].id };
   const sb = await clienteSessao();
   if (!sb) return null;
-  const { data } = await sb.from("prefeituras").select("tipo, nome_etiqueta, logo_caminho, parceira_id").eq("id", id).maybeSingle();
+  const { data } = await sb.from("prefeituras").select("nome_etiqueta, logo_caminho, logo_camara_caminho, parceira_id").eq("id", id).maybeSingle();
   if (!data) return null;
-  return { tipo: data.tipo as MarcaOrgao["tipo"], nomeEtiqueta: (data.nome_etiqueta as string | null) ?? "", logoUrl: await urlAssinada(data.logo_caminho as string | null), parceiraId: (data.parceira_id as string | null) ?? null };
+  return { nomeEtiqueta: (data.nome_etiqueta as string | null) ?? "", logoUrl: await urlAssinada(data.logo_caminho as string | null), logoCamaraUrl: await urlAssinada(data.logo_camara_caminho as string | null), parceiraId: (data.parceira_id as string | null) ?? null };
 }
 
 export async function classesDoOrgao(id: string): Promise<{ classes: Regra[]; grupos: { id: string; nome: string }[] }> {
@@ -65,7 +66,7 @@ export async function classesDoOrgao(id: string): Promise<{ classes: Regra[]; gr
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const classes = ((c.data ?? []) as any[]).map((r): Regra => ({
     id: r.id, codigo: r.codigo, classe: r.nome, grupoId: r.grupo_id, grupo: r.grupo, corrente: r.prazo_corrente_anos, intermediaria: r.prazo_intermediaria_anos,
-    tipoPrazo: r.tipo_prazo as TipoPrazo, evento: r.evento, destinacao: r.destinacao as Destinacao, observacao: r.observacao, ativa: r.ativa,
+    tipoPrazo: r.tipo_prazo as TipoPrazo, destinacao: r.destinacao as Destinacao, observacao: r.observacao, ativa: r.ativa,
   }));
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const grupos = ((g.data ?? []) as any[]).filter((x) => x.ativo).map((x) => ({ id: x.id as string, nome: x.nome as string }));

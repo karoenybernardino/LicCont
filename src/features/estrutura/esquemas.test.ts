@@ -1,14 +1,14 @@
 import { expect, it } from "vitest";
-import { esquemaCaixas, esquemaModulos, esquemaSituacao, mensagemErro } from "./esquemas";
+import { esquemaCapacidade, esquemaCaixas, esquemaModulos, esquemaSituacao, mensagemErro } from "./esquemas";
 
 const id = "de300000-0000-0000-0000-000000000001";
 
 it("adicionar módulos respeita os limites do banco", () => {
-  expect(esquemaModulos.safeParse({ rua: id, modulos: "2", niveis: "4", capacidade: "3" }).success).toBe(true);
-  expect(esquemaModulos.safeParse({ rua: id, modulos: "21", niveis: "4", capacidade: "3" }).success).toBe(false);
-  expect(esquemaModulos.safeParse({ rua: id, modulos: "2", niveis: "11", capacidade: "3" }).success).toBe(false);
-  expect(esquemaModulos.safeParse({ rua: id, modulos: "2", niveis: "4", capacidade: "51" }).success).toBe(false);
-  expect(esquemaModulos.safeParse({ rua: "x", modulos: "2", niveis: "4", capacidade: "3" }).success).toBe(false);
+  expect(esquemaModulos.safeParse({ rua: id, modulos: "2" }).success).toBe(true);
+  expect(esquemaModulos.safeParse({ rua: id, modulos: "21" }).success).toBe(false);
+  expect(esquemaModulos.safeParse({ rua: "x", modulos: "2" }).success).toBe(false);
+  expect(esquemaCapacidade.safeParse({ id, capacidade: "6" }).success).toBe(true);
+  expect(esquemaCapacidade.safeParse({ id, capacidade: "7" }).success).toBe(false);
 });
 
 it("caixas e situação só aceitam valores conhecidos", () => {

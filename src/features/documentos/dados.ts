@@ -6,13 +6,15 @@ import { SECRETARIAS_DEMO, VINCULOS_DEMO, emDemo } from "@/features/demo/dados";
 import { perfilDemo } from "@/features/demo/sessao";
 import { CAPACIDADE_CAIXA_DEMO, DOCUMENTOS_DEMO, caixaDemo, idCaixaDemo } from "@/features/demo/documentos";
 import { ESTRUTURA_DEMO } from "@/features/demo/estrutura";
-import { carregarEstrutura } from "@/features/estrutura/dados";
+import { carregarEstrutura, lerCaixasPorModulo } from "@/features/estrutura/dados";
 import { resumir } from "@/features/estrutura/ocupacao";
+import { REGRAS_EDITAVEIS_DEMO } from "@/features/demo/temporalidade";
 import { aplicarFiltros } from "./aplicar";
+import { esquemaCodigoClasse } from "./esquemas";
 import type { Filtros } from "./filtros";
 import type { DocumentoSemPdf } from "./lote";
 import { tituloDocumento } from "./titulo";
-import type { Modalidade, ResultadoPesquisa, Tipo } from "./tipos";
+import type { Modalidade, Orgao, ResultadoPesquisa, Tipo } from "./tipos";
 
 // Leitura pela sessão do usuário: o RLS devolve só a prefeitura e as
 // secretarias permitidas. Demonstração: dados fictícios em memória.
@@ -46,23 +48,14 @@ export type DocumentoDetalhe = {
   numero: string;
   ano: number;
   objeto: string;
-  empresa: string | null;
-  cnpj: string | null;
-  // CPF do credor pessoa física (só para o formulário de edição; nunca em lista, busca ou log).
-  cpf_credor: string | null;
-  valor: number | null;
-  situacao: string;
-  vigencia_inicio: string | null;
-  vigencia_fim: string | null;
-  encerrado_em: string | null;
+  tituloProcesso: string | null;
+  orgao: Orgao;
   classeId: string | null;
   grupoId: string | null;
   tipologiaId: string | null;
   tipologia: string | null;
-  dataProducao: string | null;
   observacao: string | null;
   volume: number;
-  eventoEm: string | null;
   conferido: boolean;
   origem?: "manual" | "planilha" | "tce";
   ativo: boolean;
@@ -92,9 +85,9 @@ export async function pesquisar(u: Usuario, f: Filtros): Promise<ResultadoPesqui
   }
   const sb = await clienteSessao();
   if (!sb) return VAZIO;
-  // O cursor do banco é "criado_em|valor|id".
-  const [cc, cv, ci] = (f.cursor ?? "").split("|");
-  const cursorOk = !!ci && /^[0-9a-f-]{36}$/i.test(ci) && !Number.isNaN(Date.parse(cc)) && (cv === "" || !Number.isNaN(Number(cv)));
+  // O cursor do banco é "criado_em|id".
+  const [cc, ci] = (f.cursor ?? "").split("|");
+  const cursorOk = !!ci && /^[0-9a-f-]{36}$/i.test(ci) && !Number.isNaN(Date.parse(cc));
   const { data, error } = await sb.rpc("pesquisar_documentos", {
     p_busca: f.q || null,
     p_aba: f.aba,
@@ -102,15 +95,14 @@ export async function pesquisar(u: Usuario, f: Filtros): Promise<ResultadoPesqui
     p_ano_ate: f.ate,
     p_modalidade: f.modalidade,
     p_secretaria: f.secretaria,
-    p_situacao: f.situacao,
-    p_valor_min: f.vmin,
-    p_valor_max: f.vmax,
-    p_vigencia: f.vigencia,
     p_ordem: f.ordem,
     p_cursor_criado: cursorOk ? cc : null,
-    p_cursor_valor: cursorOk && cv ? Number(cv) : null,
     p_cursor_id: cursorOk ? ci : null,
     p_origem: f.origem,
+    p_orgao: f.orgao,
+    p_fundo: f.fundo,
+    p_setor: f.setor,
+    p_mes: f.mes,
   });
   if (error || !data) throw new Error(FALHA);
   const r = data as ResultadoPesquisa & { total: number | string };
@@ -118,7 +110,7 @@ export async function pesquisar(u: Usuario, f: Filtros): Promise<ResultadoPesqui
 }
 
 export function cursorDoBanco(p: ResultadoPesquisa["proximo"]) {
-  return p ? (emDemo() ? p.id : `${p.criado_em}|${p.valor ?? ""}|${p.id}`) : null;
+  return p ? (emDemo() ? p.id : `${p.criado_em}|${p.id}`) : null;
 }
 
 export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe | null> => {
@@ -128,7 +120,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
     const cx = caixaDemo(d.caixa_id);
     const sec = SECRETARIAS_DEMO.find((s) => s.id === d.secretaria_id)?.nome ?? "";
     return {
-      ...d, encerrado_em: null, cpf_credor: null, classeId: null, grupoId: null, tipologiaId: null, tipologia: null, dataProducao: null, observacao: null, volume: 1, eventoEm: null, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
+      ...d, tituloProcesso: d.titulo_processo, classeId: null, grupoId: null, tipologiaId: null, tipologia: null, observacao: null, volume: 1, conferido: d.conferido, ativo: true, secretariaId: d.secretaria_id, secretaria: sec, caixaId: d.caixa_id,
       posicao: cx ? posicaoDe(cx.rua.codigo, cx.modulo.numero, cx.nivel.numero, cx.numero) : null,
       arquivo: d.arquivo
         ? { id: `a-${d.id}`, nome: d.arquivo.nome, paginas: d.arquivo.paginas, tamanho: d.arquivo.tamanho, situacao: "pronto", avisos: [], motivo: null, miniatura: false, sha256: null,
@@ -141,7 +133,7 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const { data, error } = await sb
     .from("documentos")
     .select(
-      "id, tipo, modalidade, numero, ano, objeto, empresa, cnpj, cpf_credor, valor, situacao, vigencia_inicio, vigencia_fim, encerrado_em, classe_id, grupo_id, tipologia_id, data_producao, observacao, volume, evento_em, tipologias(nome), conferido_em, ativo, origem, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256, titulo, assunto, autor, local_digitalizacao, genero, selo, assinatura_icp)",
+      "id, tipo, modalidade, numero, ano, objeto, titulo_processo, orgao, classe_id, grupo_id, tipologia_id, observacao, volume, tipologias(nome), conferido_em, ativo, origem, secretaria_id, caixa_id, secretarias(nome), caixas(numero, niveis(numero, modulos(numero, ruas(codigo)))), arquivos(id, nome_original, tamanho, paginas, situacao, avisos, motivo_recusa, ativo, miniatura_caminho, enviado_em, sha256, titulo, assunto, autor, local_digitalizacao, genero, selo, assinatura_icp)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -157,10 +149,9 @@ export const obterDocumento = cache(async (id: string): Promise<DocumentoDetalhe
   const comTexto = a ? await sb.from("arquivo_textos").select("arquivo_id").eq("arquivo_id", a.id).maybeSingle() : null;
   return {
     id: d.id, tipo: d.tipo, modalidade: d.modalidade, numero: d.numero, ano: d.ano, objeto: d.objeto,
-    empresa: d.empresa, cnpj: d.cnpj, cpf_credor: d.cpf_credor ?? null, valor: d.valor === null ? null : Number(d.valor), situacao: d.situacao,
-    vigencia_inicio: d.vigencia_inicio, vigencia_fim: d.vigencia_fim, encerrado_em: d.encerrado_em,
+    tituloProcesso: d.titulo_processo ?? null, orgao: d.orgao,
     classeId: d.classe_id ?? null, grupoId: d.grupo_id ?? null, tipologiaId: d.tipologia_id ?? null, tipologia: d.tipologias?.nome ?? null,
-    dataProducao: d.data_producao ?? null, observacao: d.observacao ?? null, volume: d.volume ?? 1, eventoEm: d.evento_em ?? null, conferido: !!d.conferido_em, origem: d.origem, ativo: d.ativo,
+    observacao: d.observacao ?? null, volume: d.volume ?? 1, conferido: !!d.conferido_em, origem: d.origem, ativo: d.ativo,
     secretariaId: d.secretaria_id, secretaria: d.secretarias?.nome ?? "", caixaId: d.caixa_id,
     posicao: cx ? posicaoDe(cx.niveis.modulos.ruas.codigo, cx.niveis.modulos.numero, cx.niveis.numero, cx.numero) : null,
     arquivo: a
@@ -224,7 +215,7 @@ export async function podeConferir(u: Usuario, secretariaId: string) {
   return !!data?.length;
 }
 
-export type CaixaOcupada = { id: string; numero: number; documentos: number; capacidade: number };
+export type CaixaOcupada = { id: string; numero: number; documentos: number; capacidade: number; orgao: Orgao };
 
 // Caixas ativas de um nível com a ocupação (só números, de todas as secretarias).
 export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]> {
@@ -233,12 +224,13 @@ export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]
     if (!nivel) return [];
     return Array.from({ length: nivel.caixas }, (_, i) => {
       const id = idCaixaDemo(nivel.id, i + 1);
-      return { id, numero: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: CAPACIDADE_CAIXA_DEMO };
+      return { id, numero: i + 1, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length, capacidade: CAPACIDADE_CAIXA_DEMO, orgao: "prefeitura" as Orgao };
     });
   }
   const sb = await clienteSessao();
   if (!sb) return [];
-  const { data: caixas } = await sb.from("caixas").select("id, numero").eq("nivel_id", nivelId).eq("ativo", true).order("numero");
+  // Só caixa detalhada recebe documento (a geral não lista conteúdo).
+  const { data: caixas } = await sb.from("caixas").select("id, numero, orgao").eq("nivel_id", nivelId).eq("ativo", true).eq("tipo", "detalhada").order("numero");
   const ids = (caixas ?? []).map((c) => c.id as string);
   if (!ids.length) return [];
   const { data: oc } = await sb.rpc("ocupacao_caixas", { p_caixas: ids });
@@ -248,6 +240,7 @@ export async function caixasComOcupacao(nivelId: string): Promise<CaixaOcupada[]
   return (caixas ?? []).map((c) => ({
     id: c.id as string,
     numero: c.numero as number,
+    orgao: c.orgao as Orgao,
     documentos: mapa.get(c.id as string)?.documentos ?? 0,
     capacidade: mapa.get(c.id as string)?.capacidade ?? 50,
   }));
@@ -306,10 +299,11 @@ export async function limitePdfMb(u: Usuario) {
 
 // Ruas, módulos e níveis ativos para as listas do cadastro.
 export async function opcoesEstrutura() {
-  const e = await carregarEstrutura();
+  const [e, caixasPorModulo] = await Promise.all([carregarEstrutura(), lerCaixasPorModulo()]);
   const ruas = e.ruas.filter((r) => r.ativo);
   const modulos = e.modulos.filter((m) => m.ativo && ruas.some((r) => r.id === m.ruaId));
   return {
+    caixasPorModulo,
     ruas: ruas.map((r) => ({
       id: r.id,
       codigo: r.codigo,
@@ -321,4 +315,81 @@ export async function opcoesEstrutura() {
       .filter((n) => n.ativo && modulos.some((m) => m.id === n.moduloId))
       .map((n) => ({ id: n.id, moduloId: n.moduloId, numero: n.numero })),
   };
+}
+
+// Classe, prazo e destino a partir do código da classificação (o cadastro da caixa preenche com isto).
+export type ClasseDoCodigo = { classeId: string; grupoId: string; codigo: string; nome: string; prazoAnos: number; permanente: boolean };
+
+export async function classePorCodigo(codigo: string): Promise<ClasseDoCodigo | null> {
+  const c = esquemaCodigoClasse.safeParse(codigo);
+  if (!c.success) return null;
+  if (emDemo()) {
+    const r = REGRAS_EDITAVEIS_DEMO.find((x) => x.codigo === c.data && x.ativa);
+    return r ? { classeId: r.id, grupoId: r.grupoId, codigo: r.codigo, nome: r.classe, prazoAnos: r.corrente + r.intermediaria, permanente: r.destinacao === "guarda_permanente" } : null;
+  }
+  const sb = await clienteSessao();
+  if (!sb) return null;
+  const { data } = await sb.rpc("classe_por_codigo", { p_codigo: c.data });
+  const r = ((data ?? []) as { classe_id: string; grupo_id: string; codigo: string; nome: string; prazo_anos: number; permanente: boolean }[])[0];
+  return r ? { classeId: r.classe_id, grupoId: r.grupo_id, codigo: r.codigo, nome: r.nome, prazoAnos: r.prazo_anos, permanente: r.permanente } : null;
+}
+
+// Caixas ativas de um nível para o cadastro de caixa (de qualquer tipo): número no nível, número do
+// órgão (sequencial) e se já foi cadastrada como geral ou detalhada.
+export type CaixaDoNivel = { id: string; numero: number; sequencial: number; orgao: Orgao; tipo: "geral" | "detalhada"; documentos: number };
+
+export async function caixasParaCadastro(nivelId: string): Promise<CaixaDoNivel[]> {
+  if (emDemo()) {
+    const nivel = ESTRUTURA_DEMO.niveis.find((n) => n.id === nivelId);
+    if (!nivel) return [];
+    return Array.from({ length: nivel.caixas }, (_, i) => {
+      const id = idCaixaDemo(nivel.id, i + 1);
+      return { id, numero: i + 1, sequencial: i + 1, orgao: "prefeitura" as Orgao, tipo: "detalhada" as const, documentos: DOCUMENTOS_DEMO.filter((d) => d.caixa_id === id).length };
+    });
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data } = await sb.from("caixas").select("id, numero, sequencial, orgao, tipo").eq("nivel_id", nivelId).eq("ativo", true).order("numero");
+  const ids = (data ?? []).map((c) => c.id as string);
+  if (!ids.length) return [];
+  const { data: oc } = await sb.rpc("ocupacao_caixas", { p_caixas: ids });
+  const mapa = new Map<string, number>((oc ?? []).map((o: { caixa_id: string; documentos: number }) => [o.caixa_id, o.documentos]));
+  return (data ?? []).map((c) => ({ id: c.id as string, numero: c.numero as number, sequencial: c.sequencial as number, orgao: c.orgao as Orgao, tipo: c.tipo as "geral" | "detalhada", documentos: mapa.get(c.id as string) ?? 0 }));
+}
+
+// Pesquisa de caixas (gerais e detalhadas) pelos mesmos filtros de órgão, fundo, setor, mês e ano.
+export type CaixaPesquisa = {
+  id: string; orgao: Orgao; sequencial: number; tipo: "geral" | "detalhada"; fundo: string | null; setor: string | null; meses: number[];
+  anoLimite: number | null; digitalizada: boolean; codigoClassificacao: string | null; prazoAnos: number | null; etiquetaGeral: boolean; endereco: string;
+};
+
+// Caixas gerais fictícias da demonstração (nada aqui é dado real).
+export const CAIXAS_GERAIS_DEMO: CaixaPesquisa[] = [
+  { id: "de430000-0000-0000-0000-000000000001", orgao: "prefeitura", sequencial: 1, tipo: "geral", fundo: "Fundo Municipal de Saúde", setor: "Contabilidade", meses: [1, 2, 3], anoLimite: 2019, digitalizada: false, codigoClassificacao: "031", prazoAnos: 12, etiquetaGeral: true, endereco: "A-M1-N1-C01" },
+  { id: "de430000-0000-0000-0000-000000000002", orgao: "prefeitura", sequencial: 2, tipo: "geral", fundo: "Fundo Municipal de Educação", setor: "Tesouraria", meses: [6], anoLimite: 2020, digitalizada: true, codigoClassificacao: "032", prazoAnos: 10, etiquetaGeral: true, endereco: "A-M1-N1-C02" },
+  { id: "de430000-0000-0000-0000-000000000003", orgao: "camara", sequencial: 1, tipo: "geral", fundo: "Câmara Municipal", setor: "Secretaria Legislativa", meses: [11, 12], anoLimite: 2021, digitalizada: false, codigoClassificacao: "034", prazoAnos: 5, etiquetaGeral: false, endereco: "B-M1-N1-C01" },
+];
+
+export async function pesquisarCaixas(f: Pick<Filtros, "orgao" | "fundo" | "setor" | "mes" | "ano"> & { ano?: number | null; tipo?: "geral" | "detalhada" | null }): Promise<CaixaPesquisa[]> {
+  if (emDemo()) {
+    const sem = (t: string | null | undefined) => (t ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+    return CAIXAS_GERAIS_DEMO.filter(
+      (c) =>
+        (!f.tipo || c.tipo === f.tipo) &&
+        (!f.orgao || c.orgao === f.orgao) &&
+        (!f.fundo || sem(c.fundo).includes(sem(f.fundo))) &&
+        (!f.setor || sem(c.setor).includes(sem(f.setor))) &&
+        (!f.mes || c.meses.includes(f.mes)) &&
+        (!f.ano || c.anoLimite === f.ano),
+    );
+  }
+  const sb = await clienteSessao();
+  if (!sb) return [];
+  const { data, error } = await sb.rpc("pesquisar_caixas", { p_orgao: f.orgao, p_tipo: f.tipo ?? null, p_fundo: f.fundo, p_setor: f.setor, p_mes: f.mes, p_ano: f.ano ?? null });
+  if (error) throw new Error(FALHA);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data ?? []) as any[]).map((c) => ({
+    id: c.id, orgao: c.orgao, sequencial: c.sequencial, tipo: c.tipo, fundo: c.fundo, setor: c.setor, meses: c.meses ?? [], anoLimite: c.ano_limite,
+    digitalizada: c.digitalizada, codigoClassificacao: c.codigo_classificacao, prazoAnos: c.prazo_anos, etiquetaGeral: c.etiqueta_geral, endereco: c.codigo,
+  }));
 }

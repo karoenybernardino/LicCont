@@ -51,12 +51,12 @@ insert into public.caixas (id, prefeitura_id, nivel_id, numero, capacidade_docum
 
 -- A: caixa 1 cheia (2 docs: Saúde licitação 2023 e Obras contrato 2024), caixa 2 com 1 (Obras licitação 2024),
 -- caixa 3 vazia, e 1 documento importado sem endereço (Saúde). B: 1 documento.
-insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, situacao, origem) values
-  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2023', 2023, 'Licitação Saúde fictícia', 'concluida', 'manual'),
-  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '002/2024', 2024, 'Contrato Obras fictício', 'vigente', 'manual'),
-  ('d0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'dispensa', '003/2024', 2024, 'Licitação Obras fictícia', 'concluida', 'manual'),
-  ('d0a40000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', null, 'contrato', null, '004/2024', 2024, 'Contrato importado fictício', 'vigente', 'planilha'),
-  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Documento de B fictício', 'concluida', 'manual');
+insert into public.documentos (id, prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto, origem, orgao) values
+  ('d0a10000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2023', 2023, 'Licitação Saúde fictícia', 'manual', 'prefeitura'),
+  ('d0a20000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000001', 'contrato', null, '002/2024', 2024, 'Contrato Obras fictício', 'manual', 'prefeitura'),
+  ('d0a30000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a2000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', 'dispensa', '003/2024', 2024, 'Licitação Obras fictícia', 'manual', 'prefeitura'),
+  ('d0a40000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', null, 'contrato', null, '004/2024', 2024, 'Contrato importado fictício', 'planilha', 'camara'),
+  ('d0b10000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '001/2024', 2024, 'Documento de B fictício', 'manual', 'prefeitura');
 
 create function public.tst_entrar(p_uid uuid, p_sessao uuid, p_aal text)
 returns void language sql as $$
@@ -75,6 +75,9 @@ select results_eq($$select (public.painel_resumo() -> 'documentos' ->> 'sem_pdf'
 select results_eq($$select jsonb_array_length(public.painel_resumo() -> 'por_ano')$$, array[2], 'documentos por ano: 2023 e 2024');
 select results_eq($$select (public.painel_resumo('a1000000-0000-0000-0000-000000000000') -> 'documentos' ->> 'total')::int$$, array[2], 'filtro por secretaria (Saúde)');
 select results_eq($$select (public.painel_resumo('b1000000-0000-0000-0000-000000000000') -> 'documentos' ->> 'total')::int$$, array[0], 'filtrar por secretaria de B não traz nada');
+select results_eq($$select (public.painel_resumo(p_orgao => 'camara') -> 'documentos' ->> 'total')::int$$, array[1], 'filtro por órgão: só o documento da Câmara');
+select results_eq($$select (public.painel_resumo(p_orgao => 'prefeitura') -> 'documentos' ->> 'total')::int$$, array[3], 'filtro por órgão: os da Prefeitura de A, sem os de B');
+select results_eq($$select (public.painel_caixas('camara') ->> 'total')::int$$, array[0], 'nenhuma caixa da Câmara');
 select results_eq($$select public.painel_caixas()::text$$,
   array['{"total": 3, "cheias": 1, "vazias": 1, "com_espaco": 1, "com_documento": 2}'], 'caixas: 1 cheia, 1 com espaço, 1 vazia');
 
@@ -90,8 +93,8 @@ select results_eq($$select (public.painel_caixas() ->> 'total')::int$$, array[1]
 
 -- Anon não executa.
 reset role;
-select ok(not has_function_privilege('anon', 'public.painel_resumo(uuid)', 'execute'), 'anon não executa painel_resumo');
-select ok(not has_function_privilege('anon', 'public.painel_caixas()', 'execute'), 'anon não executa painel_caixas');
+select ok(not has_function_privilege('anon', 'public.painel_resumo(uuid, text)', 'execute'), 'anon não executa painel_resumo');
+select ok(not has_function_privilege('anon', 'public.painel_caixas(text)', 'execute'), 'anon não executa painel_caixas');
 
 select * from finish();
 rollback;

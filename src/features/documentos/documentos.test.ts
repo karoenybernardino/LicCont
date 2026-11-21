@@ -1,16 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { Conferidor } from "./conferencia";
-import { cnpjValido, cpfValido, esquemaDocumento } from "./esquemas";
-import { abreviarSha, descreverArquivo, formatarTamanho, lerValor } from "./formato";
+import { cnpjValido, cpfValido, esquemaCaixa, esquemaCodigoClasse, esquemaDocumento } from "./esquemas";
+import { abreviarSha, descreverArquivo, formatarTamanho } from "./formato";
 import { lerFiltros, paraQuery } from "./filtros";
 import { tituloDocumento } from "./titulo";
 
 const U = "11111111-1111-4111-8111-111111111111";
 const base = {
   tipo: "licitacao", modalidade: "pregao_eletronico", numero: "015/2023", ano: "2023",
-  objeto: "Aquisição de equipamentos", empresa: "", cnpj: "", valor: "", secretaria: U, caixa: U,
-  situacao: "concluida", vigencia_inicio: "", vigencia_fim: "",
-  classe: U, data_producao: "2023-03-01",
+  objeto: "Aquisição de equipamentos", orgao: "prefeitura", secretaria: U, caixa: U, classe: U,
 };
 
 describe("título", () => {
@@ -21,23 +19,26 @@ describe("título", () => {
 });
 
 describe("classificação", () => {
-  it("exige classe e data do documento; tipologia, observação e evento são opcionais", () => {
+  it("exige classe e órgão; tipologia, observação e título do processo são opcionais", () => {
     expect(esquemaDocumento.safeParse(base).success).toBe(true);
     expect(esquemaDocumento.safeParse({ ...base, classe: "" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, data_producao: "" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, data_producao: "2999-01-01" }).success).toBe(false);
-    const r = esquemaDocumento.safeParse({ ...base, tipologia: "", observacao: "", volume: "" });
-    expect(r.success && [r.data.tipologia, r.data.observacao, r.data.volume]).toEqual([null, null, 1]);
+    expect(esquemaDocumento.safeParse({ ...base, orgao: "" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, orgao: "estado" }).success).toBe(false);
+    const r = esquemaDocumento.safeParse({ ...base, tipologia: "", observacao: "", titulo_processo: "", volume: "" });
+    expect(r.success && [r.data.tipologia, r.data.observacao, r.data.titulo_processo, r.data.volume]).toEqual([null, null, null, 1]);
   });
-  it("observação não leva CPF", () => {
+  it("a Câmara pode guardar documento na caixa da Prefeitura: o órgão é do cadastro", () => {
+    const r = esquemaDocumento.safeParse({ ...base, orgao: "camara" });
+    expect(r.success && r.data.orgao).toBe("camara");
+  });
+  it("observação e título não levam CPF", () => {
     expect(esquemaDocumento.safeParse({ ...base, observacao: "Servidor 123.456.789-09" }).success).toBe(false);
+    expect(esquemaDocumento.safeParse({ ...base, titulo_processo: "Fulano 12345678909" }).success).toBe(false);
   });
-  it("documento de outro grupo: tipo outro, situação arquivado, sem modalidade nem vigência", () => {
-    const outro = { ...base, tipo: "outro", modalidade: "", situacao: "arquivado" };
+  it("documento de outro grupo: tipo outro, sem modalidade", () => {
+    const outro = { ...base, tipo: "outro", modalidade: "" };
     expect(esquemaDocumento.safeParse(outro).success).toBe(true);
-    expect(esquemaDocumento.safeParse({ ...outro, situacao: "vigente" }).success).toBe(false);
     expect(esquemaDocumento.safeParse({ ...outro, modalidade: "dispensa" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...outro, vigencia_fim: "2024-01-01" }).success).toBe(false);
   });
   it("título do documento de outro grupo usa a tipologia", () => {
     expect(tituloDocumento({ tipo: "outro", modalidade: null, numero: "12", ano: 2020, tipologia: "Ofício" })).toBe("Ofício 12/2020");
@@ -54,67 +55,72 @@ describe("formato", () => {
     expect(abreviarSha("9f2c" + "0".repeat(56) + "a71e")).toBe("9f2c…a71e");
     expect(abreviarSha(null)).toBeNull();
   });
-  it("valor em reais", () => {
-    expect(lerValor("1.234,56")).toBe(1234.56);
-    expect(lerValor("")).toBeNull();
-    expect(lerValor("abc")).toBeNaN();
-  });
 });
 
 describe("cadastro", () => {
   it("aceita o mínimo e normaliza vazios", () => {
     const r = esquemaDocumento.safeParse(base);
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data).toMatchObject({ empresa: null, cnpj: null, valor: null, ano: 2023 });
+    if (r.success) expect(r.data).toMatchObject({ titulo_processo: null, observacao: null, ano: 2023, orgao: "prefeitura" });
   });
-  it("encerramento: só licitação, não no futuro e não antes do ano do processo", () => {
-    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2023-06-01" }).success).toBe(true);
-    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2999-01-01" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, encerrado_em: "2022-12-31" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, tipo: "contrato", modalidade: "", situacao: "vigente", encerrado_em: "2023-06-01" }).success).toBe(false);
+  it("não leva mais empresa, valor, situação, vigência nem datas", () => {
+    const r = esquemaDocumento.safeParse({ ...base, empresa: "X", valor: "10", situacao: "concluida", vigencia_fim: "2024-01-01", data_producao: "2023-03-01" });
+    expect(r.success).toBe(true);
+    if (r.success) for (const k of ["empresa", "valor", "situacao", "vigencia_fim", "data_producao", "encerrado_em", "evento_em", "cnpj"]) expect(k in r.data).toBe(false);
   });
-  it("licitação exige modalidade; situação segue o tipo", () => {
+  it("licitação exige modalidade; contrato e documento não levam", () => {
     expect(esquemaDocumento.safeParse({ ...base, modalidade: "" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, situacao: "vigente" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, tipo: "contrato", modalidade: "", situacao: "vigente" }).success).toBe(true);
+    expect(esquemaDocumento.safeParse({ ...base, tipo: "contrato", modalidade: "" }).success).toBe(true);
+    expect(esquemaDocumento.safeParse({ ...base, tipo: "contrato" }).success).toBe(false);
   });
-  it("vigência: fim depois do início, e só em contrato", () => {
-    const c = { ...base, tipo: "contrato", modalidade: "", situacao: "vigente" };
-    expect(esquemaDocumento.safeParse({ ...c, vigencia_inicio: "2023-05-01", vigencia_fim: "2023-04-01" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...c, vigencia_inicio: "2023-05-01", vigencia_fim: "2024-04-30" }).success).toBe(true);
-    expect(esquemaDocumento.safeParse({ ...base, vigencia_fim: "2024-04-30" }).success).toBe(false);
-  });
-  it("CNPJ e CPF com dígito verificador; CPF vai para coluna própria", () => {
+  it("CNPJ e CPF com dígito verificador (conta de validação)", () => {
     expect(cnpjValido("11222333000181")).toBe(true);
     expect(cnpjValido("11222333000182")).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, cnpj: "11.222.333/0001-81" }).success).toBe(true);
-    expect(esquemaDocumento.safeParse({ ...base, cnpj: "111.111.111-11" }).success).toBe(false);
-    const cpf = esquemaDocumento.safeParse({ ...base, cnpj: "123.456.789-09" });
-    expect(cpf.success && cpf.data).toMatchObject({ cnpj: null, cpf_credor: "12345678909" });
-    const pj = esquemaDocumento.safeParse({ ...base, cnpj: "11.222.333/0001-81" });
-    expect(pj.success && pj.data).toMatchObject({ cnpj: "11222333000181", cpf_credor: null });
     expect(cpfValido("12345678909")).toBe(true);
     expect(cpfValido("12345678900")).toBe(false);
   });
-  it("valor em reais", () => {
-    const r = esquemaDocumento.safeParse({ ...base, valor: "1.250.000,50" });
-    expect(r.success && r.data.valor).toBe(1250000.5);
-    expect(esquemaDocumento.safeParse({ ...base, valor: "-1" }).success).toBe(false);
+});
+
+describe("caixa", () => {
+  const caixa = { id: U, orgao: "camara", tipo: "geral" };
+  it("aceita o mínimo; vazios viram nulo e meses vira lista vazia", () => {
+    const r = esquemaCaixa.safeParse({ ...caixa, fundo: "", setor: "", ano_limite: "", codigo_classificacao: "", classe: "", tipologia: "", prazo_anos: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data).toMatchObject({ fundo: null, setor: null, ano_limite: null, codigo_classificacao: null, classe: null, prazo_anos: null, meses: [], digitalizada: false, etiqueta_geral: false });
+  });
+  it("órgão e tipo são obrigatórios e fechados", () => {
+    expect(esquemaCaixa.safeParse({ ...caixa, orgao: "" }).success).toBe(false);
+    expect(esquemaCaixa.safeParse({ ...caixa, tipo: "mista" }).success).toBe(false);
+  });
+  it("meses: um ou vários, de 1 a 12, sem repetir e em ordem", () => {
+    const r = esquemaCaixa.safeParse({ ...caixa, meses: "3,1,3" });
+    expect(r.success && r.data.meses).toEqual([1, 3]);
+    expect(esquemaCaixa.safeParse({ ...caixa, meses: ["4"] }).success).toBe(true);
+    expect(esquemaCaixa.safeParse({ ...caixa, meses: "13" }).success).toBe(false);
+    expect(esquemaCaixa.safeParse({ ...caixa, meses: "0" }).success).toBe(false);
+  });
+  it("etiqueta geral e digitalizada vêm de caixas de seleção", () => {
+    const r = esquemaCaixa.safeParse({ ...caixa, tipo: "detalhada", etiqueta_geral: "on", digitalizada: "on" });
+    expect(r.success && [r.data.etiqueta_geral, r.data.digitalizada]).toEqual([true, true]);
+  });
+  it("código da classificação, prazo e ano limite têm formato e limite", () => {
+    expect(esquemaCodigoClasse.safeParse(" 031.2 ").success).toBe(true);
+    expect(esquemaCodigoClasse.safeParse("03 1").success).toBe(false);
+    expect(esquemaCaixa.safeParse({ ...caixa, codigo_classificacao: "a b" }).success).toBe(false);
+    expect(esquemaCaixa.safeParse({ ...caixa, prazo_anos: "100" }).success).toBe(false);
+    expect(esquemaCaixa.safeParse({ ...caixa, ano_limite: "1800" }).success).toBe(false);
   });
 });
 
 describe("filtros da URL", () => {
   it("ida e volta", () => {
-    const f = lerFiltros({ q: "tecnomed", aba: "licitacao", de: "2022", modalidade: "dispensa" });
-    expect(f).toMatchObject({ q: "tecnomed", aba: "licitacao", de: 2022, modalidade: "dispensa", ordem: "recentes" });
+    const f = lerFiltros({ q: "tecnomed", aba: "licitacao", de: "2022", modalidade: "dispensa", orgao: "camara", fundo: "Câmara", setor: "Compras", mes: "4" });
+    expect(f).toMatchObject({ q: "tecnomed", aba: "licitacao", de: 2022, modalidade: "dispensa", orgao: "camara", fundo: "Câmara", setor: "Compras", mes: 4, ordem: "recentes" });
     expect(lerFiltros(Object.fromEntries(new URLSearchParams(paraQuery(f))))).toEqual(f);
   });
-  it("filtro de contrato leva a aba para Contratos", () => {
-    expect(lerFiltros({ situacao: "vigente" })).toMatchObject({ aba: "contrato", situacao: "vigente" });
-  });
   it("valor inválido na URL vira sem filtro", () => {
-    expect(lerFiltros({ aba: "x", de: "abc", modalidade: "inventada", secretaria: "não-é-uuid" })).toMatchObject({
-      aba: "todos", de: null, modalidade: null, secretaria: null,
+    expect(lerFiltros({ aba: "x", de: "abc", modalidade: "inventada", secretaria: "não-é-uuid", orgao: "estado", mes: "13" })).toMatchObject({
+      aba: "todos", de: null, modalidade: null, secretaria: null, orgao: null, mes: null,
     });
   });
 });
@@ -140,22 +146,8 @@ describe("conferência do PDF", () => {
 });
 
 describe("CPF em texto livre", () => {
-  it("recusa CPF no objeto e na empresa, aceita CNPJ e números comuns", () => {
+  it("recusa CPF no objeto, aceita CNPJ e números comuns", () => {
     expect(esquemaDocumento.safeParse({ ...base, objeto: "Serviço para João CPF 123.456.789-09" }).success).toBe(false);
-    expect(esquemaDocumento.safeParse({ ...base, empresa: "Fulano 12345678909" }).success).toBe(false);
     expect(esquemaDocumento.safeParse({ ...base, objeto: "Contrato com 12.345.678/0001-95 e 5.000 itens" }).success).toBe(true);
-  });
-});
-
-describe("faixa de valor da pesquisa", () => {
-  it("a faixa vira vmin e vmax, e vmin e vmax valem sozinhos", async () => {
-    const { lerFiltros, faixaDeValor } = await import("./filtros");
-    expect(lerFiltros({ valor: "50000-200000" })).toMatchObject({ vmin: 50000, vmax: 200000, aba: "contrato" });
-    expect(lerFiltros({ valor: "1000000-" })).toMatchObject({ vmin: 1000000, vmax: null });
-    expect(lerFiltros({ valor: "-50000" })).toMatchObject({ vmin: null, vmax: 50000 });
-    expect(lerFiltros({ vmin: "10", vmax: "20", valor: "50000-200000" })).toMatchObject({ vmin: 10, vmax: 20 });
-    expect(lerFiltros({ valor: "lixo; drop" })).toMatchObject({ vmin: null, vmax: null, aba: "todos" });
-    expect(faixaDeValor(0, 50000)).toBe("0-50000");
-    expect(faixaDeValor(null, null)).toBe("");
   });
 });

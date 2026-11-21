@@ -26,13 +26,13 @@ async function baixarLogo(sb: Cliente, caminho: string | null): Promise<Uint8Arr
 }
 
 async function marcaDoOrgao(sb: Cliente | null): Promise<MarcaPdf> {
-  if (emDemo() || !sb) return { orgaoNome: "Prefeitura Fictícia de Exemplo", logoOrgao: null, logoParceira: null };
+  if (emDemo() || !sb) return { orgaoNome: "Prefeitura Fictícia de Exemplo", logoOrgao: null, logoParceira: null, logoCamara: null };
   const { data } = await sb.rpc("etiqueta_marca");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = ((data ?? []) as any[])[0];
-  if (!m) return { orgaoNome: "", logoOrgao: null, logoParceira: null };
-  const [logoOrgao, logoParceira] = await Promise.all([baixarLogo(sb, m.logo_caminho), baixarLogo(sb, m.parceira_logo_caminho)]);
-  return { orgaoNome: m.nome_etiqueta || m.nome, logoOrgao, logoParceira };
+  if (!m) return { orgaoNome: "", logoOrgao: null, logoParceira: null, logoCamara: null };
+  const [logoOrgao, logoParceira, logoCamara] = await Promise.all([baixarLogo(sb, m.logo_caminho), baixarLogo(sb, m.parceira_logo_caminho), baixarLogo(sb, m.logo_camara_caminho)]);
+  return { orgaoNome: m.nome_etiqueta || m.nome, logoOrgao, logoParceira, logoCamara };
 }
 
 // Código aleatório do QR da caixa (tabela etiquetas): cria o que falta e lê. Nunca o id do banco.
@@ -50,7 +50,7 @@ async function codigosDosDocumentos(sb: Cliente | null, ids: string[]): Promise<
 }
 
 // Monta o PDF do que foi escolhido. Cada campo vem do cadastro (nada digitado na etiqueta).
-export async function montarEtiquetas(e: { tipos: TipoEtiqueta[]; caixas: string[]; documentos: string[]; prefeitura: string }): Promise<{ pdf: Uint8Array; impressoes: { tipo: TipoEtiqueta; id: string }[]; total: number }> {
+export async function montarEtiquetas(e: { tipos: TipoEtiqueta[]; caixas: string[]; documentos: string[]; prefeitura: string; dividir?: boolean }): Promise<{ pdf: Uint8Array; impressoes: { tipo: TipoEtiqueta; id: string }[]; total: number }> {
   const [base, origem] = await Promise.all([lerBaseEtiquetas(), origemDoSite()]);
   const sb = emDemo() ? null : await clienteSessao();
   const caixas = base.caixas.filter((c) => e.caixas.includes(c.id)).slice(0, MAX_ETIQUETAS);
@@ -66,6 +66,8 @@ export async function montarEtiquetas(e: { tipos: TipoEtiqueta[]; caixas: string
   const paraCaixa = (c: (typeof caixas)[number]): CaixaPdf => ({
     numero: c.numero, titulo: c.titulo, volume: c.volume, classe: c.classe, tipologia: c.tipologia, codigo: c.codigo, prazo: c.prazo, localizacao: c.localizacao,
     url: `${origem}/q/${codCaixas.get(c.id) ?? ""}`, itens: c.itens,
+    orgao: c.orgao, tipo: c.tipo, etiquetaGeral: c.etiquetaGeral, fundo: c.fundo, setor: c.setor, meses: c.meses, anoLimite: c.anoLimite, digitalizada: c.digitalizada,
+    observacao: c.observacao, dividir: e.dividir ?? false,
   });
   const paraDoc = (d: (typeof docs)[number]): DocumentoPdf => ({
     titulo: d.titulo, secretaria: d.secretaria, objeto: d.objeto, data: d.data, observacao: d.observacao, classe: d.classe, codigo: d.codigo, caixa: d.caixaNumero,

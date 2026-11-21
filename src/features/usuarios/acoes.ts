@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
-import { exigirAdmin, origemDaRequisicao } from "@/features/sessao/dal";
+import { exigirEquipe } from "@/features/sessao/dal";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import type { EstadoAcao } from "@/ui/formulario";
 import { AVISO_DEMO, emDemo } from "@/features/demo/dados";
@@ -10,53 +10,16 @@ import { emailSchema, lerUsuario, senhaProvisoria } from "./esquemas";
 
 const FALHA = "Não foi possível salvar. Tente de novo.";
 
-// Toda ação confere administrador com segundo fator (exigirAdmin) e grava
-// pela sessão dele, sujeita ao RLS. A service_role só cria a conta no Auth,
-// troca a senha e lê e-mails.
-async function contexto() {
-  const { usuario } = await exigirAdmin();
+// Só a equipe LicCONT (exigirEquipe: segundo fator incluso) cadastra e edita
+// usuários de uma prefeitura, que vem no formulário. A gravação é por funções
+// do banco (public.equipe_*), que conferem a equipe de novo. A service_role só
+// cria a conta no Auth, troca a senha e lê e-mails.
+async function contexto(formData: FormData) {
+  await exigirEquipe();
   const supabase = await clienteSessao();
   const servico = clienteServico();
-  return supabase && servico ? { usuario, supabase, servico } : null;
-}
-
-type Contexto = NonNullable<Awaited<ReturnType<typeof contexto>>>;
-
-// Grava primeiro os vínculos novos (ou o papel novo) e só depois apaga os que
-// saíram: a pessoa nunca fica sem secretaria no meio do caminho.
-async function gravarVinculos(c: Contexto, usuarioId: string, perfil: string, secretarias: string[]) {
-  const manter = perfil === "administrador" ? [] : [...new Set(secretarias)];
-  const { data: atuais, error } = await c.supabase
-    .from("vinculos")
-    .select("secretaria_id")
-    .eq("usuario_id", usuarioId);
-  if (error) return error;
-  const existentes = new Set((atuais ?? []).map((v) => v.secretaria_id as string));
-  const novas = manter.filter((s) => !existentes.has(s));
-
-  if (novas.length) {
-    const { error: e } = await c.supabase.from("vinculos").insert(
-      novas.map((s) => ({ prefeitura_id: c.usuario.prefeituraId, usuario_id: usuarioId, secretaria_id: s, papel: perfil })),
-    );
-    if (e) return e;
-  }
-  const mantidas = manter.filter((s) => existentes.has(s));
-  if (mantidas.length) {
-    const { error: e } = await c.supabase
-      .from("vinculos")
-      .update({ papel: perfil })
-      .eq("usuario_id", usuarioId)
-      .in("secretaria_id", mantidas);
-    if (e) return e;
-  }
-  const removidas = [...existentes].filter((s) => !manter.includes(s));
-  if (!removidas.length) return null;
-  const { error: e } = await c.supabase
-    .from("vinculos")
-    .delete()
-    .eq("usuario_id", usuarioId)
-    .in("secretaria_id", removidas);
-  return e;
+  const prefeitura = idSchema.safeParse(formData.get("prefeitura"));
+  return supabase && servico && prefeitura.success ? { supabase, servico, prefeitura: prefeitura.data } : null;
 }
 
 // Mensagem neutra: não revela se o e-mail tem conta em outro órgão.
@@ -64,7 +27,7 @@ const EMAIL_RECUSADO =
   "Não foi possível cadastrar este e-mail. Se a pessoa já usa o LicCONT em outro órgão, use outro e-mail institucional.";
 
 export async function cadastrarUsuario(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const c = await contexto();
+  const c = await contexto(formData);
   if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const dados = lerUsuario(formData);
@@ -83,25 +46,25 @@ export async function cadastrarUsuario(_: EstadoAcao, formData: FormData): Promi
   }
 
   const id = data.user.id;
-  const { error: erroUsuario } = await c.supabase.from("usuarios").insert({
-    id,
-    prefeitura_id: c.usuario.prefeituraId,
-    nome: dados.data.nome,
-    matricula: dados.data.matricula,
-    administrador: dados.data.perfil === "administrador",
+  const { error: erroBanco } = await c.supabase.rpc("equipe_incluir_usuario", {
+    p_prefeitura: c.prefeitura,
+    p_usuario: id,
+    p_nome: dados.data.nome,
+    p_matricula: dados.data.matricula,
+    p_perfil: dados.data.perfil,
+    p_secretarias: dados.data.perfil === "administrador" ? [] : dados.data.secretarias,
   });
-  const erroVinculos = erroUsuario ? null : await gravarVinculos(c, id, dados.data.perfil, dados.data.secretarias);
-  if (erroUsuario || erroVinculos) {
+  if (erroBanco) {
     // Desfaz: apagar a conta apaga usuarios e vinculos (cascata).
     await c.servico.auth.admin.deleteUser(id);
-    return { erro: FALHA };
+    return { erro: erroBanco.code === "23514" ? "Confira o perfil e as secretarias (administradores: no máximo 5)." : FALHA };
   }
-  revalidatePath("/usuarios", "layout");
+  revalidatePath("/equipe", "layout");
   return { aviso: "Usuário cadastrado.", senha };
 }
 
 export async function salvarUsuario(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const c = await contexto();
+  const c = await contexto(formData);
   if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
@@ -109,89 +72,61 @@ export async function salvarUsuario(_: EstadoAcao, formData: FormData): Promise<
   if (!id.success) return { erro: FALHA };
   if (!dados.success) return { erro: dados.error.issues[0].message };
 
-  const { data, error } = await c.supabase
-    .from("usuarios")
-    .update({
-      nome: dados.data.nome,
-      matricula: dados.data.matricula,
-      administrador: dados.data.perfil === "administrador",
-    })
-    .eq("id", id.data)
-    .select("id");
-  if (error?.code === "42501") return { erro: "Você não pode mudar o seu próprio perfil de administrador." };
-  if (error || !data?.length) return { erro: FALHA };
-  if (await gravarVinculos(c, id.data, dados.data.perfil, dados.data.secretarias)) return { erro: FALHA };
-  revalidatePath("/usuarios", "layout");
+  const { data, error } = await c.supabase.rpc("equipe_salvar_usuario", {
+    p_prefeitura: c.prefeitura,
+    p_usuario: id.data,
+    p_nome: dados.data.nome,
+    p_matricula: dados.data.matricula,
+    p_perfil: dados.data.perfil,
+    p_secretarias: dados.data.perfil === "administrador" ? [] : dados.data.secretarias,
+  });
+  if (error || !data) return { erro: FALHA };
+  revalidatePath("/equipe", "layout");
   return { aviso: "Alterações salvas." };
 }
 
 export async function alternarBloqueio(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const c = await contexto();
+  const c = await contexto(formData);
   if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   const bloquear = formData.get("bloquear") === "sim";
   if (!id.success) return { erro: FALHA };
-  if (id.data === c.usuario.id) return { erro: "Você não pode bloquear a si mesmo." };
 
-  const { data, error } = await c.supabase
-    .from("usuarios")
-    .update({ ativo: !bloquear })
-    .eq("id", id.data)
-    .select("id");
-  if (error || !data?.length) return { erro: FALHA };
-  revalidatePath("/usuarios", "layout");
-  if (!bloquear) return { aviso: "Usuário desbloqueado." };
-  // Bloqueado já perde o acesso na hora (RLS); as sessões caem junto.
-  const { error: erroSessoes } = await c.supabase.rpc("encerrar_sessoes", { p_usuario: id.data });
-  return { aviso: erroSessoes ? "Usuário bloqueado." : "Usuário bloqueado e sessões encerradas." };
+  // Bloqueado já perde o acesso na hora; a função derruba as sessões junto.
+  const { data, error } = await c.supabase.rpc("equipe_bloquear_usuario", { p_prefeitura: c.prefeitura, p_usuario: id.data, p_bloquear: bloquear });
+  if (error || !data) return { erro: FALHA };
+  revalidatePath("/equipe", "layout");
+  return { aviso: bloquear ? "Usuário bloqueado e sessões encerradas." : "Usuário desbloqueado." };
 }
 
 export async function encerrarSessoes(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const c = await contexto();
+  const c = await contexto(formData);
   if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { erro: FALHA };
-  if (id.data === c.usuario.id) return { erro: "Para sair, use o botão Sair." };
-  const { error } = await c.supabase.rpc("encerrar_sessoes", { p_usuario: id.data });
-  return error ? { erro: FALHA } : { aviso: "Sessões encerradas. A pessoa precisa entrar de novo." };
+  const { data, error } = await c.supabase.rpc("equipe_encerrar_sessoes", { p_prefeitura: c.prefeitura, p_usuario: id.data });
+  return error || !data ? { erro: FALHA } : { aviso: "Sessões encerradas. A pessoa precisa entrar de novo." };
 }
 
 export async function redefinirSenha(_: EstadoAcao, formData: FormData): Promise<EstadoAcao> {
-  const c = await contexto();
+  const c = await contexto(formData);
   if (emDemo()) return { aviso: AVISO_DEMO };
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { erro: FALHA };
-  if (id.data === c.usuario.id) return { erro: "Para a sua própria senha, peça a outro administrador." };
 
-  // O RLS só devolve a linha se a pessoa for da prefeitura do administrador.
-  const { data: alvo } = await c.supabase.from("usuarios").select("id").eq("id", id.data).maybeSingle();
-  if (!alvo) return { erro: FALHA };
-
-  // Primeiro marca a troca obrigatória e registra; só então troca a senha.
-  const { error: erroTroca } = await c.servico
-    .from("usuarios")
-    .update({ troca_senha_obrigatoria: true })
-    .eq("id", id.data);
-  if (erroTroca) return { erro: FALHA };
-  const { ip, aparelho } = await origemDaRequisicao();
-  const { error: erroAuditoria } = await c.servico.rpc("registrar_auditoria_sistema", {
-    p_prefeitura: c.usuario.prefeituraId,
-    p_usuario: c.usuario.id,
-    p_acao: "usuarios.senha_redefinida",
-    p_ip: ip,
-    p_aparelho: aparelho,
-    p_depois: { usuario: id.data },
-  });
-  if (erroAuditoria) return { erro: FALHA };
+  // Primeiro marca a troca obrigatória e registra (só se a pessoa for dessa
+  // prefeitura); só então troca a senha.
+  const { data: marcou, error: erroTroca } = await c.supabase.rpc("equipe_marcar_troca_senha", { p_prefeitura: c.prefeitura, p_usuario: id.data });
+  if (erroTroca || !marcou) return { erro: FALHA };
 
   const senha = senhaProvisoria();
   const { error } = await c.servico.auth.admin.updateUserById(id.data, { password: senha });
   if (error) return { erro: FALHA };
-  const { error: erroSessoes } = await c.supabase.rpc("encerrar_sessoes", { p_usuario: id.data });
-  revalidatePath("/usuarios", "layout");
+  const { error: erroSessoes } = await c.supabase.rpc("equipe_encerrar_sessoes", { p_prefeitura: c.prefeitura, p_usuario: id.data });
+  revalidatePath("/equipe", "layout");
   if (erroSessoes) return { aviso: "Senha redefinida. Não foi possível encerrar as sessões abertas.", senha };
   return { aviso: "Senha redefinida e sessões encerradas.", senha };
 }

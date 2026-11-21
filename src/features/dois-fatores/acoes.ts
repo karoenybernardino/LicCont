@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { membroEquipe, nivelSessao, origemDaRequisicao, usuarioAtual } from "@/features/sessao/dal";
+import { euParceira } from "@/features/parceira/dados";
 import { MENSAGEM_INDISPONIVEL, idSchema } from "@/features/login/esquemas";
 import { hashEmail } from "@/features/login/seguranca";
 import { emDemo } from "@/features/demo/dados";
@@ -15,7 +16,7 @@ const codigoSchema = z.string().regex(/^\d{6}$/);
 const MENSAGEM_CODIGO = "Código inválido ou vencido. Confira a hora do celular e tente de novo.";
 const MENSAGEM_BLOQUEIO = "Muitas tentativas. Aguarde 15 minutos e tente de novo.";
 
-// Quem precisa do segundo fator: administrador de prefeitura e equipe LicCONT.
+// Quem precisa do segundo fator: administrador de prefeitura, equipe LicCONT e empresa parceira.
 async function contexto() {
   if (emDemo()) redirect("/inicio");
   const supabase = await clienteSessao();
@@ -24,19 +25,21 @@ async function contexto() {
   if (!supabase || !servico || !segredo || segredo.length < 32) return null;
   const usuario = await usuarioAtual();
   const equipe = usuario ? null : await membroEquipe();
-  if (!usuario?.administrador && !equipe) redirect("/entrar");
-  return { supabase, servico, segredo, usuario, equipe };
+  const parceira = usuario || equipe ? null : await euParceira();
+  if (!usuario?.administrador && !equipe && !parceira) redirect("/entrar");
+  return { supabase, servico, segredo, usuario, equipe, parceira };
 }
 
 type Contexto = NonNullable<Awaited<ReturnType<typeof contexto>>>;
 
-function destinoDepoisDoFator(usuario: { trocaSenha: boolean } | null) {
-  return !usuario ? "/equipe" : usuario.trocaSenha ? "/nova-senha" : "/inicio";
+function destinoDepoisDoFator(c: Pick<Contexto, "usuario" | "parceira">) {
+  if (c.parceira) return c.parceira.trocaSenha ? "/parceira/nova-senha" : "/parceira";
+  return !c.usuario ? "/equipe" : c.usuario.trocaSenha ? "/nova-senha" : "/inicio";
 }
 
 // Mesmo limite do login (5 falhas em 15 min), contado por pessoa.
 async function comLimite(c: Contexto, verificar: () => Promise<boolean>): Promise<Estado> {
-  const id = c.usuario?.id ?? c.equipe!.id;
+  const id = c.usuario?.id ?? c.equipe?.id ?? c.parceira!.pessoaId;
   const { ip } = await origemDaRequisicao();
   const { data: tentativa, error } = await c.servico.rpc("iniciar_tentativa_login", {
     p_email_hash: hashEmail(`mfa:${id}`, c.segredo),
@@ -84,21 +87,23 @@ export async function confirmarCadastro(_: Estado, formData: FormData): Promise<
   if (c.usuario) {
     await c.supabase.rpc("registrar_auditoria", { p_acao: "mfa.ativado", p_ip: ip, p_aparelho: aparelho });
   } else {
+    // Equipe e parceira não têm linha em usuarios: o registro é pelo servidor.
+    const { data: u } = await c.supabase.auth.getUser();
     await c.servico.rpc("registrar_auditoria_sistema", {
       p_prefeitura: null,
-      p_usuario: c.equipe!.id,
+      p_usuario: c.equipe?.id ?? u.user?.id ?? null,
       p_acao: "mfa.ativado",
       p_ip: ip,
       p_aparelho: aparelho,
     });
   }
-  redirect(destinoDepoisDoFator(c.usuario));
+  redirect(destinoDepoisDoFator(c));
 }
 
 export async function verificarCodigo(_: Estado, formData: FormData): Promise<Estado> {
   const c = await contexto();
   if (!c) return { erro: MENSAGEM_INDISPONIVEL };
-  if ((await nivelSessao()) === "aal2") redirect(destinoDepoisDoFator(c.usuario));
+  if ((await nivelSessao()) === "aal2") redirect(destinoDepoisDoFator(c));
   const codigo = codigoSchema.safeParse(formData.get("codigo"));
   if (!codigo.success) return { erro: MENSAGEM_CODIGO };
 
@@ -111,5 +116,5 @@ export async function verificarCodigo(_: Estado, formData: FormData): Promise<Es
     return !error;
   });
   if (falha) return falha;
-  redirect(destinoDepoisDoFator(c.usuario));
+  redirect(destinoDepoisDoFator(c));
 }

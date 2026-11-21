@@ -16,17 +16,20 @@ import {
 import type { CaixaOcupada } from "./dados";
 import { MOTIVOS } from "./conferencia";
 import { EscolhaRua } from "./escolha-rua";
+import { EscolhaOrgao } from "./escolha-orgao";
 import { useOrigem } from "@/features/etiquetas/origem";
 import { urlDaCaixa } from "@/features/etiquetas/qr";
 import { QrSvg } from "@/features/etiquetas/qr-svg";
+import { CAIXAS_POR_MODULO_PADRAO, textoCaixaNoModulo } from "@/features/estrutura/capacidade";
 import { descreverArquivo } from "./formato";
 import { analisarPdf, enviarParaStorage } from "./pdf-navegador";
-import { MODALIDADES, SITUACOES_CONTRATO, SITUACOES_LICITACAO, type Tipo } from "./tipos";
+import { MODALIDADES, ORGAOS, type Orgao, type Tipo } from "./tipos";
 
 export type OpcoesEstrutura = {
   ruas: { id: string; codigo: string; modulos: number; percentual: number }[];
   modulos: { id: string; ruaId: string; numero: number }[];
   niveis: { id: string; moduloId: string; numero: number }[];
+  caixasPorModulo?: number;
 };
 export type Inicial = {
   id: string;
@@ -35,20 +38,13 @@ export type Inicial = {
   numero: string;
   ano: number;
   objeto: string;
-  empresa: string | null;
-  cnpj: string | null;
-  valor: number | null;
-  situacao: string;
-  vigencia_inicio: string | null;
-  vigencia_fim: string | null;
-  encerrado_em: string | null;
+  tituloProcesso: string | null;
+  orgao: Orgao;
   classeId: string | null;
   grupoId: string | null;
   tipologiaId: string | null;
-  dataProducao: string | null;
   observacao: string | null;
   volume: number;
-  eventoEm: string | null;
   secretariaId: string;
   caixaId: string;
   ruaId: string;
@@ -57,10 +53,10 @@ export type Inicial = {
   arquivo: string | null;
 };
 
-const caixaCampo =
+export const caixaCampo =
   "min-h-10 w-full rounded-lg border border-borda-campo bg-campo px-3 text-sm text-texto focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foco disabled:opacity-60";
-const secao = "flex flex-col gap-3.5 rounded-2xl border border-linha bg-superficie px-5 py-[18px]";
-const botaoBase =
+export const secao = "flex flex-col gap-3.5 rounded-2xl border border-linha bg-superficie px-5 py-[18px]";
+export const botaoBase =
   "inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:opacity-60";
 
 function Rotulo({ id, children }: { id: string; children: React.ReactNode }) {
@@ -71,7 +67,7 @@ function Rotulo({ id, children }: { id: string; children: React.ReactNode }) {
   );
 }
 
-function Campo({ rotulo, children, className = "" }: { rotulo: string; children: (id: string) => React.ReactNode; className?: string }) {
+export function Campo({ rotulo, children, className = "" }: { rotulo: string; children: (id: string) => React.ReactNode; className?: string }) {
   const id = useId();
   return (
     <div className={`flex min-w-0 flex-col gap-[5px] ${className}`}>
@@ -81,7 +77,7 @@ function Campo({ rotulo, children, className = "" }: { rotulo: string; children:
   );
 }
 
-function Titulo({ n, children }: { n: number; children: React.ReactNode }) {
+export function Titulo({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
       <span aria-hidden className="flex size-[26px] items-center justify-center rounded-full bg-aqua font-titulo text-[13px] font-bold text-petroleo">
@@ -117,13 +113,12 @@ export function FormularioDocumento({
   const [pendente, iniciar] = useTransition();
   const [tipo, setTipo] = useState<Tipo>(inicial?.tipo ?? "licitacao");
   const [modalidade, setModalidade] = useState(inicial?.modalidade ?? "");
-  const [encerrado, setEncerrado] = useState(inicial?.encerrado_em ?? "");
-  const [vigFim, setVigFim] = useState(inicial?.vigencia_fim ?? "");
   const grupoPadrao = grupos.find((g) => g.chave === "licitacoes_contratos")?.id ?? grupos[0]?.id ?? "";
   const [grupoId, setGrupoId] = useState(inicial?.grupoId ?? grupoPadrao);
   const [classeId, setClasseId] = useState(inicial?.classeId ?? "");
-  const [dataProducao, setDataProducao] = useState(inicial?.dataProducao ?? "");
-  const [eventoEm, setEventoEm] = useState(inicial?.eventoEm ?? "");
+  // Órgão do documento: vem da caixa escolhida, mas o cadastro pode trocar (documento da Câmara em caixa da Prefeitura).
+  const [orgao, setOrgao] = useState<Orgao | "">(inicial?.orgao ?? "prefeitura");
+  const [orgaoManual, setOrgaoManual] = useState(!!inicial);
   const grupoLic = grupos.find((g) => g.id === grupoId)?.chave === "licitacoes_contratos";
   const classesDoGrupo = regras.filter((r) => r.grupoId === grupoId && (r.ativa || r.id === classeId));
   const regraAtual = regras.find((r) => r.id === classeId);
@@ -142,16 +137,19 @@ export function FormularioDocumento({
   const [avisosPdf, setAvisosPdf] = useState<string[]>([]);
   const [arrastando, setArrastando] = useState(false);
   const entrada = useRef<HTMLInputElement>(null);
-  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()), empresa: inicial?.empresa ?? "" });
+  const [resumo, setResumo] = useState({ numero: inicial?.numero ?? "", objeto: inicial?.objeto ?? "", ano: String(inicial?.ano ?? new Date().getFullYear()), titulo: inicial?.tituloProcesso ?? "" });
   const origem = useOrigem();
   const [secretaria, setSecretaria] = useState(inicial?.secretariaId ?? secretariaPadrao);
 
   const modulosDaRua = estrutura.modulos.filter((m) => m.ruaId === rua);
   const niveisDoModulo = estrutura.niveis.filter((n) => n.moduloId === modulo);
   const caixaEscolhida = nivel ? caixas.find((c) => c.id === caixa) : undefined;
+  // Sem escolha manual, o órgão do documento acompanha o da caixa.
+  const orgaoAtual: Orgao | "" = orgaoManual ? orgao : (caixaEscolhida?.orgao ?? orgao);
   const ruaAtual = estrutura.ruas.find((r) => r.id === rua);
   const moduloAtual = estrutura.modulos.find((m) => m.id === modulo);
   const nivelAtual = estrutura.niveis.find((n) => n.id === nivel);
+  const caixasPorModulo = estrutura.caixasPorModulo ?? CAIXAS_POR_MODULO_PADRAO;
 
   useEffect(() => {
     let vivo = true;
@@ -204,7 +202,7 @@ export function FormularioDocumento({
     setAviso(null);
     dados.set("caixa", caixa);
     dados.set("tipo", tipoEfetivo);
-    if (tipoEfetivo === "outro") dados.set("situacao", "arquivado");
+    dados.set("orgao", orgaoAtual);
     if (inicial) dados.set("id", inicial.id);
     iniciar(async () => {
       setEtapa("Salvando…");
@@ -255,9 +253,6 @@ export function FormularioDocumento({
       router.refresh();
     });
   }
-
-  const situacoes = tipo === "licitacao" ? SITUACOES_LICITACAO : SITUACOES_CONTRATO;
-  const inicioPrazo = regraAtual?.tipoPrazo === "apos_evento" ? (tipoEfetivo === "licitacao" ? encerrado : tipoEfetivo === "contrato" ? vigFim || eventoEm : eventoEm) : dataProducao;
 
   return (
     <form
@@ -339,7 +334,7 @@ export function FormularioDocumento({
             )}
           </div>
           <div className="grid gap-3.5 sm:grid-cols-[1fr_1.4fr]">
-            <Campo rotulo={grupoLic ? "Título do processo" : "Número ou protocolo"}>
+            <Campo rotulo={grupoLic ? "Número do processo" : "Número ou protocolo"}>
               {(id) => (
                 <input id={id} name="numero" required maxLength={30} defaultValue={inicial?.numero} onChange={(e) => setResumo((s) => ({ ...s, numero: e.target.value }))} placeholder="015/2023" className={caixaCampo} />
               )}
@@ -350,12 +345,12 @@ export function FormularioDocumento({
               )}
             </Campo>
           </div>
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_.6fr_.9fr_1fr]">
-            {grupoLic && (
-            <Campo rotulo={tipo === "licitacao" ? "Empresa vencedora" : "Empresa contratada"}>
-              {(id) => <input id={id} name="empresa" maxLength={200} defaultValue={inicial?.empresa ?? ""} onChange={(e) => setResumo((s) => ({ ...s, empresa: e.target.value }))} className={caixaCampo} />}
-            </Campo>
+          <Campo rotulo="Título do processo (opcional)">
+            {(id) => (
+              <input id={id} name="titulo_processo" maxLength={200} defaultValue={inicial?.tituloProcesso ?? ""} onChange={(e) => setResumo((s) => ({ ...s, titulo: e.target.value }))} className={caixaCampo} />
             )}
+          </Campo>
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.3fr_.6fr_1.2fr]">
             <Campo rotulo="Secretaria">
               {(id) => (
                 <>
@@ -373,71 +368,21 @@ export function FormularioDocumento({
                 <input id={id} name="ano" inputMode="numeric" required maxLength={4} defaultValue={resumo.ano} onChange={(e) => setResumo((s) => ({ ...s, ano: e.target.value }))} className={caixaCampo} />
               )}
             </Campo>
-            {grupoLic && (
-            <>
-            <Campo rotulo="Valor (R$)">
+            <Campo rotulo="Órgão">
               {(id) => (
-                <input id={id} name="valor" inputMode="decimal" defaultValue={inicial?.valor === null || inicial?.valor === undefined ? "" : String(inicial.valor).replace(".", ",")} placeholder="50.000,00" className={caixaCampo} />
+                <EscolhaOrgao id={id} valor={orgaoAtual} aoEscolher={(o) => { setOrgao(o); setOrgaoManual(true); }} />
               )}
             </Campo>
-            <Campo rotulo="Situação">
-              {(id) => (
-                <select id={id} name="situacao" defaultValue={inicial?.situacao ?? (tipo === "licitacao" ? "concluida" : "vigente")} key={tipo} className={caixaCampo}>
-                  {Object.entries(situacoes).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-              )}
-            </Campo>
-            </>
-            )}
-          </div>
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            {grupoLic && (
-            <Campo rotulo="CNPJ ou CPF do credor (opcional)">
-              {(id) => <input id={id} name="cnpj" inputMode="numeric" defaultValue={inicial?.cnpj ?? ""} placeholder="CNPJ ou CPF" className={caixaCampo} />}
-            </Campo>
-            )}
-            {grupoLic && tipo === "contrato" && (
-              <>
-                <Campo rotulo="Vigência · início">
-                  {(id) => <input id={id} name="vigencia_inicio" type="date" defaultValue={inicial?.vigencia_inicio ?? ""} className={caixaCampo} />}
-                </Campo>
-                <Campo rotulo="Vigência · fim">
-                  {(id) => <input id={id} name="vigencia_fim" type="date" value={vigFim} onChange={(e) => setVigFim(e.target.value)} className={caixaCampo} />}
-                </Campo>
-              </>
-            )}
           </div>
           <div className="grid items-start gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            <Campo rotulo="Data do documento">
-              {(id) => <input id={id} name="data_producao" type="date" required value={dataProducao} onChange={(e) => setDataProducao(e.target.value)} className={`${caixaCampo} font-mono font-medium`} />}
-            </Campo>
             <Campo rotulo="Volume">
               {(id) => <input id={id} name="volume" type="number" min={1} max={99} defaultValue={inicial?.volume ?? 1} className={`${caixaCampo} font-mono`} />}
             </Campo>
-            {tipoEfetivo === "outro" && regraAtual?.tipoPrazo === "apos_evento" && (
-              <Campo rotulo={`Data do evento (${regraAtual.evento ?? "início da contagem"})`}>
-                {(id) => <input id={id} name="evento_em" type="date" value={eventoEm} onChange={(e) => setEventoEm(e.target.value)} className={`${caixaCampo} font-mono`} />}
-              </Campo>
-            )}
             <Campo rotulo="Observação (opcional)" className="sm:col-span-2">
               {(id) => <input id={id} name="observacao" maxLength={300} defaultValue={inicial?.observacao ?? ""} placeholder="Sai na etiqueta do documento" className={caixaCampo} />}
             </Campo>
           </div>
-          <PrazoDeGuarda regra={regraAtual} inicio={inicioPrazo} />
-          {tipo === "licitacao" && grupoLic && (
-            <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,2fr)]">
-              <Campo rotulo="Encerramento do processo">
-                {(id) => (
-                  <>
-                    <input id={id} name="encerrado_em" type="date" value={encerrado} onChange={(e) => setEncerrado(e.target.value)} className={`${caixaCampo} font-mono font-medium`} aria-describedby={`${id}-nota`} />
-                    <span id={`${id}-nota`} className="text-xs text-texto-suave">Data da homologação ou do último ato do processo.</span>
-                  </>
-                )}
-              </Campo>
-            </div>
-          )}
+          <PrazoDeGuarda regra={regraAtual} ano={resumo.ano} />
         </section>
 
         <section className={secao} aria-labelledby="t2">
@@ -473,7 +418,7 @@ export function FormularioDocumento({
                 <select id={id} value={caixa} disabled={!nivel} onChange={(e) => setCaixa(e.target.value)} className={`${caixaCampo} font-mono`}>
                   <option value="">Escolha…</option>
                   {(nivel ? caixas : []).map((c) => (
-                    <option key={c.id} value={c.id}>{`Caixa ${String(c.numero).padStart(2, "0")} · ${c.documentos} de ${c.capacidade}`}</option>
+                    <option key={c.id} value={c.id}>{`${nivelAtual ? textoCaixaNoModulo(nivelAtual.numero, c.numero, caixasPorModulo) : `Caixa ${String(c.numero).padStart(2, "0")}`} · ${c.documentos} de ${c.capacidade} documentos`}</option>
                   ))}
                 </select>
               )}
@@ -484,6 +429,7 @@ export function FormularioDocumento({
               {posicao && caixaEscolhida ? (
                 <>
                   <b className="font-mono font-medium text-texto">{posicao}</b>
+                  {nivelAtual && ` · ${textoCaixaNoModulo(nivelAtual.numero, caixaEscolhida.numero, caixasPorModulo)} do módulo`}
                   {` · ${caixaEscolhida.documentos} ${caixaEscolhida.documentos === 1 ? "documento" : "documentos"}, `}
                   {caixaEscolhida.documentos >= caixaEscolhida.capacidade ? (
                     <span className="font-semibold text-[#b45309] dark:text-[#fbbf24]">a caixa está cheia (capacidade estimada: {caixaEscolhida.capacidade}). Você pode salvar.</span>
@@ -508,7 +454,10 @@ export function FormularioDocumento({
           <div className="overflow-hidden rounded-xl border border-linha bg-white text-petroleo">
             <div className="flex items-center justify-between px-4 py-3">
               <span className="font-titulo text-[13px] tracking-[1px] uppercase"><span className="font-light">Lic</span><span className="font-bold">Cont</span></span>
-              <span className="text-[11px] text-[#3f5e66]">{prefeitura}</span>
+              <span className="text-right text-[11px] leading-4 text-[#3f5e66]">
+                <span className="mr-1.5 rounded bg-petroleo px-1.5 py-0.5 text-[10px] font-bold tracking-[.06em] text-aqua uppercase">{orgaoAtual ? ORGAOS[orgaoAtual] : "Órgão"}</span>
+                {prefeitura}
+              </span>
             </div>
             <div className="flex bg-petroleo">
               {[["Rua", ruaAtual?.codigo ?? "–"], ["Módulo", moduloAtual?.numero ?? "–"], ["Nível", nivelAtual?.numero ?? "–"], ["Caixa", caixaEscolhida ? String(caixaEscolhida.numero).padStart(2, "0") : "–"]].map(([r, v], i) => (
@@ -522,13 +471,13 @@ export function FormularioDocumento({
               <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                 <div>
                   <div className="font-titulo text-[15px] leading-5 font-bold">{resumo.numero ? `${tipo === "contrato" ? "Contrato" : "Licitação"} ${resumo.numero}` : "Título do processo"}</div>
-                  <div className="mt-0.5 line-clamp-2 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
+                  <div className="mt-0.5 text-xs leading-[17px] text-[#3f5e66]">{resumo.objeto || "Objeto"}</div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
-                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Empresa", resumo.empresa || "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
+                  {[["Tipo", tipo === "contrato" ? "Contrato" : "Licitação"], ["Ano", resumo.ano || "–"], ["Órgão", orgaoAtual ? ORGAOS[orgaoAtual] : "–"], ["Secretaria", secretarias.find((s) => s.id === secretaria)?.nome ?? "–"]].map(([r, v]) => (
                     <div key={r} className="min-w-0">
                       <dt className="text-[9px] font-semibold tracking-[.1em] text-[#3f5e66] uppercase">{r}</dt>
-                      <dd className="mt-px truncate text-[13px] leading-[18px] font-medium text-petroleo">{v}</dd>
+                      <dd className="mt-px text-[13px] break-words leading-[18px] font-medium text-petroleo">{v}</dd>
                     </div>
                   ))}
                 </dl>

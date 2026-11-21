@@ -25,13 +25,13 @@ export async function lerRegras(): Promise<Regra[]> {
   if (!sb) return [];
   const { data } = await sb
     .from("classes_documentais")
-    .select("id, codigo, nome, grupo_id, prazo_corrente_anos, prazo_intermediaria_anos, tipo_prazo, evento, destinacao, observacao, ativa, grupos_documentais(nome)")
+    .select("id, codigo, nome, grupo_id, prazo_corrente_anos, prazo_intermediaria_anos, tipo_prazo, destinacao, observacao, ativa, grupos_documentais(nome)")
     .order("codigo");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ((data ?? []) as any[]).map((r) => ({
     id: r.id, codigo: r.codigo, classe: r.nome, grupoId: r.grupo_id, grupo: r.grupos_documentais?.nome ?? "",
     corrente: r.prazo_corrente_anos, intermediaria: r.prazo_intermediaria_anos, tipoPrazo: r.tipo_prazo as TipoPrazo,
-    evento: r.evento, destinacao: r.destinacao as Destinacao, observacao: r.observacao, ativa: r.ativa,
+    destinacao: r.destinacao as Destinacao, observacao: r.observacao, ativa: r.ativa,
   }));
 }
 
@@ -46,8 +46,7 @@ export async function lerModelo(tipo: "eliminacao" | "emprestimo" = "eliminacao"
 }
 
 type LinhaDoc = {
-  id: string; tipo: Tipo; modalidade: Modalidade | null; numero: string; ano: number; secretaria_id: string;
-  vigencia_fim: string | null; encerrado_em: string | null; classe_id: string | null; data_producao: string | null; evento_em: string | null;
+  id: string; tipo: Tipo; modalidade: Modalidade | null; numero: string; ano: number; secretaria_id: string; classe_id: string | null;
   caixas: { numero: number; niveis: { numero: number; modulos: { numero: number; ruas: { codigo: string } } } } | null;
 };
 
@@ -61,7 +60,7 @@ async function documentosComData() {
   for (let p = 0; p < MAX_PAGINAS; p++) {
     const { data, error } = await sb
       .from("documentos")
-      .select("id, tipo, modalidade, numero, ano, secretaria_id, vigencia_fim, encerrado_em, classe_id, data_producao, evento_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
+      .select("id, tipo, modalidade, numero, ano, secretaria_id, classe_id, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))")
       .eq("ativo", true)
       .not("classe_id", "is", null)
       .order("id")
@@ -126,8 +125,6 @@ export async function listarTermos(): Promise<Termo[]> {
   }));
 }
 
-const ano = (iso: string | null) => (iso ? iso.slice(0, 4) : "—");
-
 export async function obterTermo(id: string): Promise<TermoCompleto | null> {
   if (emDemo()) return termosDemo(hojeSaoPaulo()).find((t) => t.id === id) ?? null;
   const sb = await clienteSessao();
@@ -135,7 +132,7 @@ export async function obterTermo(id: string): Promise<TermoCompleto | null> {
   const { data, error } = await sb
     .from("descartes")
     .select(
-      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, vigencia_inicio, vigencia_fim, encerrado_em, classe_id, data_producao, evento_em, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
+      "id, numero, ano, situacao, secretaria_id, gerado_por, gerado_em, edital_publicado_em, aprovado_em, cancelado_em, observacao, secretarias(nome), prefeituras(nome), descarte_itens(documentos(tipo, modalidade, numero, ano, objeto, classe_id, caixas(numero, niveis(numero, modulos(numero, ruas(codigo))))))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -148,12 +145,9 @@ export async function obterTermo(id: string): Promise<TermoCompleto | null> {
   const documentos: ItemTermo[] = (t.descarte_itens ?? []).map((i: any) => {
     const d = i.documentos;
     const prazo = estadoDoPrazo(d, regras, hoje);
-    const contrato = d.tipo === "contrato";
-    const fim = contrato ? d.vigencia_fim : d.encerrado_em;
     return {
       titulo: tituloDocumento(d), objeto: d.objeto, caixa: codigoCaixa(d.caixas), classe: regras.find((r) => r.id === d.classe_id)?.classe ?? "—",
-      inicio: contrato ? d.vigencia_inicio : null, fim,
-      extremos: `${contrato ? ano(d.vigencia_inicio) : d.ano} – ${ano(fim)}`,
+      extremos: String(d.ano),
       vencimento: "vencimento" in prazo ? prazo.vencimento : null,
     };
   });

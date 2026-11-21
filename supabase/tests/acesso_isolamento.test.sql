@@ -136,9 +136,9 @@ select throws_ok($$insert into public.prefeituras (nome, cnpj) values ('Nova', '
 select throws_ok($$select public.encerrar_sessoes('0a000000-0000-0000-0000-000000000004')$$,
   '42501', null, 'operador A não encerra sessões de outro usuário');
 
-select is_empty($$update public.usuarios set administrador = true
-  where id = '0a000000-0000-0000-0000-000000000002' returning id$$,
-  'operador A não se promove a administrador');
+select throws_ok($$update public.usuarios set administrador = true
+  where id = '0a000000-0000-0000-0000-000000000002'$$,
+  '42501', null, 'operador A não se promove a administrador');
 select throws_ok($$insert into public.secretarias (prefeitura_id, nome)
   values ('11111111-1111-1111-1111-111111111111', 'Nova')$$,
   '42501', null, 'operador A não cadastra secretaria');
@@ -186,9 +186,9 @@ select is_empty('select 1 from public.exemplo_acervo', 'token com sessão de out
 -- ---------------------------------------------------------------------------
 select tst_entrar('0a000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000001', 'aal1');
 select is_empty('select 1 from public.exemplo_acervo', 'administrador sem segundo fator não vê acervo sem vínculo');
-select is_empty($$update public.usuarios set ativo = false
-  where id = '0a000000-0000-0000-0000-000000000002' returning id$$,
-  'administrador sem segundo fator não bloqueia usuário');
+select throws_ok($$update public.usuarios set ativo = false
+  where id = '0a000000-0000-0000-0000-000000000002'$$,
+  '42501', null, 'administrador sem segundo fator não bloqueia usuário');
 select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome)
   values ('0a000000-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'X')$$,
   '42501', null, 'administrador sem segundo fator não cadastra usuário');
@@ -198,9 +198,9 @@ select results_eq('select descricao from public.exemplo_acervo order by descrica
   array['doc A Obras', 'doc A Saúde'], 'administrador com segundo fator vê todas as secretarias da prefeitura A');
 select results_eq('select count(*)::int from public.usuarios', array[4],
   'administrador vê os usuários da prefeitura A e nenhum da B');
-select lives_ok($$insert into public.usuarios (id, prefeitura_id, nome)
+select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome)
   values ('0a000000-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'Extra A')$$,
-  'administrador com segundo fator cadastra usuário na própria prefeitura');
+  '42501', null, 'administrador com segundo fator não cadastra usuário (só a equipe LicCONT)');
 select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome)
   values ('0b000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'X')$$,
   '42501', null, 'administrador A não cadastra usuário na prefeitura B');
@@ -210,11 +210,11 @@ select throws_ok($$update public.usuarios set prefeitura_id = '22222222-2222-222
 select throws_ok($$insert into public.vinculos (prefeitura_id, usuario_id, secretaria_id, papel)
   values ('11111111-1111-1111-1111-111111111111', '0a000000-0000-0000-0000-000000000009',
           'b1000000-0000-0000-0000-000000000000', 'consulta')$$,
-  '23503', null, 'vínculo com secretaria de outra prefeitura é recusado');
-select lives_ok($$insert into public.vinculos (prefeitura_id, usuario_id, secretaria_id, papel)
+  '42501', null, 'administrador não cria vínculo com secretaria de outra prefeitura');
+select throws_ok($$insert into public.vinculos (prefeitura_id, usuario_id, secretaria_id, papel)
   values ('11111111-1111-1111-1111-111111111111', '0a000000-0000-0000-0000-000000000009',
           'a2000000-0000-0000-0000-000000000000', 'coordenador')$$,
-  'administrador cria vínculo na própria prefeitura');
+  '42501', null, 'administrador não cria vínculo nem na própria prefeitura');
 select isnt_empty('select 1 from public.auditoria', 'administrador lê a auditoria da própria prefeitura');
 select throws_ok($$insert into public.prefeituras (nome, cnpj) values ('Nova', '00000000000434')$$,
   '42501', null, 'administrador não cadastra prefeitura');
@@ -237,12 +237,12 @@ select throws_ok($$insert into public.usuarios (id, prefeitura_id, nome)
 select throws_ok($$insert into public.secretarias (prefeitura_id, nome)
   values ('22222222-2222-2222-2222-222222222222', 'Nova')$$,
   '42501', null, 'administrador A não cadastra secretaria na prefeitura B');
-select lives_ok($$insert into public.secretarias (prefeitura_id, nome)
+select throws_ok($$insert into public.secretarias (prefeitura_id, nome)
   values ('11111111-1111-1111-1111-111111111111', 'Turismo')$$,
-  'administrador cadastra secretaria na própria prefeitura');
-select is_empty($$delete from public.vinculos
-  where usuario_id = '0b000000-0000-0000-0000-000000000001' returning id$$,
-  'administrador A não apaga vínculo da prefeitura B');
+  '42501', null, 'administrador não cadastra secretaria (só a equipe LicCONT)');
+select throws_ok($$delete from public.vinculos
+  where usuario_id = '0b000000-0000-0000-0000-000000000001'$$,
+  '42501', null, 'administrador A não apaga vínculo');
 select is_empty($$update public.prefeituras set nome = 'Alterada' returning id$$,
   'administrador não altera a prefeitura');
 select throws_ok($$select public.encerrar_sessoes('0b000000-0000-0000-0000-000000000001')$$,
@@ -291,7 +291,7 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select results_eq($$select nome from public.prefeituras_para_login() where nome like 'Prefeitura Fictícia _'$$,
   array['Prefeitura Fictícia A', 'Prefeitura Fictícia B'], 'login lista só prefeituras ativas, só o nome');
 select results_eq($$select nome from public.secretarias_para_login('11111111-1111-1111-1111-111111111111')$$,
-  array['Obras', 'Saúde', 'Turismo'], 'login lista só secretarias ativas');
+  array['Obras', 'Saúde'], 'login lista só secretarias ativas');
 select is_empty($$select 1 from public.secretarias_para_login('33333333-3333-3333-3333-333333333333')$$,
   'login não lista secretarias de prefeitura suspensa');
 select throws_ok('select 1 from public.usuarios', '42501', null, 'anon não lê usuários');
@@ -329,7 +329,7 @@ select is_empty($$select 1 from public.auditoria where alvo_id = 'forjado'$$,
 select is_empty($$select 1 from public.auditoria where usuario_id = '0a000000-0000-0000-0000-000000000004'$$,
   'usuário bloqueado não grava auditoria');
 select results_eq($$select depois ? 'nome' from public.auditoria
-  where acao = 'usuarios.insert' and alvo_id = '0a000000-0000-0000-0000-000000000009'$$,
+  where acao = 'usuarios.insert' and alvo_id = '0a000000-0000-0000-0000-000000000001'$$,
   array[false], 'cadastro de usuário fica na auditoria por gatilho, sem o nome');
 select results_eq($$select (depois ->> 'troca_senha_obrigatoria')::boolean from public.auditoria
   where acao = 'usuarios.insert' and alvo_id = '0d000000-0000-0000-0000-000000000001'$$,

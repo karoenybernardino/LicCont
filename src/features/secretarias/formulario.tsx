@@ -42,11 +42,14 @@ const PASSOS = [
 // Nova secretaria e Editar: os mesmos quadros (SecretariaNova*).
 export function FormularioSecretaria({
   acao,
+  prefeitura,
   inicial,
   usuarios,
   ruas,
 }: {
   acao: (estado: EstadoAcao, dados: FormData) => Promise<EstadoAcao>;
+  /** Órgão do cadastro: só a equipe LicCONT cadastra secretarias. */
+  prefeitura: string;
   inicial?: SecretariaDetalhe;
   usuarios: { id: string; nome: string }[];
   ruas: { id: string; rotulo: string }[];
@@ -64,6 +67,7 @@ export function FormularioSecretaria({
 
   return (
     <form ref={form} action={enviar} className="grid items-start gap-4 pr-2 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <input type="hidden" name="prefeitura" value={prefeitura} />
       {inicial && <input type="hidden" name="id" value={inicial.id} />}
       <div className="flex min-w-0 flex-col gap-4">
         <Painel>
@@ -112,7 +116,7 @@ export function FormularioSecretaria({
             </Linha>
           </div>
           <p className="text-[13px] text-texto-suave">
-            Só aparecem usuários já cadastrados nesta prefeitura. O vínculo de outros usuários com a secretaria é feito em Usuários e perfis.
+            Só aparecem usuários já cadastrados nesta prefeitura. O vínculo de outros usuários com a secretaria é feito na aba Usuários.
           </p>
         </Painel>
 
@@ -165,7 +169,7 @@ export function FormularioSecretaria({
               Salvar e cadastrar outra
             </button>
           )}
-          <Link href="/secretarias" className={`${botao} inline-flex items-center justify-center border border-linha font-medium hover:border-destaque`}>
+          <Link href={`/equipe/${prefeitura}?aba=secretarias`} className={`${botao} inline-flex items-center justify-center border border-linha font-medium hover:border-destaque`}>
             Cancelar
           </Link>
         </div>

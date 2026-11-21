@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Painel } from "@/features/estrutura/componentes";
 import { folhasDeCaixas, folhasDeDocumentos, folhasDoConteudo } from "./esquemas";
+import { MESES_ABREV, ajustarRotulos, cabeNaEtiqueta, dividirItens, rotulosDosItens, usaLayoutGeral } from "./ajuste";
 import type { BaseEtiquetas, CaixaEtiqueta, DocumentoEtiqueta } from "./dados";
 
 // Quadro Etiquetas: o que imprimir (um ou mais tipos), o que etiquetar (caixas e documentos, com filtros),
@@ -38,33 +39,74 @@ function Impressa({ em }: { em: string | null }) {
   );
 }
 
-// Prévia aproximada (a folha de verdade é o PDF). Mostra só o primeiro item escolhido.
-function PreviaCaixa({ c }: { c: CaixaEtiqueta | undefined }) {
+const nomeDoOrgao = (o: "prefeitura" | "camara") => (o === "camara" ? "CÂMARA" : "PREFEITURA");
+
+// Prévia aproximada (a folha de verdade é o PDF). Mostra a primeira caixa escolhida, com o mesmo ajuste do PDF:
+// todos os itens aparecem (nada de "..." nem "+N itens"); lista grande reduz a fonte e, no mínimo, vira partes.
+function PreviaCaixa({ c, dividir }: { c: CaixaEtiqueta | undefined; dividir: boolean }) {
   if (!c) return <p className="py-10 text-center text-sm text-texto-suave">Marque uma caixa para ver a etiqueta.</p>;
-  const mais = c.itens.length - 4;
+  const geral = usaLayoutGeral(c);
+  const partes = geral ? [] : dividirItens(c.itens, dividir);
+  const itens = partes[0] ?? [];
+  const aj = ajustarRotulos(rotulosDosItens(itens));
+  const rotulos = rotulosDosItens(itens);
+  const esc = 408 / 474; // largura da prévia / largura do cartão
   return (
     <div className="mx-auto flex w-full max-w-[440px] flex-col gap-2 rounded-2xl border border-linha bg-white p-4 text-[#0b2e3a]">
+      <div className="flex items-center gap-3">
+        <span aria-hidden className="size-12 shrink-0 rounded-lg border border-dashed border-[#cfdde2]" />
+        <b className="font-titulo text-[18px] leading-tight break-words">{nomeDoOrgao(c.orgao)}</b>
+      </div>
       <div className="h-[5px] rounded bg-[linear-gradient(90deg,#0e7490,#2dd4bf)]" />
-      <div className="flex items-center justify-between gap-2">
-        <b className="font-titulo text-[22px]">{c.titulo}</b>
-        {c.volume && <span className="rounded-full bg-[#0b2e3a] px-3 py-1 text-[11px] font-bold text-white">VOL. {c.volume.n}/{c.volume.total}</span>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <b className="font-titulo text-[22px] break-words">{c.titulo}</b>
+        <span className="flex gap-1.5">
+          {c.volume && <span className="rounded-full bg-[#0b2e3a] px-3 py-1 text-[11px] font-bold text-white">VOL. {c.volume.n}/{c.volume.total}</span>}
+          {partes.length > 1 && <span className="rounded-full bg-[#0b2e3a] px-3 py-1 text-[11px] font-bold text-white">PARTE 1/{partes.length}</span>}
+        </span>
       </div>
-      <div className="flex gap-6 text-[11px] text-[#3f5e66]">
-        <span>CLASSE<b className="block text-[13px] text-[#0b2e3a]">{c.classe}</b></span>
-        {c.tipologia && <span>TIPOLOGIA DOCUMENTAL<b className="block text-[13px] text-[#0b2e3a]">{c.tipologia}</b></span>}
+      {geral && (
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-[#3f5e66]">
+          <span>FUNDO<b className="block text-[13px] break-words text-[#0b2e3a]">{c.fundo || "—"}</b></span>
+          <span>SETOR<b className="block text-[13px] break-words text-[#0b2e3a]">{c.setor || "—"}</b></span>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-x-6 text-[11px] text-[#3f5e66]">
+        <span>CLASSE<b className="block text-[13px] break-words text-[#0b2e3a]">{c.classe}</b></span>
+        {c.tipologia && <span>TIPOLOGIA DOCUMENTAL<b className="block text-[13px] break-words text-[#0b2e3a]">{c.tipologia}</b></span>}
       </div>
-      <ul className="flex flex-col gap-1.5">
-        {c.itens.slice(0, 4).map((i, n) => (
-          <li key={n} className="border-l-[3px] border-[#0e7490] pl-2 text-[12px] leading-4">
-            <b className="block truncate uppercase">{i.modalidade} {i.numeroAno} – {i.secretaria}</b>
-            <span className="block truncate text-[#3f5e66]">Objeto: {i.objeto}</span>
-          </li>
-        ))}
-      </ul>
-      {mais > 0 && <p className="rounded-lg border border-dashed border-[#0b2e3a] py-1 text-center text-[12px] font-semibold">+ {mais} {mais === 1 ? "item" : "itens"} · ver folha de conteúdo</p>}
+      {geral ? (
+        <>
+          <div>
+            <span className="text-[11px] text-[#3f5e66]">MESES</span>
+            <div className="mt-0.5 grid grid-cols-12 gap-px">
+              {MESES_ABREV.map((m, i) => (
+                <span key={m} className={`rounded px-0 py-0.5 text-center text-[8px] font-semibold ${c.meses.includes(i + 1) ? "bg-[#0b2e3a] text-white" : "border border-[#cfdde2] text-[#3f5e66]"}`}>{m}</span>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-6 text-[11px] text-[#3f5e66]">
+            <span>ANO LIMITE<b className="block text-[13px] text-[#0b2e3a]">{c.anoLimite ?? "—"}</b></span>
+            <span>DIGITALIZADO<b className="block text-[13px] text-[#0b2e3a]">{c.digitalizada ? "Sim" : "Não"}</b></span>
+          </div>
+          <span className="text-[11px] text-[#3f5e66]">OBSERVAÇÕES<b className="block text-[12px] font-semibold break-words text-[#0b2e3a]">{c.observacao || "—"}</b></span>
+        </>
+      ) : (
+        <div>
+          <span className="text-[11px] text-[#3f5e66]">{itens.length === 1 ? "PROCESSO" : `PROCESSOS · ${itens.length}`}</span>
+          <ul
+            aria-label="Processos da caixa"
+            className="mt-0.5 grid gap-x-0 font-bold"
+            style={{ gridAutoFlow: "column", gridTemplateRows: `repeat(${aj.linhas}, auto)`, gridTemplateColumns: `repeat(${aj.colunas}, minmax(0, 1fr))`, fontSize: `${(aj.tam * esc).toFixed(1)}px`, lineHeight: 1.22 }}
+          >
+            {rotulos.map((r, n) => <li key={n}>{r}</li>)}
+          </ul>
+          {partes.length > 1 && <p className="mt-1 text-[11px] text-[#3f5e66]">Lista grande: sai em {partes.length} etiquetas (parte 1/{partes.length} a {partes.length}/{partes.length}).</p>}
+        </div>
+      )}
       <div className="flex gap-6 rounded-xl bg-[#edf5f7] px-3 py-2 text-[10px] text-[#3f5e66]">
         <span>CÓDIGO<b className="block text-[14px] text-[#0b2e3a]">{c.codigo}</b></span>
-        <span>PRAZO DE GUARDA<b className="block text-[12px] text-[#0b2e3a]">{c.prazo}</b></span>
+        <span>PRAZO DE GUARDA<b className="block text-[12px] break-words text-[#0b2e3a]">{c.prazo}</b></span>
       </div>
       <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#0b2e3a] p-3 text-white">
         <div>
@@ -84,7 +126,7 @@ function PreviaDocumento({ d }: { d: DocumentoEtiqueta | undefined }) {
       <div className="h-[5px] rounded bg-[linear-gradient(90deg,#0e7490,#2dd4bf)]" />
       <b className="font-titulo text-[20px] uppercase">{d.titulo}</b>
       {([["SECRETARIA", d.secretaria], ["OBJETO", d.objeto], ["DATA", d.data || "—"], ...(d.observacao ? [["OBSERVAÇÃO", d.observacao]] : [])] as [string, string][]).map(([r, v]) => (
-        <span key={r} className="text-[10px] text-[#3f5e66]">{r}<b className="block truncate text-[13px] text-[#0b2e3a]">{v}</b></span>
+        <span key={r} className="text-[10px] text-[#3f5e66]">{r}<b className="block text-[13px] break-words text-[#0b2e3a]">{v}</b></span>
       ))}
       <div className="flex gap-6 rounded-xl bg-[#edf5f7] px-3 py-2 text-[10px] text-[#3f5e66]">
         <span>CLASSE<b className="block text-[12px] text-[#0b2e3a]">{d.classe}</b></span>
@@ -113,6 +155,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
   const [ano, setAno] = useState("");
   const [situacao, setSituacao] = useState<"" | "nunca" | "impressa">("");
   const [previaTipo, setPrevia] = useState<"caixa" | "documento">("caixa");
+  const [dividir, setDividir] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
 
@@ -156,9 +199,12 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
   const escolhidasDocs = base.documentos.filter((d) => selDocs.has(d.id));
   const usaCaixas = tipos.has("caixa") || tipos.has("conteudo");
   const nCaixa = tipos.has("caixa") ? escolhidasCaixas.length : 0;
+  // Etiquetas de verdade na folha: caixa de lista grande vira partes (1/2, 2/2).
+  const etiquetasCaixa = tipos.has("caixa") ? escolhidasCaixas.reduce((s, c) => s + (usaLayoutGeral(c) ? 1 : dividirItens(c.itens, dividir).length), 0) : 0;
+  const listaGrande = tipos.has("caixa") && escolhidasCaixas.some((c) => !usaLayoutGeral(c) && !cabeNaEtiqueta(c.itens));
   const nDoc = tipos.has("documento") ? escolhidasDocs.length : 0;
   const folhasConteudo = tipos.has("conteudo") ? escolhidasCaixas.reduce((s, c) => s + folhasDoConteudo(c.itens.length), 0) : 0;
-  const folhas = folhasDeCaixas(nCaixa) + folhasDeDocumentos(nDoc) + folhasConteudo;
+  const folhas = folhasDeCaixas(etiquetasCaixa) + folhasDeDocumentos(nDoc) + folhasConteudo;
   const total = nCaixa + nDoc + (tipos.has("conteudo") ? escolhidasCaixas.length : 0);
   void usaCaixas;
 
@@ -169,7 +215,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
     for (const t of tipos) {
       const r = await fetch("/etiquetas/pdf", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tipos: [t], caixas: t === "documento" ? [] : [...selCaixas], documentos: t === "documento" ? [...selDocs] : [] }),
+        body: JSON.stringify({ tipos: [t], caixas: t === "documento" ? [] : [...selCaixas], documentos: t === "documento" ? [...selDocs] : [], dividir }),
       });
       if (!r.ok) {
         setAviso(await r.text().catch(() => "Não foi possível gerar o PDF."));
@@ -198,7 +244,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
           <p className="text-[13px] text-texto-suave">Marque um ou mais tipos. Cada um sai no seu próprio PDF.</p>
           <div className="flex flex-col gap-2.5">
             {TIPOS.map((t) => (
-              <label key={t.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${tipos.has(t.id) ? `border-[#0e7490] ${SELECIONADO}` : "border-linha"}`}>
+              <label key={t.id} className={`relative flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${tipos.has(t.id) ? `border-[#0e7490] ${SELECIONADO}` : "border-linha"}`}>
                 <Caixa marcada={tipos.has(t.id)} aoMudar={() => alternar(tipos, t.id, setTipos)} rotulo={t.titulo} />
                 <span><b className="block text-[15px]">{t.titulo}</b><span className="text-[13px] text-texto-suave">{t.texto}</span></span>
               </label>
@@ -228,7 +274,7 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
             <label className="flex flex-col gap-1"><span className={rotuloMaiusculo}>Etiqueta</span>
               <select value={situacao} onChange={(e) => setSituacao(e.target.value as typeof situacao)} className={campoFiltro}><option value="">Todas</option><option value="nunca">Ainda não impressa</option><option value="impressa">Já impressa</option></select></label>
           </div>
-          <label className="flex items-center gap-3 px-3 py-1 text-[12px] font-medium tracking-wider text-texto-suave uppercase">
+          <label className="relative flex items-center gap-3 px-3 py-1 text-[12px] font-medium tracking-wider text-texto-suave uppercase">
             <Caixa marcada={todasMarcadas} aoMudar={marcarTodas} rotulo="Marcar todas as que aparecem" />
             {emCaixas ? "Caixa" : "Documento"}
             <span className="ml-auto">Etiqueta</span>
@@ -236,18 +282,18 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
           <ul className="flex max-h-[340px] flex-col gap-1 overflow-auto pr-1.5">
             {emCaixas && caixasVisiveis.map((c) => (
               <li key={c.id}>
-                <label className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selCaixas.has(c.id) ? SELECIONADO : ""}`}>
+                <label className={`relative flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selCaixas.has(c.id) ? SELECIONADO : ""}`}>
                   <Caixa marcada={selCaixas.has(c.id)} aoMudar={() => alternar(selCaixas, c.id, setSelCaixas)} rotulo={`Caixa ${c.numero}`} />
-                  <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">CX - {c.numero}</b><span className="text-[13px] text-texto-suave"> · {c.titulo}{c.volume ? ` · Vol. ${c.volume.n}/${c.volume.total}` : ""}</span><span className="block text-[12px] text-texto-suave">{c.localizacao}</span></span>
+                  <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">CX - {c.numero}</b><span className="text-[13px] text-texto-suave"> · {c.orgao === "camara" ? "Câmara · " : ""}{c.titulo}{c.volume ? ` · Vol. ${c.volume.n}/${c.volume.total}` : ""}</span><span className="block text-[12px] text-texto-suave">{c.localizacao}</span></span>
                   <Impressa em={c.impressa} />
                 </label>
               </li>
             ))}
             {!emCaixas && docsVisiveis.map((d) => (
               <li key={d.id}>
-                <label className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selDocs.has(d.id) ? SELECIONADO : ""}`}>
+                <label className={`relative flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 hover:shadow-[inset_0_0_0_1.5px_var(--foco)] ${selDocs.has(d.id) ? SELECIONADO : ""}`}>
                   <Caixa marcada={selDocs.has(d.id)} aoMudar={() => alternar(selDocs, d.id, setSelDocs)} rotulo={d.titulo} />
-                  <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">{d.titulo}</b><span className="block truncate text-[12px] text-texto-suave">{d.secretaria} · CX - {d.caixaNumero}</span></span>
+                  <span className="min-w-0 flex-1"><b className="font-titulo text-[13px]">{d.titulo}</b><span className="block text-[12px] break-words text-texto-suave">{d.secretaria} · CX - {d.caixaNumero}</span></span>
                   <Impressa em={d.impressa} />
                 </label>
               </li>
@@ -270,15 +316,24 @@ export function TelaEtiquetas({ base, caixasMarcadas, documentosMarcados, podeIm
             ))}
           </div>
           <div className="rounded-xl bg-[#f4f7f8] p-4 dark:bg-[#0b1418]">
-            {previaTipo === "caixa" ? <PreviaCaixa c={escolhidasCaixas[0]} /> : <PreviaDocumento d={escolhidasDocs[0]} />}
+            {previaTipo === "caixa" ? <PreviaCaixa c={escolhidasCaixas[0]} dividir={dividir} /> : <PreviaDocumento d={escolhidasDocs[0]} />}
           </div>
-          <p className="text-[12.5px] text-texto-suave">Volume e tipologia só aparecem quando existem. Mais de 4 itens: os 4 primeiros e a linha &quot;ver folha de conteúdo&quot;.</p>
+          <p className="text-[12.5px] text-texto-suave">Volume e tipologia só aparecem quando existem. Todos os itens aparecem: se a lista for grande, a fonte diminui e, no mínimo, ela continua em outra etiqueta (parte 1/2, 2/2).</p>
         </Painel>
+        {listaGrande && (
+          <label className="relative flex cursor-pointer items-start gap-3 rounded-xl border border-linha px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco">
+            <Caixa marcada={dividir} aoMudar={() => setDividir((v) => !v)} rotulo="Dividir em partes" />
+            <span>
+              <b className="block text-[15px]">Dividir em partes (parte 1/2 e 2/2)</b>
+              <span className="text-[13px] text-texto-suave">Há caixa com tantos processos que não cabe numa etiqueta na fonte mínima. Dividindo, as partes ficam iguais e a letra maior. Sem marcar, enche cada etiqueta e continua na seguinte. Nada é cortado.</span>
+            </span>
+          </label>
+        )}
         <Painel>
           <span className={rotuloMaiusculo}>Resumo da impressão</span>
           <dl className="flex flex-col gap-2.5 text-[15px]">
             {([
-              ["Etiquetas das caixas", tipos.has("caixa") ? `${nCaixa} → ${folhasDeCaixas(nCaixa)} ${folhasDeCaixas(nCaixa) === 1 ? "folha A4 deitada" : "folhas A4 deitadas"}` : "não marcada"],
+              ["Etiquetas das caixas", tipos.has("caixa") ? `${nCaixa} ${nCaixa === etiquetasCaixa ? "" : `(${etiquetasCaixa} com as partes) `}→ ${folhasDeCaixas(etiquetasCaixa)} ${folhasDeCaixas(etiquetasCaixa) === 1 ? "folha A4 deitada" : "folhas A4 deitadas"}` : "não marcada"],
               ["Etiquetas dos documentos", tipos.has("documento") ? `${nDoc} → ${folhasDeDocumentos(nDoc)} ${folhasDeDocumentos(nDoc) === 1 ? "folha A4" : "folhas A4"}` : "não marcada"],
               ["Folha de conteúdo", tipos.has("conteudo") ? `${escolhidasCaixas.length} ${escolhidasCaixas.length === 1 ? "caixa" : "caixas"} → ${folhasConteudo} ${folhasConteudo === 1 ? "folha" : "folhas"}` : "não marcada"],
               ["Total de folhas", String(folhas)],
