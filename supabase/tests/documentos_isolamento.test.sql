@@ -105,8 +105,8 @@ select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, do
 select throws_ok($$insert into public.arquivos (prefeitura_id, secretaria_id, documento_id, nome_original, tamanho, enviado_por)
   values ('22222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000000', 'd0a10000-0000-0000-0000-000000000000', 'x.pdf', 10, '0a000000-0000-0000-0000-000000000001')$$,
   '23503', null, 'arquivo não aponta para documento de outra prefeitura');
-select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, modalidade, numero, ano, objeto)
-  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'licitacao', 'dispensa', '9/2024', 2024, 'Objeto qualquer')$$,
+select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, orgao, tipo, modalidade, numero, ano, objeto)
+  values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4b00000-0000-0000-0000-000000000001', 'prefeitura', 'licitacao', 'dispensa', '9/2024', 2024, 'Objeto qualquer')$$,
   '23503', null, 'documento não entra em caixa de outra prefeitura (nem como dono)');
 select throws_ok($$insert into public.documentos (prefeitura_id, secretaria_id, caixa_id, tipo, numero, ano, objeto)
   values ('11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-000000000000', 'c4a00000-0000-0000-0000-000000000002', 'licitacao', '9/2024', 2024, 'Objeto qualquer')$$,

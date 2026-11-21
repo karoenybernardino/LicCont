@@ -5,8 +5,8 @@ create extension if not exists pgtap with schema extensions;
 select * from no_plan();
 
 insert into public.parceiras (id, nome, cnpj) values
-  ('f1000000-0000-0000-0000-000000000001', 'Empresa X Fictícia', '00000000000100'),
-  ('f1000000-0000-0000-0000-000000000002', 'Empresa Y Fictícia', '11111111000111');
+  ('f1000000-0000-0000-0000-000000000001', 'Empresa X Fictícia', '00000000000901'),
+  ('f1000000-0000-0000-0000-000000000002', 'Empresa Y Fictícia', '11111111000902');
 insert into public.prefeituras (id, nome, cnpj, status, parceira_id) values
   ('11111111-1111-1111-1111-111111111111', 'Prefeitura Fictícia 1', '00000000000191', 'ativa', 'f1000000-0000-0000-0000-000000000001'),
   ('22222222-2222-2222-2222-222222222222', 'Prefeitura Fictícia 2', '00000000000272', 'ativa', 'f1000000-0000-0000-0000-000000000001'),

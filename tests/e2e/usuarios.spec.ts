@@ -103,6 +103,8 @@ test("equipe cadastra prefeitura, ativa e cria o primeiro administrador", async 
   // Cada passo só vale depois da hidratação: repete o clique até o passo mudar.
   for (const passo of ["Contrato e TCE-CE", "Administrador", "Conferir"]) {
     await expect(async () => {
+      // Se um clique anterior já avançou o passo, não clica de novo (no último passo o botão some).
+      if (await page.locator('li[aria-current="step"]').filter({ hasText: passo }).count()) return;
       await page.getByRole("button", { name: "Continuar" }).click({ timeout: 2000 });
       await expect(page.locator('li[aria-current="step"]')).toContainText(passo, { timeout: 1000 });
     }).toPass({ timeout: 15_000 });
