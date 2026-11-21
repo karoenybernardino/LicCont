@@ -10,7 +10,7 @@ import type { CaixaDoNivel } from "./dados";
 import { EscolhaOrgao } from "./escolha-orgao";
 import { EscolhaRua } from "./escolha-rua";
 import { Campo, Titulo, botaoBase, caixaCampo, secao, type OpcoesEstrutura } from "./formulario";
-import { MESES, ORGAOS, TIPOS_CAIXA, type Orgao, type TipoCaixa } from "./tipos";
+import { MESES, ORGAOS, type Orgao, type TipoCaixa } from "./tipos";
 
 // Cadastro de caixa (sem quadro no canvas: segue o estilo do "Cadastro novo" e da Estrutura).
 // Geral = arquivo geral, a caixa é o próprio registro. Detalhada = licitações e contratos, cada
@@ -26,7 +26,7 @@ export function FormularioCaixa({
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
-  const [tipo, setTipo] = useState<TipoCaixa>("geral");
+  const tipo: TipoCaixa = "geral";
   const [orgao, setOrgao] = useState<Orgao>("prefeitura");
   const [rua, setRua] = useState("");
   const [modulo, setModulo] = useState("");
@@ -40,7 +40,6 @@ export function FormularioCaixa({
   const [permanente, setPermanente] = useState(false);
   const [meses, setMeses] = useState<number[]>([]);
   const [digitalizada, setDigitalizada] = useState(false);
-  const [etiquetaGeral, setEtiquetaGeral] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [dicaCodigo, setDicaCodigo] = useState<string | null>(null);
@@ -96,7 +95,6 @@ export function FormularioCaixa({
     dados.set("codigo_classificacao", codigo);
     dados.set("prazo_anos", prazo);
     if (digitalizada) dados.set("digitalizada", "on");
-    if (etiquetaGeral) dados.set("etiqueta_geral", "on");
     iniciar(async () => {
       const r = await salvarCaixa(dados);
       if (r.erro) {
@@ -117,33 +115,11 @@ export function FormularioCaixa({
         <section className={secao} aria-labelledby="c1">
           <div id="c1"><Titulo n={1}>Tipo de caixa</Titulo></div>
           <div className="flex flex-wrap items-end gap-3.5">
-            <div role="radiogroup" aria-label="Tipo de caixa" className="inline-flex shrink-0 gap-[3px] rounded-[22px] border border-linha bg-campo p-[3px]">
-              {(Object.keys(TIPOS_CAIXA) as TipoCaixa[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="radio"
-                  aria-checked={tipo === t}
-                  onClick={() => setTipo(t)}
-                  className={`min-h-[34px] rounded-[18px] px-[18px] text-[13px] focus-visible:outline-2 focus-visible:outline-foco ${tipo === t ? "bg-aqua font-semibold text-petroleo" : "text-texto-suave"}`}
-                >
-                  {TIPOS_CAIXA[t]}
-                </button>
-              ))}
-            </div>
             <Campo rotulo="Órgão">{(id) => <EscolhaOrgao id={id} valor={orgao} aoEscolher={setOrgao} />}</Campo>
           </div>
           <p className="text-[13px] text-texto-suave">
-            {geral
-              ? "Arquivo geral: cadastro bruto (por exemplo, processos de pagamento). A caixa é o próprio registro e não lista o conteúdo."
-              : "Licitações e contratos: cada item é cadastrado como documento e a etiqueta da caixa lista todos os itens."}
+            Arquivo geral: cadastro bruto (por exemplo, processos de pagamento). A caixa é o próprio registro e não lista o conteúdo.
           </p>
-          {!geral && (
-            <label className="flex items-center gap-2.5 text-sm">
-              <input type="checkbox" checked={etiquetaGeral} onChange={(e) => setEtiquetaGeral(e.target.checked)} className="size-[18px] accent-[#0e7490]" />
-              Gerar também etiqueta geral (sem listar itens)
-            </label>
-          )}
         </section>
 
         {geral && (
