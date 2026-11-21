@@ -227,7 +227,7 @@ export async function entrarParceira(_: EstadoFormulario, formData: FormData): P
     p_aparelho: sessao.aparelho,
   });
   await marcarAtividade();
-  redirect("/parceira");
+  redirect((await segundoFatorObrigatorio()) ? "/segundo-fator" : "/parceira");
 }
 
 export async function trocarSenhaParceira(_: EstadoFormulario, formData: FormData): Promise<EstadoFormulario> {
@@ -236,6 +236,7 @@ export async function trocarSenhaParceira(_: EstadoFormulario, formData: FormDat
   if (!supabase || !servico) return { erro: MENSAGEM_INDISPONIVEL };
   const eu = await euParceira();
   if (!eu) redirect("/parceira/entrar");
+  if (await faltaSegundoFator()) redirect("/segundo-fator");
   if (!eu.trocaSenha) redirect("/parceira");
 
   const dados = esquemaNovaSenha.safeParse({ senha: formData.get("senha"), confirmacao: formData.get("confirmacao") });

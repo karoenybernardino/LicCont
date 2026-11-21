@@ -6,6 +6,7 @@ import { Formulario } from "@/ui/formulario";
 import { trocarSenhaParceira } from "@/features/login/acoes";
 import { MolduraLogin } from "@/features/login/moldura";
 import { euParceira } from "@/features/parceira/dados";
+import { faltaSegundoFator } from "@/features/sessao/dal";
 
 export const metadata: Metadata = { title: "Nova senha · LicCONT" };
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Nova senha · LicCONT" };
 export default async function NovaSenhaParceira() {
   const eu = await euParceira();
   if (!eu) redirect("/parceira/entrar");
+  if (await faltaSegundoFator()) redirect("/segundo-fator");
   if (!eu.trocaSenha) redirect("/parceira");
   return (
     <MolduraLogin>

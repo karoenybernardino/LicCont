@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { clienteServico, clienteSessao } from "@/lib/supabase/servidor";
 import { emDemo } from "@/features/demo/dados";
+import { faltaSegundoFator } from "@/features/sessao/dal";
 import { perfilDemo } from "@/features/demo/sessao";
 import {
   CAIXAS_A_ETIQUETAR_DEMO, DOCUMENTOS_PARCEIRA_DEMO, PARCEIRA_DEMO, PESSOAS_PARCEIRA_DEMO, PESSOA_DEMO_DONO, PESSOA_DEMO_FUNC,
@@ -35,6 +36,8 @@ export const euParceira = cache(async (): Promise<Eu | null> => {
 export async function exigirParceira(): Promise<Eu> {
   const eu = await euParceira();
   if (!eu) redirect("/parceira/entrar");
+  // Sem o código do autenticador (aal2) o banco também não entrega nada.
+  if (await faltaSegundoFator()) redirect("/segundo-fator");
   if (eu.trocaSenha) redirect("/parceira/nova-senha");
   return eu;
 }
