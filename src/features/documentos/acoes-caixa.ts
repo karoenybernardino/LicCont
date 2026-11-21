@@ -25,7 +25,6 @@ export async function salvarCaixa(formData: FormData): Promise<RetornoCaixa> {
   if (!dados.success) return { erro: dados.error.issues[0].message, campo: String(dados.error.issues[0].path[0] ?? "") };
   const d = dados.data;
   if (!(await podeCadastrar(usuario))) return SEM_PERMISSAO;
-  if (d.tipo === "geral" && !d.codigo_classificacao && !d.classe) return { erro: "Informe o código de classificação.", campo: "codigo_classificacao" };
   if (emDemo()) return { aviso: AVISO_DEMO };
 
   const sb = await clienteSessao();
